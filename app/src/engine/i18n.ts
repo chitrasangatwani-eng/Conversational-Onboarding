@@ -71,8 +71,11 @@ export function clearFailures() {
   failed.clear();
 }
 
+/** Where the translation proxy lives. Empty means the same site; set VITE_API_BASE for a static host such as GitHub Pages. */
+const API_BASE = (import.meta.env.VITE_API_BASE ?? "").replace(/\/+$/, "");
+
 async function post<T>(path: string, body: unknown): Promise<T> {
-  const r = await fetch(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+  const r = await fetch(API_BASE + path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
   if (!r.ok) throw new Error(path + " " + r.status);
   return (await r.json()) as T;
 }
