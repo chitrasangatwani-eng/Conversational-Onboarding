@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#e9e6df}a{color:oklch(0.5 0.09 175)}a:hover{color:oklch(0.4 0.09 175)}@keyframes dot{0%,80%,100%{opacity:.25}40%{opacity:1}}@keyframes pulse{0%{box-shadow:0 0 0 0 oklch(0.5 0.09 175 / .5)}100%{box-shadow:0 0 0 14px oklch(0.5 0.09 175 / 0)}}@keyframes up{from{transform:translateY(100%)}to{transform:none}}</style>
+</helmet>
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;gap:48px;padding:32px;flex-wrap:wrap;font-family:'DM Sans',sans-serif;color:#1d2420">
+  <div style="width:260px;display:flex;flex-direction:column;gap:14px">
+    <div style="font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.08em;color:#6b7370">PROTOTYPE · PRD v2</div>
+    <div style="font-size:26px;font-weight:600;line-height:1.15">Onboarding assistant<span style="font-family:'DM Mono',monospace;font-size:11px;border:1px solid #1d2420;border-radius:6px;padding:2px 6px;margin-left:8px;vertical-align:middle">{{ scopeTag }}</span></div>
+    <sc-if value="{{ mvpOn }}" hint-placeholder-val="{{ true }}"><div style="font-size:12.5px;line-height:1.55;background:#fff;border:1px solid #d6d1c6;border-radius:10px;padding:10px 12px"><b>In the MVP</b><br>Verified status and next step<br>Plain-language help and "Why we ask"<br>Recovery for 2 frequent errors<br>DigiLocker fetch for PAN and address<br>Human handoff with reviewed summary<br>Secure forms, AI label, opt-out, offline fallback<br>Voice help in 10 Indian languages<br><b style="display:block;margin-top:6px">Deferred</b>Voice form entry, weak-network mode, proactive prompts, fee sheet, call-back and assisted centres</div></sc-if>
+    <div style="font-size:14px;line-height:1.5;color:#4a534f">The flow is the system of record. Help is optional, reads verified state, and never approves anything. Try the chips, type a question, or paste a number.</div>
+    <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;border:1px solid #d6d1c6;background:#fff;border-radius:10px;padding:10px 12px">Next failure to simulate<select value="{{ failVal }}" onChange="{{ setFail }}" style="font:inherit;font-size:13px;font-weight:600;border:0;background:transparent;padding:0;min-height:28px"><option value="none">None (everything passes)</option><option value="blur">PAN photo unreadable</option><option value="name">Name mismatch, PAN vs Aadhaar</option><sc-if value="{{ full }}" hint-placeholder-val="{{ false }}"><option value="otp">Aadhaar OTP can't be received</option><option value="video">Video KYC fails</option><option value="security">Extra security review</option></sc-if></select></label>
+    <sc-if value="{{ full }}" hint-placeholder-val="{{ false }}"><button onClick="{{ toggleWeak }}" style="text-align:left;border:1px solid #d6d1c6;background:#fff;border-radius:10px;padding:10px 12px;font:inherit;font-size:13px;cursor:pointer">Simulate weak connection: <b>{{ weakLabel }}</b></button></sc-if>
+    <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;border:1px solid #d6d1c6;background:#fff;border-radius:10px;padding:10px 12px">Status data from the system<select value="{{ dataVal }}" onChange="{{ setData }}" style="font:inherit;font-size:13px;font-weight:600;border:0;background:transparent;padding:0;min-height:28px"><option value="fresh">Fresh</option><option value="stale">Stale (20 minutes old)</option><option value="down">Unavailable</option></select></label>
+    <button onClick="{{ toggleDown }}" style="text-align:left;border:1px solid #d6d1c6;background:#fff;border-radius:10px;padding:10px 12px;font:inherit;font-size:13px;cursor:pointer">Assistant service down: <b>{{ downLabel }}</b></button>
+    <button onClick="{{ reset }}" style="text-align:left;border:1px solid #d6d1c6;background:transparent;border-radius:10px;padding:10px 12px;font:inherit;font-size:13px;cursor:pointer">Reset prototype</button>
+  </div>
+
+  <div style="position:relative;width:390px;height:800px;border-radius:44px;background:#f6f4ef;border:10px solid #1d2420;box-sizing:content-box;overflow:hidden;box-shadow:0 30px 60px -20px rgba(0,0,0,.35)">
+    <div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;font-size:13px;font-weight:600"><span>9:41</span><span style="font-family:'DM Mono',monospace;font-size:11px">LTE ▮▮▮</span></div>
+
+    <sc-if value="{{ onHome }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute;top:44px;bottom:0;left:0;right:0;overflow:auto;padding:8px 20px 100px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px"><div style="width:40px;height:40px;border-radius:50%;background:#1d2420;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px">CS</div><div style="flex:1"><div style="font-size:15px;font-weight:600">Chitra Sangatwani</div><div style="font-size:12px;color:#6b7370">Signed in · Applicant</div></div></div>
+      <div style="font-size:13px;color:#6b7370">Welcome back, Chitra. Open your account</div>
+      <div style="font-size:28px;font-weight:600;line-height:1.1;margin:4px 0 14px">{{ doneCount }} of 6 steps done</div>
+      <div style="height:6px;background:#e3dfd6;border-radius:3px;overflow:hidden"><div style="height:100%;width:{{ progressW }};background:oklch(0.5 0.09 175)"></div></div>
+
+      <sc-if value="{{ savedOn }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:14px;background:oklch(0.95 0.03 175);border:1px solid oklch(0.85 0.05 175);border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.45"><b>Saved.</b> {{ savedText }}</div>
+      </sc-if>
+      <sc-if value="{{ weakOn }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:14px;background:oklch(0.95 0.03 60);border:1px solid oklch(0.85 0.05 60);border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.45"><b>Weak connection.</b> Your progress is saved. Photos are compressed and uploads retry on their own. You can also ask for a call back.</div>
+      </sc-if>
+      <sc-if value="{{ dataBanner }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:14px;background:oklch(0.95 0.03 60);border:1px solid oklch(0.85 0.05 60);border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.45">{{ dataMsg }}<button onClick="{{ dataFix }}" style="display:block;margin-top:2px;border:0;background:none;padding:0;min-height:44px;font:inherit;font-weight:600;font-size:13.5px;color:oklch(0.4 0.09 50);cursor:pointer;text-decoration:underline">{{ dataBtn }}</button></div>
+      </sc-if>
+      <sc-if value="{{ showNeeds }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:14px;background:#fff;border:1px solid #e3dfd6;border-radius:14px;padding:12px 14px;font-size:13.5px;line-height:1.5">
+        <b style="font-size:14px">Before you start</b>
+        <div style="margin-top:6px">· 100% online. No branch visit needed.</div>
+        <div>· Keep ready: PAN card, the mobile linked to your Aadhaar, and an address document if your Aadhaar address is old.</div>
+        <div>· Your name, mobile and date of birth are already filled in. You won't type them again.</div>
+        <sc-if value="{{ full }}" hint-placeholder-val="{{ false }}"><button onClick="{{ goFees }}" style="margin-top:6px;border:0;background:none;padding:0;min-height:44px;font:inherit;font-weight:600;font-size:13.5px;color:oklch(0.4 0.09 175);cursor:pointer;text-decoration:underline">See fees and terms first</button></sc-if>
+      </div>
+      </sc-if>
+      <sc-if value="{{ isSubmitted }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:18px;background:oklch(0.95 0.03 175);border:1px solid oklch(0.85 0.05 175);border-radius:14px;padding:14px">
+        <div style="font-weight:600;font-size:15px">{{ subTitle }}</div>
+        <div style="font-size:13px;color:#4a534f;margin-top:4px;line-height:1.45">{{ subText }}</div><sc-if value="{{ isHeld }}" hint-placeholder-val="{{ false }}"><button onClick="{{ talkBtn }}" style="margin-top:8px;border:0;border-radius:10px;padding:0 14px;min-height:44px;font:inherit;font-weight:600;font-size:14px;cursor:pointer;background:#1d2420;color:#fff">Talk to a person</button></sc-if>
+      </div>
+      </sc-if>
+      <sc-if value="{{ isRejected }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:18px;background:oklch(0.95 0.03 60);border:1px solid oklch(0.85 0.05 60);border-radius:14px;padding:14px">
+        <div style="font-weight:600;font-size:15px">{{ banTitle }}</div>
+        <div style="font-size:13px;color:#4a534f;margin:4px 0 10px;line-height:1.45">{{ banSub }}</div>
+        <button onClick="{{ openBlockerHelp }}" style="border:0;background:oklch(0.4 0.09 50);color:#fff;border-radius:10px;padding:10px 14px;font:inherit;font-weight:600;font-size:14px;cursor:pointer">See how to fix this</button>
+      </div>
+      </sc-if>
+
+      <div style="margin-top:18px;display:flex;flex-direction:column;gap:8px">
+        <sc-for list="{{ steps }}" as="s" hint-placeholder-count="6">
+        <div style="display:flex;align-items:center;gap:12px;background:#fff;border:1px solid {{ s.border }};border-radius:14px;padding:12px 14px">
+          <div style="width:28px;height:28px;border-radius:50%;background:{{ s.dotBg }};color:{{ s.dotFg }};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">{{ s.glyph }}</div>
+          <div style="flex:1"><div style="font-size:15px;font-weight:500">{{ s.label }}</div><div style="font-size:12px;color:#6b7370">{{ s.sub }}</div></div>
+        </div>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{ full }}" hint-placeholder-val="{{ false }}"><button onClick="{{ goFees }}" style="margin-top:10px;border:0;background:none;padding:0;min-height:44px;font:inherit;font-size:13.5px;color:#4a534f;cursor:pointer;text-decoration:underline">Fees and terms</button></sc-if>
+      <button onClick="{{ saveLater }}" style="margin:10px 0 0 18px;border:0;background:none;padding:0;min-height:44px;font:inherit;font-size:13.5px;color:#4a534f;cursor:pointer;text-decoration:underline">Finish later</button>
+      <sc-if value="{{ canUpload }}" hint-placeholder-val="{{ true }}">
+      <button onClick="{{ goSecure }}" style="margin-top:18px;width:100%;border:0;background:#1d2420;color:#fff;border-radius:14px;padding:15px;font:inherit;font-weight:600;font-size:16px;cursor:pointer">{{ ctaLabel }}</button>
+      </sc-if>
+    </div>
+
+    <sc-if value="{{ helpOn }}" hint-placeholder-val="{{ true }}">
+    <sc-if value="{{ nudgeOn }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;right:18px;bottom:84px;width:250px;background:#fff;border:1px solid #cfc9bc;border-radius:14px;padding:10px 12px;box-shadow:0 8px 20px -8px rgba(0,0,0,.3);font-size:13px;line-height:1.4"><div>{{ nudgeText }}</div><div style="display:flex;gap:6px;margin-top:4px"><button onClick="{{ nudgeGo }}" style="border:0;border-radius:10px;padding:0 14px;min-height:44px;font:inherit;font-weight:600;font-size:14px;cursor:pointer;background:oklch(0.5 0.09 175);color:#fff">Explain</button><button onClick="{{ nudgeX }}" style="border:0;border-radius:10px;padding:0 14px;min-height:44px;font:inherit;font-weight:600;font-size:14px;cursor:pointer;background:none;color:#4a534f">Not now</button></div></div>
+    </sc-if>
+    <button onClick="{{ openSheet }}" style="position:absolute;right:18px;bottom:22px;display:flex;align-items:center;gap:8px;border:0;background:oklch(0.5 0.09 175);color:#fff;border-radius:26px;padding:0 18px;height:52px;font:inherit;font-weight:600;font-size:15px;cursor:pointer;box-shadow:0 8px 20px -6px oklch(0.4 0.09 175)">
+      <span style="font-family:'DM Mono',monospace;font-size:11px;border:1px solid rgba(255,255,255,.7);border-radius:5px;padding:1px 4px">AI</span>{{ fabLabel }}</button>
+    </sc-if>
+    </sc-if>
+
+    <sc-if value="{{ onSecure }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;top:44px;bottom:0;left:0;right:0;padding:8px 20px 24px;display:flex;flex-direction:column;gap:14px;background:#f6f4ef">
+      <button onClick="{{ backHome }}" style="align-self:flex-start;border:0;background:none;font:inherit;font-size:14px;color:#4a534f;cursor:pointer;padding:0">← Back</button>
+      <div style="font-size:24px;font-weight:600">{{ secTitle }}</div><div style="font-size:13px;color:#4a534f;margin-top:-8px">{{ secHint }} <button onClick="{{ whySecure }}" style="border:0;background:none;padding:12px 4px;margin:-12px 0;font:inherit;font-size:12.5px;font-weight:600;color:oklch(0.4 0.09 175);cursor:pointer;text-decoration:underline">Why we ask</button></div>
+      <div style="display:flex;gap:8px;align-items:center;background:oklch(0.95 0.03 175);border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.4"><span style="font-family:'DM Mono',monospace">🔒</span>Secure upload. The assistant never sees this image, your PAN or your Aadhaar number.</div>
+      <input type="file" accept="image/*" capture="{{ camFacing }}" ref="{{ fileRef }}" onChange="{{ onFile }}" style="display:none">
+      <div onClick="{{ capture }}" style="position:relative;flex:1;overflow:hidden;background-size:cover;background-position:center;border-radius:16px;background-image:{{ frameBg }};border:2px {{ frameStyle }} {{ frameColor }};display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:12px;color:#6b7370;text-align:center;padding:20px;cursor:pointer"><video ref="{{ videoRef }}" autoplay playsinline muted style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:{{ videoDisplay }};transform:{{ mirror }}"></video>{{ frameText }}</div>
+      <button onClick="{{ capture }}" style="border:1.5px solid #1d2420;background:transparent;color:#1d2420;border-radius:14px;padding:13px;font:inherit;font-weight:600;font-size:15px;cursor:pointer">{{ captureLabel }}</button>
+      <div style="font-size:12px;color:#4a534f">{{ lowData }}</div>
+      <sc-if value="{{ digiShow }}" hint-placeholder-val="{{ false }}">
+      <button onClick="{{ useDigi }}" style="border:1.5px solid oklch(0.5 0.09 175);background:oklch(0.95 0.03 175);color:#1d2420;border-radius:14px;padding:12px;font:inherit;font-weight:600;font-size:14.5px;cursor:pointer;line-height:1.35">Fetch from DigiLocker instead<br><span style="font-weight:400;font-size:12px">No photo, nothing to type. You approve sharing on the DigiLocker screen.</span></button>
+      </sc-if>
+      <button onClick="{{ submitId }}" style="border:0;background:{{ submitBg }};color:#fff;border-radius:14px;padding:15px;font:inherit;font-weight:600;font-size:16px;cursor:pointer">Submit photo</button>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ onDetails }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;top:44px;bottom:0;left:0;right:0;padding:8px 20px 24px;display:flex;flex-direction:column;gap:12px;background:#f6f4ef;overflow:auto">
+      <button onClick="{{ backHome }}" style="align-self:flex-start;border:0;background:none;font:inherit;font-size:14px;color:#4a534f;cursor:pointer;padding:0;min-height:44px">← Back</button>
+      <div style="font-size:24px;font-weight:600;margin-top:-8px">Your details</div>
+      <div style="font-size:13.5px;color:#4a534f;line-height:1.45">We filled in what we already have. Check it matches your PAN card exactly, and add the rest. Secure form: the assistant can't see it.{{ voiceNote }}</div>
+      <label><div style="font-size:12.5px;color:#4a534f;display:flex;justify-content:space-between;margin-bottom:4px"><span>Full name, as on PAN · <button onClick="{{ why_dName }}" style="border:0;background:none;padding:12px 4px;margin:-12px 0;font:inherit;font-size:12.5px;font-weight:600;color:oklch(0.4 0.09 175);cursor:pointer;text-decoration:underline">Why we ask</button></span><span style="color:oklch(0.4 0.09 175)">Pre-filled</span></div><div style="display:flex;gap:8px"><input value="{{ dName }}" onInput="{{ setDName }}" style="width:100%;box-sizing:border-box;border:1.5px solid #cfc9bc;background:#fff;border-radius:12px;padding:0 14px;height:48px;font:inherit;font-size:16px;outline:none"><sc-if value="{{ full }}" hint-placeholder-val="{{ false }}"><button onClick="{{ v_dName }}" aria-label="Speak" style="flex:none;width:48px;height:48px;border-radius:50%;border:0;background:{{ vb_dName }};display:flex;align-items:center;justify-content:center;cursor:pointer;animation:{{ va_dName }}"><span style="width:10px;height:16px;border-radius:5px;background:#fff;display:block"></span></button></sc-if></div></label>
+      <label><div style="font-size:12.5px;color:#4a534f;display:flex;justify-content:space-between;margin-bottom:4px"><span>Date of birth · <button onClick="{{ why_dDob }}" style="border:0;background:none;padding:12px 4px;margin:-12px 0;font:inherit;font-size:12.5px;font-weight:600;color:oklch(0.4 0.09 175);cursor:pointer;text-decoration:underline">Why we ask</button></span><span style="color:oklch(0.4 0.09 175)">Pre-filled</span></div><div style="display:flex;gap:8px"><input value="{{ dDob }}" onInput="{{ setDDob }}" inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10" style="width:100%;box-sizing:border-box;border:1.5px solid #cfc9bc;background:#fff;border-radius:12px;padding:0 14px;height:48px;font:inherit;font-size:16px;outline:none"><sc-if value="{{ full }}" hint-placeholder-val="{{ false }}"><button onClick="{{ v_dDob }}" aria-label="Speak" style="flex:none;width:48px;height:48px;border-radius:50%;border:0;background:{{ vb_dDob }};display:flex;align-items:center;justify-content:center;cursor:pointer;animation:{{ va_dDob }}"><span style="width:10px;height:16px;border-radius:5px;background:#fff;display:block"></span></button></sc-if></div></label>
+      <label><div style="font-size:12.5px;color:#4a534f;display:flex;justify-content:space-between;margin-bottom:4px"><span>Email · <button onClick="{{ why_dEmail }}" style="border:0;background:none;padding:12px 4px;margin:-12px 0;font:inherit;font-size:12.5px;font-weight:600;color:oklch(0.4 0.09 175);cursor:pointer;text-decoration:underline">Why we ask</button></span></div><div style="display:flex;gap:8px"><input value="{{ dEmail }}" onInput="{{ setDEmail }}" type="email" placeholder="name@example.com" style="width:100%;box-sizing:border-box;border:1.5px solid #cfc9bc;background:#fff;border-radius:12px;padding:0 14px;height:48px;font:inherit;font-size:16px;outline:none"><sc-if value="{{ full }}" hint-placeholder-val="{{ false }}"><button onClick="{{ v_dEmail }}" aria-label="Speak" style="flex:none;width:48px;height:48px;border-radius:50%;border:0;background:{{ vb_dEmail }};display:flex;align-items:center;justify-content:center;cursor:pointer;animation:{{ va_dEmail }}"><span style="width:10px;height:16px;border-radius:5px;background:#fff;display:block"></span></button></sc-if></div></label>
+      <label><div style="font-size:12.5px;color:#4a534f;display:flex;justify-content:space-between;margin-bottom:4px"><span>PIN code · <button onClick="{{ why_dPin }}" style="border:0;background:none;padding:12px 4px;margin:-12px 0;font:inherit;font-size:12.5px;font-weight:600;color:oklch(0.4 0.09 175);cursor:pointer;text-decoration:underline">Why we ask</button></span></div><div style="display:flex;gap:8px"><input value="{{ dPin }}" onInput="{{ setDPin }}" inputmode="numeric" maxlength="6" placeholder="6 digits" style="width:100%;box-sizing:border-box;border:1.5px solid #cfc9bc;background:#fff;border-radius:12px;padding:0 14px;height:48px;font:inherit;font-size:16px;outline:none"><sc-if value="{{ full }}" hint-placeholder-val="{{ false }}"><button onClick="{{ v_dPin }}" aria-label="Speak" style="flex:none;width:48px;height:48px;border-radius:50%;border:0;background:{{ vb_dPin }};display:flex;align-items:center;justify-content:center;cursor:pointer;animation:{{ va_dPin }}"><span style="width:10px;height:16px;border-radius:5px;background:#fff;display:block"></span></button></sc-if></div></label>
+      <div style="font-size:12.5px;color:oklch(0.45 0.09 50);min-height:16px">{{ dErr }}</div>
+      <button onClick="{{ demoDet }}" style="align-self:flex-start;border:1px dashed #b9b3a6;background:#fff;border-radius:10px;padding:0 12px;min-height:44px;font:inherit;font-size:13px;cursor:pointer">Demo: fill email and PIN</button>
+      <button onClick="{{ saveDet }}" style="border:0;border-radius:14px;padding:0 16px;min-height:50px;font:inherit;font-weight:600;font-size:16px;cursor:pointer;color:#fff;background:oklch(0.5 0.09 175)">Save and continue</button>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ onMobile }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;top:44px;bottom:0;left:0;right:0;padding:8px 20px 24px;display:flex;flex-direction:column;gap:14px;background:#f6f4ef;overflow:auto">
+      <button onClick="{{ backHome }}" style="align-self:flex-start;border:0;background:none;font:inherit;font-size:14px;color:#4a534f;cursor:pointer;padding:0;min-height:44px">← Back</button>
+      <div style="font-size:24px;font-weight:600;margin-top:-8px">Verify your mobile number</div>
+      <div style="display:flex;gap:8px;align-items:center;background:oklch(0.95 0.03 175);border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.4">Secure form. The assistant never sees your number or OTP.</div>
+      <sc-if value="{{ mobEnter }}" hint-placeholder-val="{{ true }}">
+        <div style="font-size:13.5px;color:#4a534f;line-height:1.45">Use the mobile number linked to your Aadhaar. We'll send a 6-digit OTP by SMS. {{ voiceNote }} <button onClick="{{ why_mobNum }}" style="border:0;background:none;padding:12px 4px;margin:-12px 0;font:inherit;font-size:12.5px;font-weight:600;color:oklch(0.4 0.09 175);cursor:pointer;text-decoration:underline">Why we ask</button></div>
+        <button onClick="{{ demoNum }}" style="align-self:flex-start;border:1px dashed #b9b3a6;background:#fff;border-radius:10px;padding:0 12px;min-height:44px;font:inherit;font-size:13px;cursor:pointer">Demo: fill 9876543210</button>
+        <div style="display:flex;gap:8px"><div style="width:100%;box-sizing:border-box;border:1.5px solid #cfc9bc;background:#fff;border-radius:12px;padding:0 14px;height:52px;font:inherit;font-size:20px;letter-spacing:.06em;outline:none;width:72px;display:flex;align-items:center;justify-content:center;font-size:17px;letter-spacing:0">+91</div><input value="{{ mobNum }}" onInput="{{ setMobNum }}" inputmode="numeric" maxlength="10" placeholder="10-digit number" aria-label="Mobile number" style="width:100%;box-sizing:border-box;border:1.5px solid #cfc9bc;background:#fff;border-radius:12px;padding:0 14px;height:52px;font:inherit;font-size:20px;letter-spacing:.06em;outline:none"><sc-if value="{{ full }}" hint-placeholder-val="{{ false }}"><button onClick="{{ v_mobNum }}" aria-label="Speak" style="flex:none;width:48px;height:48px;border-radius:50%;border:0;background:{{ vb_mobNum }};display:flex;align-items:center;justify-content:center;cursor:pointer;animation:{{ va_mobNum }}"><span style="width:10px;height:16px;border-radius:5px;background:#fff;display:block"></span></button></sc-if></div>
+        <div style="font-size:12.5px;color:oklch(0.45 0.09 50);min-height:16px">{{ mobErr }}</div>
+        <button onClick="{{ sendOtp }}" style="border:0;border-radius:14px;padding:0 16px;min-height:50px;font:inherit;font-weight:600;font-size:16px;cursor:pointer;color:#fff;background:{{ sendBg }}">Send OTP</button>
+      </sc-if>
+      <sc-if value="{{ mobOtp }}" hint-placeholder-val="{{ false }}">
+        <div style="font-size:13.5px;color:#4a534f;line-height:1.45">Enter the 6-digit OTP sent to +91 {{ mobMasked }}. {{ otpNote }}</div>
+        <div style="display:flex;gap:8px"><input value="{{ otp }}" onInput="{{ setOtp }}" inputmode="numeric" maxlength="6" placeholder="••••••" aria-label="OTP" style="width:100%;box-sizing:border-box;border:1.5px solid #cfc9bc;background:#fff;border-radius:12px;padding:0 14px;height:52px;font:inherit;font-size:20px;letter-spacing:.06em;outline:none;text-align:center;letter-spacing:.4em"><sc-if value="{{ full }}" hint-placeholder-val="{{ false }}"><button onClick="{{ v_otp }}" aria-label="Speak" style="flex:none;width:48px;height:48px;border-radius:50%;border:0;background:{{ vb_otp }};display:flex;align-items:center;justify-content:center;cursor:pointer;animation:{{ va_otp }}"><span style="width:10px;height:16px;border-radius:5px;background:#fff;display:block"></span></button></sc-if></div>
+        <div style="font-size:12.5px;color:oklch(0.45 0.09 50);min-height:16px">{{ otpErr }}</div>
+        <button onClick="{{ verifyOtp }}" style="border:0;border-radius:14px;padding:0 16px;min-height:50px;font:inherit;font-weight:600;font-size:16px;cursor:pointer;color:#fff;background:{{ verifyBg }}">Verify</button>
+        <div style="display:flex;flex-wrap:wrap;gap:4px 16px">
+          <button onClick="{{ resendOtp }}" style="border:0;background:none;padding:0;min-height:44px;font:inherit;font-size:13.5px;font-weight:600;color:oklch(0.4 0.09 175);cursor:pointer">Resend OTP</button>
+          <button onClick="{{ changeNum }}" style="border:0;background:none;padding:0;min-height:44px;font:inherit;font-size:13.5px;color:#4a534f;cursor:pointer;text-decoration:underline">Change number</button>
+          <button onClick="{{ noOtp }}" style="border:0;background:none;padding:0;min-height:44px;font:inherit;font-size:13.5px;color:#4a534f;cursor:pointer;text-decoration:underline">Didn't get the OTP?</button>
+        </div>
+        <button onClick="{{ demoOtp }}" style="align-self:flex-start;border:1px dashed #b9b3a6;background:#fff;border-radius:10px;padding:0 12px;min-height:44px;font:inherit;font-size:13px;cursor:pointer">Demo: fill OTP 123456</button>
+      </sc-if>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ onVk }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;top:44px;bottom:0;left:0;right:0;padding:8px 20px 20px;display:flex;flex-direction:column;gap:10px;background:#f6f4ef">
+      <button onClick="{{ leaveVk }}" style="align-self:flex-start;border:0;background:none;font:inherit;font-size:14px;color:#4a534f;cursor:pointer;padding:0;min-height:44px">← Back</button>
+      <div style="font-size:24px;font-weight:600;margin-top:-8px">Video KYC</div>
+      <div style="font-size:13.5px;color:#4a534f;line-height:1.4">A short live call with a verification agent. <button onClick="{{ why_vk }}" style="border:0;background:none;padding:12px 4px;margin:-12px 0;font:inherit;font-size:12.5px;font-weight:600;color:oklch(0.4 0.09 175);cursor:pointer;text-decoration:underline">Why we ask</button></div>
+      <div style="position:relative;flex:1;border-radius:16px;overflow:hidden;background:#1d2420">
+        <sc-if value="{{ vkLive }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,#2a332e 0 10px,#313b35 10px 20px);display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:12px;color:#aab3ad;text-align:center">agent video<br>(live feed placeholder)</div>
+          <div style="position:absolute;top:12px;left:12px;display:flex;gap:8px;align-items:center"><span style="background:#fff;color:#1d2420;border-radius:8px;padding:4px 8px;font-size:12px;font-weight:600">Priya · Verification agent</span><span style="background:oklch(0.5 0.09 25);color:#fff;border-radius:8px;padding:4px 8px;font-family:'DM Mono',monospace;font-size:11px">REC {{ vkTimer }}</span></div>
+          <div style="position:absolute;left:12px;right:12px;bottom:12px;background:rgba(255,255,255,.95);border-radius:12px;padding:10px 12px;font-size:14px;line-height:1.4"><span style="font-family:'DM Mono',monospace;font-size:11px;color:#6b7370;display:block">AGENT ASKS</span>{{ vkPrompt }}</div>
+        </sc-if>
+        <video ref="{{ videoRef }}" autoplay playsinline muted style="position:absolute;top:{{ vt }};left:{{ vl }};right:{{ vr }};bottom:{{ vb }};width:{{ vw }};height:{{ vh }};object-fit:cover;transform:scaleX(-1);border-radius:{{ vrad }};border:{{ vbd }};background:#313b35"></video>
+        <sc-if value="{{ vkConnecting }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;inset:0;background:rgba(29,36,32,.62);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;padding:20px"><div style="font-size:18px;font-weight:600">Connecting you to an agent…</div><div style="font-size:13px;opacity:.9">Position in queue: 1. Please keep your PAN card ready.</div></div>
+        </sc-if>
+      </div>
+      <sc-if value="{{ vkReady }}" hint-placeholder-val="{{ true }}">
+        <div style="font-size:13px;line-height:1.5;color:#1d2420;background:#fff;border:1px solid #e3dfd6;border-radius:12px;padding:10px 12px">· Original PAN card in your hand<br>· Bright light on your face, quiet place<br>· Steady Wi-Fi or 4G{{ vkWeak }}<br><span style="color:#4a534f">This call is recorded and used only for KYC.</span></div>
+        <button onClick="{{ joinVk }}" style="border:0;border-radius:14px;padding:0 16px;min-height:48px;font:inherit;font-weight:600;font-size:15px;cursor:pointer;background:oklch(0.5 0.09 175);color:#fff">Join call</button>
+      </sc-if>
+      <sc-if value="{{ vkLive }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;gap:10px"><button onClick="{{ toggleMute }}" style="border:0;border-radius:14px;padding:0 16px;min-height:48px;font:inherit;font-weight:600;font-size:15px;cursor:pointer;flex:1;background:#fff;color:#1d2420;border:1px solid #cfc9bc">{{ muteLabel }}</button><button onClick="{{ hangUp }}" style="border:0;border-radius:14px;padding:0 16px;min-height:48px;font:inherit;font-weight:600;font-size:15px;cursor:pointer;flex:1;background:oklch(0.5 0.09 25);color:#fff">End call</button></div>
+      </sc-if>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ onFees }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;top:44px;bottom:0;left:0;right:0;padding:8px 20px 24px;display:flex;flex-direction:column;gap:14px;background:#f6f4ef;overflow:auto">
+      <button onClick="{{ backFromFees }}" style="align-self:flex-start;border:0;background:none;font:inherit;font-size:14px;color:#4a534f;cursor:pointer;padding:0;min-height:44px">← Back</button>
+      <div style="font-size:24px;font-weight:600;margin-top:-8px">Fees and terms</div>
+      <div style="font-size:13.5px;color:#4a534f;line-height:1.45">Read this before you sign. Same sheet for everyone. The assistant never quotes fees itself.</div>
+      <div style="background:#fff;border:1px solid #e3dfd6;border-radius:14px;padding:4px 14px">
+        <sc-for list="{{ feeRows }}" as="v" hint-placeholder-count="5">
+          <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid #eeebe3"><span style="flex:1;font-size:14.5px">{{ v.label }}</span><span style="font-family:'DM Mono',monospace;font-size:13px">{{ v.note }}</span></div>
+        </sc-for>
+      </div>
+      <div style="font-family:'DM Mono',monospace;font-size:11px;color:#6b7370;line-height:1.5">Fee sheet v1.0 · PLACEHOLDER VALUES. Replace with the Compliance-approved fee sheet before launch.</div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ onReview }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;top:44px;bottom:0;left:0;right:0;padding:8px 20px 24px;display:flex;flex-direction:column;gap:14px;background:#f6f4ef;overflow:auto">
+      <button onClick="{{ backHome }}" style="align-self:flex-start;border:0;background:none;font:inherit;font-size:14px;color:#4a534f;cursor:pointer;padding:0;min-height:44px">← Back</button>
+      <div style="font-size:24px;font-weight:600;margin-top:-8px">Review and submit</div>
+      <div style="font-size:13.5px;color:#4a534f;line-height:1.45">Check each step below. Sensitive details aren't shown here.</div>
+      <div style="background:#fff;border:1px solid #e3dfd6;border-radius:14px;padding:4px 14px">
+        <sc-for list="{{ reviewRows }}" as="v" hint-placeholder-count="5">
+          <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid #eeebe3"><span style="color:oklch(0.45 0.09 175);font-weight:700;width:18px">✓</span><span style="flex:1;font-size:14.5px">{{ v.label }}</span><span style="font-size:12.5px;color:#6b7370">{{ v.note }}</span></div>
+        </sc-for>
+      </div>
+      <sc-if value="{{ full }}" hint-placeholder-val="{{ false }}"><button onClick="{{ goFees }}" style="align-self:flex-start;border:0;background:none;padding:0;min-height:44px;font:inherit;font-weight:600;font-size:13.5px;color:oklch(0.4 0.09 175);cursor:pointer;text-decoration:underline">Read fees and terms</button></sc-if>
+      <button onClick="{{ toggleConsent }}" style="display:flex;gap:10px;align-items:flex-start;text-align:left;border:0;background:none;font:inherit;font-size:13.5px;line-height:1.45;padding:0;cursor:pointer;color:#1d2420"><span style="width:22px;height:22px;border-radius:6px;border:1.5px solid #1d2420;background:{{ consentBg }};color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px">{{ consentMark }}</span>I confirm my details are correct and consent to my PAN and Aadhaar being used for KYC, as described in the privacy notice under the DPDP Act, 2023.</button>
+      <div style="flex:1"></div>
+      <div style="font-size:12px;color:#6b7370;line-height:1.4">Submitting sends your application for review. It isn't an approval. You'll be notified of the decision.</div>
+      <button onClick="{{ submitApp }}" style="border:0;background:{{ consentSubmitBg }};color:#fff;border-radius:14px;padding:15px;font:inherit;font-weight:600;font-size:16px;cursor:pointer">Submit application</button>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeSheet }}" style="position:absolute;inset:0;background:rgba(29,36,32,.4)"></div>
+    <div style="position:absolute;left:0;right:0;bottom:0;height:86%;background:#f6f4ef;border-radius:24px 24px 0 0;display:flex;flex-direction:column;animation:up .25s ease-out;box-shadow:0 -10px 30px rgba(0,0,0,.2)">
+      <div style="padding:14px 16px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e3dfd6">
+        <div style="flex:1"><div style="font-weight:600;font-size:16px;display:flex;align-items:center;gap:8px">{{ sTitle }}<span style="font-family:'DM Mono',monospace;font-size:10px;border:1px solid #1d2420;border-radius:5px;padding:1px 5px">AI</span></div>
+        <div style="font-size:12px;color:#6b7370">{{ sSub }}</div></div>
+        <select value="{{ lang }}" onChange="{{ setLang }}" aria-label="Language" style="border:1px solid #cfc9bc;background:#fff;height:44px;border-radius:22px;padding:0 10px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;max-width:112px"><option value="en">English</option><option value="as">অসমীয়া</option><option value="bn">বাংলা</option><option value="brx">बड़ो</option><option value="doi">डोगरी</option><option value="gu">ગુજરાતી</option><option value="hi">हिन्दी</option><option value="kn">ಕನ್ನಡ</option><option value="ks">کٲشُر</option><option value="kok">कोंकणी</option><option value="mai">मैथिली</option><option value="ml">മലയാളം</option><option value="mni">ꯃꯤꯇꯩꯂꯣꯟ</option><option value="mr">मराठी</option><option value="ne">नेपाली</option><option value="or">ଓଡ଼ିଆ</option><option value="pa">ਪੰਜਾਬੀ</option><option value="sa">संस्कृतम्</option><option value="sat">ᱥᱟᱱᱛᱟᱲᱤ</option><option value="sd">سنڌي</option><option value="ta">தமிழ்</option><option value="te">తెలుగు</option><option value="ur">اردو</option></select>
+        <button onClick="{{ toVoice }}" style="border:0;border-radius:12px;padding:0 14px;min-height:44px;font:inherit;font-weight:600;font-size:14px;cursor:pointer;background:oklch(0.5 0.09 175);color:#fff">Talk</button>
+        <button onClick="{{ closeSheet }}" aria-label="Close" style="border:0;background:#e3dfd6;width:44px;height:44px;border-radius:50%;font-size:16px;cursor:pointer">✕</button>
+      </div>
+      <div style="padding:7px 16px;font-size:12px;line-height:1.4;color:#1d2420;background:oklch(0.95 0.03 60);border-bottom:1px solid #e3dfd6">{{ sSafe }}</div>
+      <sc-if value="{{ downOn }}" hint-placeholder-val="{{ false }}"><div style="padding:7px 16px;font-size:12px;line-height:1.4;background:#1d2420;color:#fff">The assistant is offline. Your application is not affected. Static help and a person are still available.</div></sc-if>
+      <div ref="{{ scrollRef }}" style="flex:1;overflow:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px" aria-live="polite">
+        <div style="font-size:12.5px;line-height:1.45;color:#4a534f;background:#ece9e1;border-radius:10px;padding:10px 12px">{{ sIntro }}</div>
+        <sc-for list="{{ msgs }}" as="m" hint-placeholder-count="2">
+          <div style="display:flex;flex-direction:column;align-items:{{ m.align }};gap:6px">
+            <sc-if value="{{ m.isText }}" hint-placeholder-val="{{ true }}">
+              <div style="max-width:84%;padding:10px 13px;border-radius:16px;font-size:14.5px;line-height:1.45;background:{{ m.bg }};color:{{ m.fg }};border:1px solid {{ m.bd }}">{{ m.text }}</div>
+            </sc-if>
+            <sc-if value="{{ m.isStatus }}" hint-placeholder-val="{{ false }}">
+              <div style="width:92%;background:#fff;border:1px solid #e3dfd6;border-radius:14px;padding:12px 14px">
+                <div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:14px">{{ m.t.title }}</b><span style="font-family:'DM Mono',monospace;font-size:10.5px;color:#6b7370">{{ m.t.stamp }}</span></div>
+                <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px">
+                  <sc-for list="{{ m.rows }}" as="r" hint-placeholder-count="3">
+                    <div style="display:flex;gap:8px;font-size:13.5px;align-items:center"><span style="width:18px;text-align:center;color:{{ r.color }};font-weight:700">{{ r.glyph }}</span><span style="flex:1">{{ r.label }}</span><span style="font-size:12px;color:{{ r.color }}">{{ r.state }}</span></div>
+                  </sc-for>
+                </div>
+                <sc-if value="{{ m.hasNext }}" hint-placeholder-val="{{ true }}">
+                <button onClick="{{ m.act }}" style="margin-top:12px;width:100%;border:0;background:oklch(0.5 0.09 175);color:#fff;border-radius:10px;padding:11px;font:inherit;font-weight:600;font-size:14px;cursor:pointer;min-height:44px">{{ m.nextLabel }}</button>
+                </sc-if>
+              </div>
+            </sc-if>
+            <sc-if value="{{ m.isSource }}" hint-placeholder-val="{{ false }}">
+              <div style="width:92%;background:#fff;border:1px solid #e3dfd6;border-radius:14px;padding:12px 14px">
+                <div style="font-size:14.5px;line-height:1.5">{{ m.text }}</div>
+                <div style="margin-top:10px;padding-top:8px;border-top:1px dashed #d6d1c6;font-family:'DM Mono',monospace;font-size:11px;color:#4a534f">{{ m.src }}<br>{{ m.ver }}</div>
+                <div style="margin-top:8px;display:flex;gap:6px;font-size:12px"><button onClick="{{ m.fb }}" style="border:1px solid #d6d1c6;background:#fff;border-radius:8px;padding:0 10px;min-height:44px;font:inherit;cursor:pointer">{{ m.t.yes }}</button><button onClick="{{ m.fb }}" style="border:1px solid #d6d1c6;background:#fff;border-radius:8px;padding:0 10px;min-height:44px;font:inherit;cursor:pointer">{{ m.t.no }}</button></div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ m.isChecklist }}" hint-placeholder-val="{{ false }}">
+              <div style="width:92%;background:#fff;border:1px solid #e3dfd6;border-radius:14px;padding:12px 14px">
+                <b style="font-size:14px">{{ m.t.before }}</b>
+                <div style="margin-top:6px;display:flex;flex-direction:column">
+                  <sc-for list="{{ m.items }}" as="c" hint-placeholder-count="4">
+                    <button onClick="{{ c.toggle }}" style="display:flex;gap:10px;align-items:center;text-align:left;border:0;background:none;font:inherit;font-size:14px;padding:0;min-height:44px;cursor:pointer;color:#1d2420"><span style="width:20px;height:20px;border-radius:6px;border:1.5px solid oklch(0.5 0.09 175);background:{{ c.bg }};color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;flex:none">{{ c.mark }}</span>{{ c.label }}</button>
+                  </sc-for>
+                </div>
+                <div style="font-size:11.5px;color:#6b7370;margin:4px 0 8px;line-height:1.4">{{ m.t.note }}</div>
+                <button onClick="{{ m.act }}" style="width:100%;border:0;background:oklch(0.5 0.09 175);color:#fff;border-radius:10px;padding:11px;font:inherit;font-weight:600;font-size:14px;cursor:pointer;min-height:44px">{{ m.t.retry }}</button>
+              </div>
+            </sc-if>
+            <sc-if value="{{ m.isSummary }}" hint-placeholder-val="{{ false }}">
+              <div style="width:92%;background:#fff;border:1px solid #e3dfd6;border-radius:14px;padding:12px 14px">
+                <b style="font-size:14px">{{ m.t.sm1 }}</b>
+                <div style="margin-top:6px;font-size:12.5px;line-height:1.55;color:#4a534f"><sc-for list="{{ m.fields }}" as="f" hint-placeholder-count="4"><div>· {{ f }}</div></sc-for></div>
+                <label style="display:block;margin-top:8px"><div style="font-size:12px;color:#4a534f;margin-bottom:4px">{{ m.t.sm2 }}</div><input value="{{ m.goal }}" onInput="{{ m.onGoal }}" style="width:100%;box-sizing:border-box;border:1px solid #cfc9bc;border-radius:10px;padding:0 12px;height:44px;font:inherit;font-size:14px;outline:none"></label>
+                <div style="margin:8px 0;font-size:11.5px;color:#6b7370;line-height:1.4">{{ m.t.sm5 }}</div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap"><button onClick="{{ m.confirmAct }}" style="border:0;border-radius:10px;padding:0 14px;min-height:44px;font:inherit;font-weight:600;font-size:14px;cursor:pointer;background:#1d2420;color:#fff">{{ m.t.sm3 }}</button><button onClick="{{ m.declineAct }}" style="border:0;border-radius:10px;padding:0 14px;min-height:44px;font:inherit;font-weight:600;font-size:14px;cursor:pointer;background:#fff;color:#1d2420;border:1px solid #cfc9bc">{{ m.t.sm4 }}</button></div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ m.isLink }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ m.act }}" style="border:0;border-radius:10px;padding:0 14px;min-height:44px;font:inherit;font-weight:600;font-size:14px;cursor:pointer;background:#1d2420;color:#fff">{{ m.label }}</button>
+            </sc-if>
+            <sc-if value="{{ m.isSecure }}" hint-placeholder-val="{{ false }}">
+              <div style="width:92%;background:oklch(0.95 0.03 60);border:1px solid oklch(0.85 0.05 60);border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.45">
+                <b>{{ m.t.s1 }}</b> {{ m.t.s2 }}
+                <button onClick="{{ m.act }}" style="margin-top:10px;display:block;border:0;background:#1d2420;color:#fff;border-radius:10px;padding:0 14px;min-height:44px;font:inherit;font-weight:600;font-size:14px;cursor:pointer">{{ m.t.s3 }}</button>
+              </div>
+            </sc-if>
+            <sc-if value="{{ m.isHandoff }}" hint-placeholder-val="{{ false }}">
+              <div style="width:92%;background:#fff;border:1px solid #e3dfd6;border-radius:14px;padding:12px 14px">
+                <div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:14px">{{ m.t.h1 }}</b><span style="font-family:'DM Mono',monospace;font-size:11px;background:oklch(0.95 0.03 175);border-radius:6px;padding:2px 6px">live</span></div>
+                <div style="font-size:22px;font-weight:600;margin:8px 0 2px">{{ m.t.h2 }}</div>
+                <div style="font-size:13px;color:#4a534f">{{ m.t.h3 }}</div>
+                <div style="margin-top:10px;padding-top:8px;border-top:1px dashed #d6d1c6;font-size:12px;line-height:1.55;color:#4a534f">
+                  <b style="color:#1d2420">{{ m.t.h4 }}</b>
+                  <sc-for list="{{ m.fields }}" as="f" hint-placeholder-count="4"><div>· {{ f }}</div></sc-for>
+                  <div style="margin-top:4px">{{ m.t.h5 }}</div><sc-if value="{{ full }}" hint-placeholder-val="{{ false }}"><div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button onClick="{{ m.callAct }}" style="border:0;border-radius:10px;padding:0 14px;min-height:44px;font:inherit;font-weight:600;font-size:14px;cursor:pointer;background:#1d2420;color:#fff">{{ m.t.c1 }}</button><button onClick="{{ m.centreAct }}" style="border:0;border-radius:10px;padding:0 14px;min-height:44px;font:inherit;font-weight:600;font-size:14px;cursor:pointer;background:#fff;color:#1d2420;border:1px solid #cfc9bc">{{ m.t.c2 }}</button></div></sc-if>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+        <sc-if value="{{ typing }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;gap:4px;padding:10px 13px;background:#fff;border:1px solid #e3dfd6;border-radius:16px;align-self:flex-start"><span style="width:6px;height:6px;border-radius:50%;background:#6b7370;animation:dot 1.2s infinite"></span><span style="width:6px;height:6px;border-radius:50%;background:#6b7370;animation:dot 1.2s .2s infinite"></span><span style="width:6px;height:6px;border-radius:50%;background:#6b7370;animation:dot 1.2s .4s infinite"></span></div>
+        </sc-if>
+      </div>
+      <sc-if value="{{ full }}" hint-placeholder-val="{{ false }}"><div style="padding:8px 16px 0;flex:none"><button onClick="{{ toggleMic }}" aria-label="Speak" style="width:100%;display:flex;align-items:center;gap:12px;border:0;background:{{ micBg }};color:#fff;border-radius:26px;padding:0 18px 0 8px;min-height:52px;font:inherit;cursor:pointer;text-align:left"><span style="width:38px;height:38px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;flex:none;animation:{{ micAnim }}"><span style="width:12px;height:18px;border-radius:6px;background:oklch(0.5 0.09 175);display:block"></span></span><span style="flex:1;min-width:0"><span style="display:block;font-weight:600;font-size:15px">{{ micTitle }}</span><span style="display:block;font-size:12.5px;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ micSub }}</span></span></button></div></sc-if>
+      <div style="padding:8px 16px 0;display:flex;gap:6px;overflow-x:auto;flex:none">
+        <sc-for list="{{ chips }}" as="c" hint-placeholder-count="4">
+          <button onClick="{{ c.go }}" style="flex:none;border:1px solid #cfc9bc;background:#fff;border-radius:18px;padding:0 13px;min-height:44px;font:inherit;font-size:13.5px;cursor:pointer;color:#1d2420">{{ c.label }}</button>
+        </sc-for>
+      </div>
+      <div style="padding:6px 16px 14px;display:flex;flex-direction:column;gap:6px;flex:none">
+        <div style="display:flex;gap:8px">
+          <input value="{{ draft }}" onInput="{{ onDraft }}" onKeyDown="{{ onKey }}" placeholder="{{ sPlaceholder }}" aria-label="Message" style="flex:1;min-width:0;border:1px solid #cfc9bc;background:#fff;border-radius:22px;padding:0 16px;height:44px;font:inherit;font-size:14.5px;outline:none">
+          <button onClick="{{ send }}" aria-label="Send" style="border:0;background:#1d2420;color:#fff;width:44px;height:44px;border-radius:50%;font-size:16px;cursor:pointer">↑</button>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <button onClick="{{ talk }}" style="border:0;background:none;font:inherit;font-weight:600;font-size:13.5px;color:oklch(0.4 0.09 175);cursor:pointer;min-height:44px;padding:0">{{ sTalk }}</button>
+          <sc-if value="{{ full }}" hint-placeholder-val="{{ false }}"><button onClick="{{ toggleSpeak }}" style="border:0;background:none;font:inherit;font-size:12.5px;color:#4a534f;cursor:pointer;min-height:44px;padding:0">{{ speakLabel }}</button></sc-if>
+          <button onClick="{{ turnOff }}" style="border:0;background:none;font:inherit;font-size:12.5px;color:#6b7370;cursor:pointer;min-height:44px;padding:0;text-decoration:underline">{{ sOff }}</button>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+    <sc-if value="{{ vOverlay }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;left:0;right:0;bottom:0;height:86%;background:#f6f4ef;border-radius:24px 24px 0 0;display:flex;flex-direction:column;box-shadow:0 -10px 30px rgba(0,0,0,.2)">
+      <div style="padding:14px 16px 10px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #e3dfd6">
+        <div style="flex:1;font-weight:600;font-size:16px;display:flex;align-items:center;gap:8px">Voice help<span style="font-family:'DM Mono',monospace;font-size:10px;border:1px solid #1d2420;border-radius:5px;padding:1px 5px">AI</span></div>
+        <button onClick="{{ typeInstead }}" style="border:0;border-radius:12px;padding:0 14px;min-height:44px;font:inherit;font-weight:600;font-size:14px;cursor:pointer;background:#fff;border:1px solid #cfc9bc;color:#1d2420">Type instead</button>
+        <button onClick="{{ closeSheet }}" aria-label="Close" style="border:0;background:#e3dfd6;width:44px;height:44px;border-radius:50%;font-size:16px;cursor:pointer">✕</button>
+      </div>
+      <div style="padding:7px 16px;font-size:12px;line-height:1.4;background:oklch(0.95 0.03 60);border-bottom:1px solid #e3dfd6">{{ sSafe }}</div>
+      <div style="flex:1;overflow:auto;padding:14px 20px;display:flex;flex-direction:column;align-items:center;gap:12px">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#4a534f">Language<select value="{{ lang }}" onChange="{{ setLang }}" aria-label="Language" style="border:1px solid #cfc9bc;background:#fff;height:44px;border-radius:22px;padding:0 12px;font:inherit;font-size:14px;font-weight:600;cursor:pointer"><option value="en">English</option><option value="as">অসমীয়া</option><option value="bn">বাংলা</option><option value="brx">बड़ो</option><option value="doi">डोगरी</option><option value="gu">ગુજરાતી</option><option value="hi">हिन्दी</option><option value="kn">ಕನ್ನಡ</option><option value="ks">کٲشُر</option><option value="kok">कोंकणी</option><option value="mai">मैथिली</option><option value="ml">മലയാളം</option><option value="mni">ꯃꯤꯇꯩꯂꯣꯟ</option><option value="mr">मराठी</option><option value="ne">नेपाली</option><option value="or">ଓଡ଼ିଆ</option><option value="pa">ਪੰਜਾਬੀ</option><option value="sa">संस्कृतम्</option><option value="sat">ᱥᱟᱱᱛᱟᱲᱤ</option><option value="sd">سنڌي</option><option value="ta">தமிழ்</option><option value="te">తెలుగు</option><option value="ur">اردو</option></select></label>
+        <button onClick="{{ toggleOrb }}" aria-label="Talk" style="flex:none;width:132px;height:132px;border-radius:50%;border:0;background:{{ orbBg }};animation:{{ orbAnim }};cursor:pointer;display:flex;align-items:center;justify-content:center"><span style="width:30px;height:46px;border-radius:15px;background:#fff;display:block"></span></button>
+        <div style="font-weight:600;font-size:17px">{{ orbText }}</div>
+        <div style="font-size:13px;color:#4a534f;text-align:center;min-height:18px">{{ orbSub }}</div>
+        <sc-if value="{{ micBlocked }}" hint-placeholder-val="{{ false }}"><a href="{{ selfUrl }}" target="_blank" style="display:inline-flex;align-items:center;min-height:44px;font-weight:600;font-size:14px">Open in a new tab to use the microphone</a></sc-if>
+        <div style="width:100%;display:flex;flex-direction:column;gap:8px">
+          <div style="font-size:13.5px;color:#4a534f;text-align:right;min-height:18px">{{ lastUser }}</div>
+          <div style="font-size:15.5px;line-height:1.5;background:#fff;border:1px solid #e3dfd6;border-radius:14px;padding:12px 14px">{{ lastBot }}</div>
+          <sc-for list="{{ voiceLinks }}" as="vl" hint-placeholder-count="0"><button onClick="{{ vl.act }}" style="border:0;border-radius:12px;padding:0 14px;min-height:44px;font:inherit;font-weight:600;font-size:14px;cursor:pointer;background:#1d2420;color:#fff;text-align:left">{{ vl.label }}</button></sc-for>
+        </div>
+      </div>
+      <div style="padding:0 16px 4px;display:flex;gap:8px;flex:none"><input value="{{ draft }}" onInput="{{ onDraft }}" onKeyDown="{{ onKey }}" placeholder="{{ typeHere }}" aria-label="Message" style="flex:1;min-width:0;border:1px solid #cfc9bc;background:#fff;border-radius:22px;padding:0 16px;height:44px;font:inherit;font-size:14.5px;outline:none"><button onClick="{{ send }}" aria-label="Send" style="border:0;background:#1d2420;color:#fff;width:44px;height:44px;border-radius:50%;font-size:16px;cursor:pointer">↑</button></div>
+      <div style="padding:6px 16px 14px;display:flex;justify-content:space-between;align-items:center;flex:none">
+        <button onClick="{{ talk }}" style="border:0;background:none;font:inherit;font-weight:600;font-size:13.5px;color:oklch(0.4 0.09 175);cursor:pointer;min-height:44px;padding:0">{{ sTalk }}</button>
+        <button onClick="{{ turnOff }}" style="border:0;background:none;font:inherit;font-size:12.5px;color:#6b7370;cursor:pointer;min-height:44px;padding:0;text-decoration:underline">{{ sOff }}</button>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ whyOn }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ whyClose }}" style="position:absolute;inset:0;background:rgba(29,36,32,.45)"></div>
+    <div style="position:absolute;left:12px;right:12px;bottom:12px;background:#fff;border-radius:18px;padding:16px;box-shadow:0 -6px 24px rgba(0,0,0,.25)">
+      <div style="font-weight:600;font-size:16px">Why we ask: {{ whyWhat }}</div>
+      <div style="margin-top:8px;font-size:13.5px;line-height:1.5"><b>Why:</b> {{ whyWhy }}<br><b>Legal basis:</b> KYC rules for opening an account (placeholder, Legal to confirm).<br><b>If you don't provide it:</b> {{ whyIfNot }}</div>
+      <div style="margin-top:8px;font-family:'DM Mono',monospace;font-size:11px;color:#6b7370">Source: Data request explanations · v1.0 · 1 Sep 2026</div>
+      <button onClick="{{ whyClose }}" style="margin-top:10px;width:100%;border:0;border-radius:10px;padding:0 14px;min-height:44px;font:inherit;font-weight:600;font-size:14px;cursor:pointer;background:#1d2420;color:#fff">Got it</button>
+    </div>
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1000,&quot;height&quot;:900},&quot;mvp&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Scope&quot;}}">
+class Component extends DCLogic {
+  state = { micErr: '', micBlocked: false, vmode: false, speaking: false, data: 'fresh', down: false, why: '', hgoal: '', nudgeOff: {}, det: 'todo', dName: 'Chitra Sangatwani', dDob: '14/08/1994', dEmail: '', dPin: '', dErr: '', mob: 'todo', mobStage: 'enter', mobNum: '', otp: '', otpErr: '', mobErr: '', otpNote: '', screen: 'home', sheet: false, helpOn: true, fail: 'blur', reason: '', held: false, saved: false, id: 'todo', msgs: [], typing: false, draft: '', checks: [false, false, false, false], shot: false, url: '', addr: 'todo', selfie: 'todo', consent: false, submitted: false, vk: 'ready', vkT: 0, muted: false, weak: false, lang: 'en', listening: false, live: '', speak: true };
+  rec = null;
+  scrollRef = React.createRef();
+  fileRef = React.createRef();
+  videoRef = React.createRef();
+  stream = null;
+  stopCam() { if (this.stream) { this.stream.getTracks().forEach(t => t.stop()); this.stream = null; } this.setState({ cam: false }); }
+  startCam() {
+    const ad = this.state.addr === 'done';
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { this.setState({ camErr: true }); return; }
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: ad ? 'user' : 'environment' }, audio: false }).then(st => {
+      this.stream = st; const v = this.videoRef.current; if (v) { v.srcObject = st; v.play && v.play().catch(() => {}); } this.setState({ cam: true, camErr: false });
+    }).catch(() => this.setState({ cam: false, camErr: true }));
+  }
+  snap() {
+    const v = this.videoRef.current; if (!v || !v.videoWidth) return;
+    const c = document.createElement('canvas'); c.width = v.videoWidth; c.height = v.videoHeight;
+    const x = c.getContext('2d'); if (this.state.addr === 'done') { x.translate(c.width, 0); x.scale(-1, 1); }
+    x.drawImage(v, 0, 0); this.stopCam(); this.setState({ shot: true, url: c.toDataURL('image/jpeg', 0.85) });
+  }
+  componentWillUnmount() { this.clearTick(); if (this.stream) this.stream.getTracks().forEach(t => t.stop()); }
+  stripe = 'repeating-linear-gradient(135deg,#e3dfd6 0 10px,#ebe8e0 10px 20px)';
+  uid = 0;
+  componentDidUpdate() { const e = this.scrollRef.current; if (e) e.scrollTop = e.scrollHeight; }
+  mk(o) { return Object.assign({ id: ++this.uid, align: 'flex-start', isText: false, isStatus: false, isSource: false, isChecklist: false, isSecure: false, isHandoff: false, isSummary: false, isLink: false, bg: '#fff', fg: '#1d2420', bd: '#e3dfd6', hasNext: false }, o); }
+  add(m) { this.setState(s => ({ msgs: [...s.msgs, m] })); }
+  say(text) { return this.mk({ isText: true, text }); }
+  user(text) { return this.mk({ isText: true, text, align: 'flex-end', bg: '#1d2420', fg: '#fff', bd: '#1d2420' }); }
+  LN = { as: 'Assamese', bn: 'Bengali', brx: 'Bodo', doi: 'Dogri', gu: 'Gujarati', hi: 'Hindi', kn: 'Kannada', ks: 'Kashmiri', kok: 'Konkani', mai: 'Maithili', ml: 'Malayalam', mni: 'Manipuri (Meitei)', mr: 'Marathi', ne: 'Nepali', or: 'Odia', pa: 'Punjabi', sa: 'Sanskrit', sat: 'Santali', sd: 'Sindhi', ta: 'Tamil', te: 'Telugu', ur: 'Urdu' };
+  SR = { en: 'en-IN', as: 'as-IN', bn: 'bn-IN', brx: 'hi-IN', doi: 'hi-IN', gu: 'gu-IN', hi: 'hi-IN', kn: 'kn-IN', ks: 'ur-IN', kok: 'mr-IN', mai: 'hi-IN', ml: 'ml-IN', mni: 'bn-IN', mr: 'mr-IN', ne: 'ne-NP', or: 'or-IN', pa: 'pa-IN', sa: 'hi-IN', sat: 'en-IN', sd: 'ur-IN', ta: 'ta-IN', te: 'te-IN', ur: 'ur-IN' };
+  cache = {}; failed = new Set(); missing = new Set(); busy = false; inRender = false;
+  sr() { return this.SR[this.state.lang] || 'en-IN'; }
+  async llm(prompt) { return window.claude.complete({ messages: [{ role: 'user', content: prompt }], max_tokens: 3000 }); }
+  async tr1(arr, tries) {
+    const lang = this.state.lang;
+    for (let t = 0; t < tries; t++) {
+      try {
+        const out = await window.claude.complete({ messages: [{ role: 'user', content: 'Translate each string in this JSON array from English to ' + this.LN[lang] + ' for an Indian fintech onboarding assistant. Write in the native script of that language. Use plain, polite everyday wording a first-time applicant understands. Keep codes and terms such as ID-204, PAN, Aadhaar, OTP, KYC, DigiLocker and Video KYC as they are. Keep numbers intact. Return ONLY a JSON array of strings, same length, no code fences, no commentary.\n' + JSON.stringify(arr) }], max_tokens: 8000 });
+        const j = JSON.parse(out.slice(out.indexOf('['), out.lastIndexOf(']') + 1));
+        if (j.length === arr.length) return j;
+      } catch (e) {}
+      await new Promise(r => setTimeout(r, 2500));
+    }
+    return null;
+  }
+  async tr(arr) {
+    const chunks = []; for (let i = 0; i < arr.length; i += 24) chunks.push(arr.slice(i, i + 24));
+    const res = []; for (const c of chunks) res.push(await this.tr1(c, 2));
+    return res.map((r, i) => r || chunks[i].map(() => null)).flat();
+  }
+  flushUI() {
+    if (this.busy || !this.missing.size) return;
+    const lang = this.state.lang, keys = [...this.missing]; this.missing.clear(); this.busy = true; this.setState({ translating: true });
+    this.tr(keys).then(res => { this.cache[lang] = this.cache[lang] || {}; keys.forEach((k, i) => { if (res[i]) this.cache[lang][k] = res[i]; else this.failed.add(lang + '|' + k); }); this.busy = false; this.setState({ translating: false }); if (this.missing.size) this.flushUI(); });
+  }
+  async translateMsgs(msgs) {
+    if (this.state.lang === 'en' || this.state.lang === 'hi') return msgs;
+    const refs = [];
+    msgs.forEach(m => {
+      if (m.isText || m.isSource) refs.push([m, 'text']);
+      if (m.nextLabel) refs.push([m, 'nextLabel']);
+      if (m.goal) refs.push([m, 'goal']);
+      if (m.label && m.isLink) refs.push([m, 'label']);
+      if (m.t) Object.keys(m.t).forEach(k => refs.push([m.t, k]));
+      if (m.items) m.items.forEach(i => refs.push([i, 'label']));
+      if (m.fields) m.fields.forEach((x, i) => refs.push([m.fields, i]));
+    });
+    const out = await this.tr(refs.map(([o, k]) => o[k]));
+    refs.forEach(([o, k], i) => { if (out[i]) o[k] = out[i]; });
+    return msgs;
+  }
+  async routeAsync(text) {
+    const lang = this.state.lang;
+    if (lang === 'en' || lang === 'hi' || /\d[\d\s-]{6,}/.test(text) || /[a-z]{5}\d{4}[a-z]/i.test(text)) return this.route(text);
+    try {
+      const out = await this.llm('Classify this customer message (language: ' + this.LN[lang] + ') from a bank onboarding chat into exactly one code: status (what is left / progress), docs (what identity or PAN or Aadhaar documents are needed), addr (address proof), video (video KYC), aadhaar (Aadhaar not linked to mobile / OTP problem), name (name mismatch between PAN and Aadhaar), blocker (why a photo was rejected), approval (will I be approved), handoff (wants a person), safety (is my data safe, scams, OTP), glossary (what does KYC/PAN/Aadhaar mean), branch (do I need to visit a branch), fees (fees or charges), abstain (anything else, interest rates, off-topic). Reply with the code only.\nMessage: ' + text);
+      const c = out.trim().toLowerCase().replace(/[^a-z]/g, '');
+      const m = { safety: 'intentSafety', glossary: 'intentGlossary', branch: 'intentBranch', fees: 'intentFees', status: 'intentStatus', docs: 'intentDocs', addr: 'intentAddr', video: 'intentSelfie', aadhaar: 'intentAadhaar', name: 'intentName', approval: 'intentApproval', handoff: 'intentHandoff' };
+      if (c === 'blocker') return (this.state.id === 'rejected' || this.state.selfie === 'rejected') ? this.intentFix() : this.intentStatus();
+      return this[m[c] || 'intentAbstain']();
+    } catch (e) { return this.intentAbstain(); }
+  }
+  ask(label, msgs) {
+    if (this.state.down && !(Array.isArray(msgs) && msgs.some(m => m.isSummary || m.isHandoff))) msgs = this.fallback();
+    this.add(this.user(label));
+    this.setState({ typing: true });
+    this.stopSpeak();
+    Promise.all([new Promise(r => setTimeout(r, 700)), Promise.resolve(msgs).then(ms => this.translateMsgs(ms))]).then(([, ms]) => {
+      this.setState(s => ({ typing: false, msgs: [...s.msgs, ...ms] })); this.speakMsgs(ms, () => { if (this.state.vmode && this.state.sheet && !this.state.micBlocked) this.startListen(); });
+    });
+  }
+  statusRows() {
+    const id = this.state.id;
+    const idRow = id === 'done' ? { glyph: '✓', state: 'Done', color: 'oklch(0.45 0.09 175)' } : id === 'rejected' ? { glyph: '!', state: 'Needs action', color: 'oklch(0.45 0.09 50)' } : id === 'pending' ? { glyph: '…', state: 'Pending', color: '#6b7370' } : this.state.det !== 'done' ? { glyph: '·', state: 'Next', color: '#6b7370' } : { glyph: '→', state: 'Action needed', color: 'oklch(0.45 0.09 175)' };
+    return [
+      this.state.mob === 'done' ? { glyph: '✓', label: 'Mobile number', state: 'Done', color: 'oklch(0.45 0.09 175)' } : { glyph: '→', label: 'Mobile number', state: 'Action needed', color: 'oklch(0.45 0.09 175)' },
+      this.state.det === 'done' ? { glyph: '✓', label: 'Personal details', state: 'Done', color: 'oklch(0.45 0.09 175)' } : this.state.mob === 'done' ? { glyph: '→', label: 'Personal details', state: 'Action needed', color: 'oklch(0.45 0.09 175)' } : { glyph: '·', label: 'Personal details', state: 'Next', color: '#6b7370' },
+      Object.assign({ label: 'PAN card' }, idRow),
+      (a => a === 'done' ? { glyph: '✓', label: 'Address proof', state: 'Done', color: 'oklch(0.45 0.09 175)' } : a === 'pending' ? { glyph: '…', label: 'Address proof', state: 'Pending', color: '#6b7370' } : { glyph: id === 'done' ? '→' : '·', label: 'Address proof', state: id === 'done' ? 'Action needed' : 'Next', color: id === 'done' ? 'oklch(0.45 0.09 175)' : '#6b7370' })(this.state.addr),
+      (sf => sf === 'rejected' ? { glyph: '!', label: 'Video KYC', state: 'Needs action', color: 'oklch(0.45 0.09 50)' } : sf === 'done' ? { glyph: '✓', label: 'Video KYC', state: 'Done', color: 'oklch(0.45 0.09 175)' } : sf === 'pending' ? { glyph: '…', label: 'Video KYC', state: 'Pending', color: '#6b7370' } : { glyph: this.state.addr === 'done' ? '→' : '·', label: 'Video KYC', state: this.state.addr === 'done' ? 'Action needed' : 'Next', color: this.state.addr === 'done' ? 'oklch(0.45 0.09 175)' : '#6b7370' })(this.state.selfie)
+    ];
+  }
+  contextTip() {
+    const q = this.state, L = (a, b) => this.L(a, b);
+    let t;
+    if (q.selfie === 'rejected') t = L("Your Video KYC call dropped. That's usually low light or a weak connection. Want to retry or get a call back?", 'आपकी वीडियो KYC कॉल कट गई। आमतौर पर यह कम रोशनी या कमज़ोर कनेक्शन से होता है। दोबारा कोशिश करें?');
+    else if (q.id === 'rejected') t = L("Your last identity step didn't go through. Ask me why and I'll walk you through the fix.", 'आपका पिछला पहचान चरण पूरा नहीं हुआ। मुझसे पूछें क्यों, मैं ठीक करने में मदद करूँगा।');
+    else if (q.mob !== 'done') t = L("You're verifying your mobile number. Use the number linked to your Aadhaar, then enter the OTP we send.", 'आप मोबाइल नंबर सत्यापित कर रहे हैं। आधार से जुड़ा नंबर इस्तेमाल करें, फिर हमारा भेजा OTP डालें।');
+    else if (q.det !== 'done') t = L("You're on personal details. Your name and date of birth are filled in. Check they match your PAN, then add your email and PIN code.", 'आप व्यक्तिगत विवरण पर हैं। नाम और जन्मतिथि भरी हुई है। जाँचें कि वे PAN से मिलते हैं, फिर ईमेल और पिन कोड जोड़ें।');
+    else if (q.id !== 'done') t = L("You're on the PAN step. Take a clear photo on a flat, dark surface, or fetch it from DigiLocker.", 'आप PAN चरण पर हैं। समतल, गहरी सतह पर साफ़ फ़ोटो लें, या DigiLocker से लाएँ।');
+    else if (q.addr !== 'done') t = L("You're on address proof. Aadhaar, passport, voter ID or driving licence all work.", 'आप पते के प्रमाण पर हैं। आधार, पासपोर्ट, वोटर ID या ड्राइविंग लाइसेंस चलेगा।');
+    else if (q.selfie !== 'done') t = L("Next is Video KYC, a short live call. Keep your PAN card in hand and sit in good light.", 'अगला चरण वीडियो KYC है, एक छोटी लाइव कॉल। PAN कार्ड हाथ में रखें और अच्छी रोशनी में बैठें।');
+    else t = L("You're at the last step. Check your details and confirm to submit.", 'आप आखिरी चरण पर हैं। विवरण जाँचें और सबमिट की पुष्टि करें।');
+    return t + ' ' + L("Ask me anything, or say: what's left?", 'कुछ भी पूछें, या कहें: क्या बाकी है?');
+  }
+  async greet() { const m = await this.translateMsgs([this.say(this.contextTip())]); this.add(m[0]); this.speakMsgs(m, () => { if (this.state.vmode && this.state.sheet && !this.state.micBlocked) this.startListen(); }); }
+  clearTick() { if (this.tick) { clearInterval(this.tick); this.tick = null; } }
+  joinVk() {
+    this.setState({ vk: 'connecting' });
+    setTimeout(() => {
+      if (this.state.screen !== 'vkyc' || this.state.vk !== 'connecting') return;
+      this.setState({ vk: 'live', vkT: 0 });
+      this.tick = setInterval(() => {
+        const t = this.state.vkT + 1; this.setState({ vkT: t });
+        if (this.state.fail === 'video' && t >= 5) this.endCall('drop'); else if (t >= 13) this.endCall('done');
+      }, 1000);
+    }, 3000);
+  }
+  endCall(kind) {
+    this.clearTick(); this.stopCam();
+    if (kind === 'drop') this.setState({ screen: 'home', selfie: 'rejected', fail: 'none', vk: 'ready' });
+    else if (kind === 'done') { this.setState({ screen: 'home', selfie: 'pending', vk: 'ready' }); setTimeout(() => this.setState({ selfie: 'done' }), 4000); }
+    else this.setState({ screen: 'home', vk: 'ready' });
+  }
+  wordsToDigits(text) {
+    const W = { zero: 0, oh: 0, o: 0, one: 1, two: 2, to: 2, too: 2, three: 3, four: 4, for: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, 'शून्य': 0, 'जीरो': 0, 'एक': 1, 'दो': 2, 'तीन': 3, 'चार': 4, 'पांच': 5, 'पाँच': 5, 'छह': 6, 'छः': 6, 'छे': 6, 'सात': 7, 'आठ': 8, 'नौ': 9 };
+    let out = '', rep = 1;
+    text.toLowerCase().split(/[\s,.\-]+/).forEach(tok => {
+      if (/^(double|डबल)$/.test(tok)) rep = 2; else if (/^(triple|ट्रिपल)$/.test(tok)) rep = 3;
+      else if (/^\d+$/.test(tok)) { out += tok; rep = 1; }
+      else if (tok in W) { out += String(W[tok]).repeat(rep); rep = 1; }
+    });
+    return out;
+  }
+  parseVoice(field, text) {
+    const t0 = (text || '').trim(); if (!t0) return '';
+    if (field === 'mobNum' || field === 'otp' || field === 'dPin') { const d = this.wordsToDigits(t0); return d.slice(0, field === 'mobNum' ? 10 : 6); }
+    if (field === 'dDob') {
+      const M = { january: 1, february: 2, march: 3, april: 4, may: 5, june: 6, july: 7, august: 8, september: 9, october: 10, november: 11, december: 12, 'जनवरी': 1, 'फरवरी': 2, 'मार्च': 3, 'अप्रैल': 4, 'मई': 5, 'जून': 6, 'जुलाई': 7, 'अगस्त': 8, 'सितंबर': 9, 'सितम्बर': 9, 'अक्टूबर': 10, 'नवंबर': 11, 'नवम्बर': 11, 'दिसंबर': 12, 'दिसम्बर': 12 };
+      let t = t0.toLowerCase().replace(/(\d+)(st|nd|rd|th)\b/g, '$1');
+      Object.keys(M).forEach(k => { t = t.split(k).join(' ' + M[k] + ' '); });
+      let n = t.match(/\d+/g) || [];
+      if (n.length === 1 && n[0].length === 8) n = [n[0].slice(0, 2), n[0].slice(2, 4), n[0].slice(4)];
+      if (n.length < 3) return '';
+      return n[0].padStart(2, '0') + '/' + n[1].padStart(2, '0') + '/' + n[2];
+    }
+    if (field === 'dEmail') return t0.toLowerCase().replace(/\s+(at the rate of|at the rate|at|एट)\s+/g, '@').replace(/\s+(dot|डॉट)\s+/g, '.').replace(/\s+underscore\s+/g, '_').replace(/\s+(dash|hyphen)\s+/g, '-').replace(/\s+/g, '').replace(/\.$/, '');
+    return t0.replace(/[.,]$/, '').replace(/\s+/g, ' ').replace(/\b(\p{L})(\p{L}*)/gu, (m, a, b2) => a.toUpperCase() + b2);
+  }
+  dictate(field) {
+    const SRc = window.SpeechRecognition || window.webkitSpeechRecognition, ek = field === 'mobNum' ? 'mobErr' : field === 'otp' ? 'otpErr' : 'dErr';
+    if (this.state.dictating === field && this.rec) { try { this.rec.stop(); } catch (e) {} return; }
+    if (!SRc) { this.setState({ [ek]: 'Voice input needs a browser with speech recognition, such as Chrome. Please type.' }); return; }
+    this.stopSpeak(); this.stopListen();
+    const r = new SRc(); this.rec = r; r.lang = this.sr(); r.interimResults = false; let heard = '';
+    r.onresult = e => { heard = Array.from(e.results).map(x => x[0].transcript).join(' '); };
+    r.onerror = e => this.setState({ dictating: '', [ek]: e.error === 'not-allowed' || e.error === 'service-not-allowed' ? 'Microphone access is blocked. Allow it in your browser, or type.' : '' });
+    r.onend = () => {
+      const v = this.parseVoice(field, heard);
+      this.setState(Object.assign({ dictating: '' }, v ? { [field]: v, [ek]: '' } : { [ek]: heard ? "Sorry, I couldn't catch that. Try again, or type it." : '' }));
+      if (v && this.state.speak && window.speechSynthesis && field !== 'dEmail') { this.stopSpeak(); const u = new SpeechSynthesisUtterance((this.L('You said ', 'आपने कहा ')) + (/^(mobNum|otp|dPin)$/.test(field) ? v.split('').join(' ') : v)); u.lang = this.sr(); window.speechSynthesis.speak(u); }
+    };
+    try { r.start(); this.setState({ dictating: field }); } catch (e) { this.setState({ dictating: '' }); }
+  }
+  stopSpeak() { this.tok++; this.state.speaking && this.setState({ speaking: false }); try { window.speechSynthesis && window.speechSynthesis.cancel(); } catch (e) {} }
+  tok = 0;
+  speakMsgs(msgs, cb) {
+    if (!this.state.speak || !window.speechSynthesis) { if (cb) setTimeout(cb, 400); return; }
+    const parts = [];
+    msgs.forEach(m => {
+      if (m.isText || m.isSource) parts.push(m.text);
+      else if (m.isStatus) parts.push(m.rows.map(r => r.label + ', ' + r.state).join('. '));
+      else if (m.isSummary) parts.push(m.t.sm1 + '. ' + m.fields.join('. ') + '. ' + m.t.sm5);
+      else if (m.isSecure) parts.push(m.t.s1 + ' ' + m.t.s2);
+      else if (m.isHandoff) parts.push(m.t.h1 + '. ' + m.t.h2 + '. ' + m.t.h3);
+      else if (m.isChecklist) parts.push(m.items.map(i => i.label).join('. '));
+      else if (m.isLink && this.state.vmode) parts.push(this.L('You can tap: ', 'आप टैप कर सकते हैं: ') + m.label);
+    });
+    this.stopSpeak(); const tok = this.tok;
+    const done = () => { if (tok !== this.tok) return; this.setState({ speaking: false }); if (cb) cb(); };
+    if (!parts.length) { done(); return; }
+    this.setState({ speaking: true });
+    parts.forEach((p, i) => { const u = new SpeechSynthesisUtterance(p); u.lang = this.sr(); u.rate = 0.95; if (i === parts.length - 1) { u.onend = done; u.onerror = done; } window.speechSynthesis.speak(u); });
+  }
+  stopListen() { if (this.rec) { try { this.rec.stop(); } catch (e) {} } }
+  startListen() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    this.stopSpeak();
+    if (!SR) { this.add(this.say(this.L("Voice input isn't supported in this browser. Please type, or try Chrome.", 'इस ब्राउज़र में आवाज़ से बोलना उपलब्ध नहीं है। कृपया टाइप करें, या Chrome आज़माएँ।'))); return; }
+    const r = new SR(); this.rec = r; r.lang = this.sr(); r.interimResults = true; r.continuous = false;
+    let final = '';
+    r.onresult = e => { let t = ''; for (let i = 0; i < e.results.length; i++) { t += e.results[i][0].transcript; if (e.results[i].isFinal) final = t; } this.setState({ live: t }); };
+    r.onerror = e => { const L = (a, b) => this.L(a, b); if (e.error !== 'aborted') this.setState({ micErr: e.error === 'no-speech' ? L("I didn't hear anything. Tap and try again.", 'मुझे कुछ सुनाई नहीं दिया। टैप करके फिर कोशिश करें।') : e.error === 'audio-capture' ? L('No microphone found on this device.', 'इस डिवाइस पर माइक्रोफ़ोन नहीं मिला।') : e.error === 'network' ? L('The speech service is unreachable. Check your connection, or type below.', 'स्पीच सेवा नहीं मिल रही। कनेक्शन जाँचें, या नीचे टाइप करें।') : e.error === 'not-allowed' || e.error === 'service-not-allowed' ? '' : 'Voice error: ' + e.error }); this.setState({ listening: false, live: '' }); if (e.error === 'not-allowed' || e.error === 'service-not-allowed') this.setState({ micBlocked: true }); if (e.error === 'not-allowed' || e.error === 'service-not-allowed') this.add(this.say(this.L('Microphone access is blocked. Allow it in your browser, or type instead.', 'माइक्रोफ़ोन की अनुमति बंद है। ब्राउज़र में अनुमति दें, या टाइप करें।'))); };
+    r.onend = () => { const t = (final || this.state.live || '').trim(); this.setState({ listening: false, live: '' }); if (t) this.ask(t.replace(/\d[\d\s-]{6,}/g, '••••').replace(/[a-z]{5}\d{4}[a-z]/ig, '••••'), this.routeAsync(t)); };
+    try { r.start(); this.setState({ listening: true, live: '' }); } catch (e) { this.setState({ listening: false }); }
+  }
+  L(en, hi) { const g = this.state.lang; if (g === 'hi') return hi; if (g === 'en') return en; if (this.inRender) { const c = (this.cache[g] || {})[en]; if (c) return c; if (!this.failed.has(g + '|' + en)) this.missing.add(en); } return en; }
+  T() { const L = (a, b) => this.L(a, b); return { title: L('Your application', 'आपका आवेदन'), stamp: this.state.data === 'stale' ? L('as of 20 min ago · may be out of date', '20 मिनट पहले की जानकारी · पुरानी हो सकती है') : L('verified 14s ago', '14 सेकंड पहले सत्यापित'), sm1: L("Review what we'll share", 'देखें हम क्या साझा करेंगे'), sm2: L('Your goal (you can edit)', 'आपका लक्ष्य (बदल सकते हैं)'), sm3: L('Send summary and connect', 'सारांश भेजें और जुड़ें'), sm4: L('Connect without summary', 'सारांश के बिना जुड़ें'), sm5: L('You can decline. Nothing is sent until you confirm.', 'आप मना कर सकते हैं। आपकी पुष्टि तक कुछ नहीं भेजा जाएगा।'), yes: L('Helpful', 'काम का'), no: L('Not helpful', 'काम का नहीं'), before: L('Before you retry', 'दोबारा कोशिश से पहले'), note: L("I can't promise a re-review outcome. A new photo is checked again as normal.", 'मैं पुनः समीक्षा के नतीजे का वादा नहीं कर सकता। नई फ़ोटो की जाँच सामान्य तरीके से होगी।'), retry: L('Retry upload', 'फिर से अपलोड करें'), s1: L('That looks like a PAN or Aadhaar number.', 'यह PAN या आधार नंबर जैसा लग रहा है।'), s2: L("I didn't send or store it. Please enter PAN, Aadhaar and bank details only in the secure form.", 'मैंने इसे न भेजा, न सहेजा। PAN, आधार और बैंक की जानकारी सिर्फ़ सुरक्षित फ़ॉर्म में डालें।'), s3: L('Open secure form', 'सुरक्षित फ़ॉर्म खोलें'), h1: L('Connecting you to a person', 'आपको एक व्यक्ति से जोड़ा जा रहा है'), h2: L('Position in queue: 3', 'कतार में स्थान: 3'), h3: L('Estimated wait: 8 minutes. You can keep using the app.', 'अनुमानित प्रतीक्षा: 8 मिनट। आप ऐप इस्तेमाल करते रह सकते हैं।'), h4: L("Shared with the agent so you don't repeat yourself:", 'एजेंट को यह जानकारी दी जा रही है ताकि आपको दोहराना न पड़े:'), h5: L('Not shared: PAN/Aadhaar numbers, documents, photos.', 'साझा नहीं: PAN/आधार नंबर, दस्तावेज़, फ़ोटो।'), c1: L('Call me back instead', 'मुझे फ़ोन करें'), c2: L('Find an assisted centre', 'सहायता केंद्र खोजें') }; }
+  src(en, hi, ref, ver) { return [this.mk({ isSource: true, text: this.L(en, hi), src: this.L('Source: ', 'स्रोत: ') + ref, ver, t: this.T(), fb: () => {} })]; }
+  fallback() { const L = (a, b) => this.L(a, b); return [this.say(L("The assistant is unavailable right now, so I can't answer. Your application and progress are not affected. You can keep going with the steps on the home screen, read the fee sheet, or talk to a person.", 'सहायक अभी उपलब्ध नहीं है, इसलिए मैं जवाब नहीं दे सकता। आपके आवेदन और प्रगति पर कोई असर नहीं है। आप होम स्क्रीन के चरण जारी रख सकते हैं, शुल्क पत्रक पढ़ सकते हैं, या किसी व्यक्ति से बात कर सकते हैं।')), this.lk(L('Open fees and terms', 'शुल्क और शर्तें खोलें'), () => this.setState({ screen: 'fees', sheet: false })), this.talkLk()]; }
+  intentStatus() {
+    const id = this.state.id, L = (a, b) => this.L(a, b);
+    if (this.state.data === 'down') return [this.say(L("I can't read your application status right now, so I won't guess. Your progress is saved. You can try again or talk to a person.", 'मैं अभी आपके आवेदन की स्थिति नहीं पढ़ पा रहा, इसलिए अंदाज़ा नहीं लगाऊँगा। आपकी प्रगति सहेजी गई है। आप फिर कोशिश कर सकते हैं या किसी व्यक्ति से बात कर सकते हैं।')), this.lk(L('Try again', 'फिर कोशिश करें'), () => { this.setState({ data: 'fresh' }); this.ask(L("What's left?", 'क्या बाकी है?'), this.intentStatus()); }), this.talkLk()];
+    const q = this.state, pend = id === 'pending' || (id === 'done' && q.addr === 'pending') || (q.addr === 'done' && (q.selfie === 'pending' || q.selfie === 'done'));
+    const nl = q.mob !== 'done' ? L('Verify mobile number', 'मोबाइल नंबर सत्यापित करें') : q.det !== 'done' ? L('Fill personal details', 'व्यक्तिगत विवरण भरें') : q.addr === 'done' ? L('Start Video KYC', 'वीडियो KYC शुरू करें') : id === 'done' ? L('Upload address proof', 'पते का प्रमाण अपलोड करें') : id === 'rejected' ? L('Retake PAN photo', 'PAN फ़ोटो दोबारा लें') : L('Upload PAN photo', 'PAN फ़ोटो अपलोड करें');
+    return [this.say(pend ? L('Your submission is with verification. Nothing else is needed from you right now.', 'आपका जमा किया हुआ सत्यापन में है। अभी आपको कुछ और करने की ज़रूरत नहीं है।') : L("Here's what the system shows right now.", 'सिस्टम में अभी यह दिख रहा है।')),
+      this.mk({ isStatus: true, t: this.T(), rows: this.statusRows(), hasNext: !pend, nextLabel: L('Next: ', 'अगला: ') + nl, act: () => this.goSecure() })];
+  }
+  intentDocs() { return this.src('You need your PAN card: a clear photo showing the PAN, your name and date of birth. Your Aadhaar is verified by an OTP to the mobile number linked to it, so you do not upload it. You can also fetch both from DigiLocker.', 'आपको PAN कार्ड चाहिए: ऐसी साफ़ फ़ोटो जिसमें PAN, आपका नाम और जन्मतिथि दिखे। आधार का सत्यापन उससे जुड़े मोबाइल नंबर पर OTP से होता है, इसलिए उसे अपलोड नहीं करना है। आप दोनों DigiLocker से भी ला सकते हैं।', 'Identity requirements §2', 'v3.2 · 12 Sep 2026'); }
+  intentAddr() { return this.src('Accepted: Aadhaar (via DigiLocker or OTP), passport, voter ID or driving licence, showing your current address. If the address on your Aadhaar is outdated, use one of the other documents.', 'मान्य: आधार (DigiLocker या OTP से), पासपोर्ट, वोटर ID या ड्राइविंग लाइसेंस, जिसमें आपका मौजूदा पता हो। अगर आधार का पता पुराना है, तो बाकी में से कोई एक दस्तावेज़ दें।', 'Address proof requirements §1', 'v2.4 · 3 Sep 2026'); }
+  intentSelfie() { return this.src("Video KYC is a short live check with an agent. Keep your original PAN card with you, sit in good light somewhere quiet, and make sure your camera and connection are working. The agent compares you with your documents. I can't see or decide any of it.", 'वीडियो KYC एजेंट के साथ एक छोटी लाइव जाँच है। अपना असली PAN कार्ड साथ रखें, शांत जगह पर अच्छी रोशनी में बैठें, और कैमरा व इंटरनेट जाँच लें। एजेंट आपको आपके दस्तावेज़ों से मिलाता है। मैं इसे न देख सकता हूँ, न इसका फ़ैसला कर सकता हूँ।', 'Video KYC guidance §1', 'v1.3 · 20 Aug 2026'); }
+  intentAadhaar() { return this.src("Your Aadhaar OTP goes only to the mobile number linked to your Aadhaar. If it isn't linked, you can update it at an Aadhaar Seva Kendra, or use your PAN photo with a passport, voter ID or driving licence instead. I can connect you to a person if you'd like.", 'आधार का OTP सिर्फ़ आधार से जुड़े मोबाइल नंबर पर आता है। अगर नंबर लिंक नहीं है, तो आधार सेवा केंद्र पर अपडेट करा सकते हैं, या PAN फ़ोटो के साथ पासपोर्ट, वोटर ID या ड्राइविंग लाइसेंस दे सकते हैं। चाहें तो मैं आपको किसी व्यक्ति से जोड़ सकता हूँ।', 'Identity requirements §4', 'v3.2 · 12 Sep 2026'); }
+  intentName() { return this.src("Small differences like initials, spelling or word order are often fine. If the names differ a lot, we may ask for a supporting document. A person confirms this, and I can't decide it.", 'इनिशियल, स्पेलिंग या नाम के क्रम जैसे छोटे फ़र्क अक्सर चल जाते हैं। अगर नाम काफ़ी अलग हैं, तो हम कोई सहायक दस्तावेज़ माँग सकते हैं। यह एक व्यक्ति तय करता है, मैं नहीं।', 'Identity requirements §5', 'v3.2 · 12 Sep 2026'); }
+  intentSafety() { return this.src('We never ask for your OTP, PIN, password or card details in this chat, and our staff never ask for them on a call. Your PAN, Aadhaar and photos go only through the secure forms, and I cannot see them. If a message or call asks for your OTP, do not share it.', 'हम इस चैट में आपका OTP, PIN, पासवर्ड या कार्ड की जानकारी कभी नहीं माँगते, और हमारे कर्मचारी फ़ोन पर भी नहीं माँगते। आपका PAN, आधार और फ़ोटो सिर्फ़ सुरक्षित फ़ॉर्म से जाते हैं, और मैं उन्हें नहीं देख सकता। अगर कोई संदेश या कॉल आपका OTP माँगे, तो उसे न बताएँ।', 'Security and privacy notice §1', 'v1.1 · 5 Sep 2026'); }
+  intentGlossary() { return this.src('KYC (Know Your Customer) is a check that you are who you say you are. Every bank account in India needs it. PAN is your permanent tax number. Aadhaar is your 12-digit ID linked to your mobile. We use them only for this check.', 'KYC (अपने ग्राहक को जानें) यह जाँच है कि आप वही हैं जो आप बता रहे हैं। भारत में हर बैंक खाते के लिए यह ज़रूरी है। PAN आपका स्थायी कर नंबर है। आधार आपका 12 अंकों का पहचान नंबर है जो मोबाइल से जुड़ा होता है। हम इन्हें सिर्फ़ इसी जाँच के लिए इस्तेमाल करते हैं।', 'Plain-language glossary §1', 'v1.0 · 1 Sep 2026'); }
+  intentBranch() { return this.src('No. Your application is fully online. If a case ever needs an in-person step, we tell you here before you continue, and you can choose an assisted centre near you. Your progress is always saved.', 'नहीं। आपका आवेदन पूरी तरह ऑनलाइन है। अगर कभी किसी मामले में आमने-सामने का कदम ज़रूरी हो, तो हम आगे बढ़ने से पहले यहीं बताएँगे, और आप अपने पास का सहायता केंद्र चुन सकते हैं। आपकी प्रगति हमेशा सहेजी रहती है।', 'Account opening FAQ §1', 'v1.0 · 1 Sep 2026'); }
+  intentFees() { const L = (a, b) => this.L(a, b); return [this.say(L("I don't quote fees myself, so you always see the official numbers. Here is the approved fee sheet.", 'मैं खुद शुल्क नहीं बताता, ताकि आप हमेशा आधिकारिक आँकड़े देखें। यह रहा मंज़ूर शुल्क पत्रक।')), this.mk({ isLink: true, label: L('Open fees and terms', 'शुल्क और शर्तें खोलें'), act: () => this.setState({ screen: 'fees', sheet: false }) })]; }
+  intentOtp() { return [this.say(this.L('Please do not share OTPs, PINs or passwords in this chat. We will never ask for them, and I cannot use them. If someone asked you for it, stop and tell us.', 'कृपया इस चैट में OTP, PIN या पासवर्ड न भेजें। हम इन्हें कभी नहीं माँगते, और मैं इन्हें इस्तेमाल नहीं कर सकता। अगर किसी ने माँगा हो, तो रुकें और हमें बताएँ।'))]; }
+  lk(label, fn) { return this.mk({ isLink: true, label, act: fn }); }
+  talkLk() { return this.lk(this.L('Talk to a person', 'किसी व्यक्ति से बात करें'), () => this.ask(this.L('Talk to a person', 'किसी व्यक्ति से बात करें'), this.intentHandoff())); }
+  callMsg() { return this.say(this.L('Okay. We will call your registered mobile in about 8 minutes. You can close the app. Your progress is saved.', 'ठीक है। हम लगभग 8 मिनट में आपके रजिस्टर्ड मोबाइल पर फ़ोन करेंगे। आप ऐप बंद कर सकते हैं। आपकी प्रगति सहेजी गई है।')); }
+  intentFix() { if (this.state.selfie === 'rejected') return this.intentVideoFix(); const r = this.state.reason; return r === 'name' ? this.intentNameFix() : r === 'otp' ? this.intentOtpFix() : this.intentBlocker(); }
+  intentNameFix() { const L = (a, b) => this.L(a, b); return [this.say(L("The name on your PAN and your Aadhaar doesn't match exactly (ID-310). This is common: an initial, a missing middle name or a spelling difference. Your documents are not being treated as fake. I can't decide whether it is accepted. Your options:", 'आपके PAN और आधार पर नाम बिल्कुल एक जैसा नहीं है (ID-310)। यह आम बात है: इनिशियल, बीच का नाम न होना या स्पेलिंग का फ़र्क। आपके दस्तावेज़ नकली नहीं माने जा रहे। यह स्वीकार होगा या नहीं, यह मैं तय नहीं कर सकता। आपके विकल्प:')), this.lk(L('Use DigiLocker or add a supporting document', 'DigiLocker इस्तेमाल करें या सहायक दस्तावेज़ जोड़ें'), () => this.goSecure()), this.talkLk()]; }
+  intentOtpFix() { const L = (a, b) => this.L(a, b); return [this.say(L("We couldn't send the Aadhaar OTP (ID-120). It goes only to the mobile number linked to your Aadhaar. If you don't have that phone or number, you can still continue:", 'आधार का OTP नहीं भेजा जा सका (ID-120)। यह सिर्फ़ आधार से जुड़े मोबाइल नंबर पर जाता है। अगर वह फ़ोन या नंबर आपके पास नहीं है, तब भी आप आगे बढ़ सकते हैं:')), this.lk(L('Verify with DigiLocker or another document', 'DigiLocker या दूसरे दस्तावेज़ से सत्यापित करें'), () => this.goSecure()), this.lk(L('Find an assisted centre', 'सहायता केंद्र खोजें'), () => this.add(this.say(L('Assisted centres, such as a Common Service Centre or partner branch, help you finish the same steps in person. It is optional, and your progress is saved.', 'सहायता केंद्र, जैसे कॉमन सर्विस सेंटर या पार्टनर शाखा, वही चरण आमने-सामने पूरे करने में मदद करते हैं। यह वैकल्पिक है, और आपकी प्रगति सहेजी गई है।')))), this.talkLk()]; }
+  intentVideoFix() { const L = (a, b) => this.L(a, b); return [this.say(L("Video KYC didn't complete (VK-301). Usual reasons: low light, a weak connection, or your face not matching your documents. Try a bright spot facing a window, stronger Wi-Fi or 4G, and remove glare from glasses or a cap. Your documents are fine.", 'वीडियो KYC पूरा नहीं हुआ (VK-301)। आम वजहें: कम रोशनी, कमज़ोर कनेक्शन, या चेहरे का दस्तावेज़ों से न मिलना। खिड़की के सामने रोशनी में बैठें, बेहतर Wi-Fi या 4G लें, और चश्मे की चमक या टोपी हटाएँ। आपके दस्तावेज़ ठीक हैं।')), this.lk(L('Retry Video KYC', 'वीडियो KYC दोबारा करें'), () => this.goSecure()), this.lk(L('Call me back instead', 'मुझे फ़ोन करें'), () => this.add(this.callMsg())), this.talkLk()]; }
+  intentHeld() { const L = (a, b) => this.L(a, b); return [this.say(L("Some applications get an extra check, for example after several attempts or from a new location. It doesn't mean anything is wrong, and it isn't a rejection. I can't see or explain the reason. A person reviews it and we will message you. You don't need to do anything now.", 'कुछ आवेदनों की अतिरिक्त जाँच होती है, जैसे कई कोशिशों के बाद या नई जगह से। इसका मतलब यह नहीं कि कुछ गलत है, और यह अस्वीकृति नहीं है। मैं इसकी वजह न देख सकता हूँ, न बता सकता हूँ। एक व्यक्ति इसकी समीक्षा करता है और हम आपको संदेश भेजेंगे। अभी आपको कुछ करने की ज़रूरत नहीं है।')), this.talkLk()]; }
+  intentDetails() { return this.src('We ask for your name and date of birth exactly as on your PAN, so they match your records and avoid a mismatch later. Your email is for updates, and your PIN code helps with the address check. We use them only for KYC.', 'हम आपका नाम और जन्मतिथि बिल्कुल PAN के अनुसार माँगते हैं, ताकि वे आपके रिकॉर्ड से मिलें और आगे नाम में फ़र्क की दिक्कत न हो। ईमेल अपडेट के लिए है, और पिन कोड पते की जाँच में मदद करता है। इनका इस्तेमाल सिर्फ़ KYC के लिए होता है।', 'Personal details guidance §1', 'v1.0 · 1 Sep 2026'); }
+  intentBlocker() {
+    const c = this.state.checks, L = (a, b) => this.L(a, b);
+    const labels = [L('Place the PAN card on a dark, flat surface', 'PAN कार्ड को गहरे, समतल सतह पर रखें'), L('Use even light with no glare', 'एक-सी रोशनी रखें, चमक न आए'), L('All four corners and the PAN number readable', 'चारों कोने और PAN नंबर साफ़ पढ़े जाएँ'), L('Hold steady until the frame turns green', 'फ़्रेम हरा होने तक हाथ स्थिर रखें')];
+    return [this.say(L("Your PAN card photo didn't pass the image quality check (ID-204). It was likely blurry or had glare. Nothing about you was rejected. Try this:", 'आपकी PAN कार्ड फ़ोटो इमेज क्वालिटी जाँच (ID-204) में पास नहीं हुई। शायद वह धुंधली थी या उस पर चमक थी। आपके बारे में कुछ अस्वीकार नहीं हुआ। यह आज़माएँ:')),
+      this.mk({ isChecklist: true, t: this.T(), items: labels.map((l, i) => ({ label: l, mark: c[i] ? '✓' : '', bg: c[i] ? 'oklch(0.5 0.09 175)' : '#fff', toggle: () => this.setState(s => ({ checks: s.checks.map((v, j) => j === i ? !v : v), msgs: s.msgs.map(m => m.isChecklist ? Object.assign({}, m, { items: m.items }) : m) })) })), act: () => this.goSecure() })];
+  }
+  intentApproval() {
+    const id = this.state.id, L = (a, b) => this.L(a, b);
+    return [this.say(L("I can't tell you whether you'll be approved. Only the verification system decides that, and I won't guess. What I can confirm: your ID step is ", 'आपका आवेदन मंज़ूर होगा या नहीं, यह मैं नहीं बता सकता। यह सिर्फ़ सत्यापन प्रणाली तय करती है, और मैं अंदाज़ा नहीं लगाऊँगा। मैं इतना बता सकता हूँ: आपका PAN चरण ') + (id === 'pending' ? L('pending review.', 'समीक्षा में है।') : id === 'rejected' ? L('waiting on a new photo.', 'नई फ़ोटो का इंतज़ार कर रहा है।') : id === 'done' ? L('verified.', 'सत्यापित है।') : L('not submitted yet.', 'अभी जमा नहीं हुआ।'))), this.mk({ isStatus: true, t: this.T(), rows: this.statusRows(), hasNext: false })];
+  }
+  intentAbstain() { return [this.say(this.L("I don't have approved information on that, so I won't guess. I can connect you to a person who can answer.", 'इस बारे में मेरे पास मंज़ूर जानकारी नहीं है, इसलिए मैं अंदाज़ा नहीं लगाऊँगा। मैं आपको ऐसे व्यक्ति से जोड़ सकता हूँ जो जवाब दे सके।'))]; }
+  goalDefault() { return this.L('Finish opening my account today', 'आज अपना खाता खुलवाना पूरा करना'); }
+  summaryFields() {
+    const L = (a, b) => this.L(a, b), q = this.state, none = L('none', 'कोई नहीं');
+    const stage = q.mob !== 'done' ? L('Mobile verification', 'मोबाइल सत्यापन') : q.det !== 'done' ? L('Personal details', 'व्यक्तिगत विवरण') : q.id !== 'done' ? L('PAN card', 'PAN कार्ड') : q.addr !== 'done' ? L('Address proof', 'पते का प्रमाण') : q.selfie !== 'done' ? L('Video KYC', 'वीडियो KYC') : L('Review and submit', 'समीक्षा और सबमिट');
+    const blk = q.selfie === 'rejected' ? 'VK-301' : q.id === 'rejected' ? ({ blur: 'ID-204', name: 'ID-310', otp: 'ID-120' }[q.reason] || 'ID-204') : none;
+    return [L('Applicant: Chitra Sangatwani', 'आवेदक: Chitra Sangatwani'), L('Current step: ', 'मौजूदा चरण: ') + stage, L('Status snapshot, verified just now', 'स्थिति का स्नैपशॉट, अभी सत्यापित'), L('Error code: ', 'त्रुटि कोड: ') + blk, L('Actions tried: ', 'आज़माए गए कदम: ') + (blk === none ? none : L('1 upload or call attempt', '1 अपलोड या कॉल कोशिश'))];
+  }
+  intentHandoff() {
+    const L = (a, b) => this.L(a, b);
+    return [this.mk({ isSummary: true, t: this.T(), fields: this.summaryFields(), goal: this.goalDefault(), confirmAct: () => this.ask(L('Send summary and connect', 'सारांश भेजें और जुड़ें'), [this.handoffCard(true)]), declineAct: () => this.ask(L('Connect without summary', 'सारांश के बिना जुड़ें'), [this.handoffCard(false)]) })];
+  }
+  handoffCard(share) {
+    const L = (a, b) => this.L(a, b);
+    return this.mk({ isHandoff: true, t: this.T(), callAct: () => this.add(this.callMsg()), centreAct: () => this.add(this.say(L('Assisted centres, such as a Common Service Centre or partner branch, help you finish the same steps in person. It is optional, and your progress is saved.', 'सहायता केंद्र, जैसे कॉमन सर्विस सेंटर या पार्टनर शाखा, वही चरण आमने-सामने पूरे करने में मदद करते हैं। यह वैकल्पिक है, और आपकी प्रगति सहेजी गई है।'))), fields: share ? [...this.summaryFields(), L('Your goal: ', 'आपका लक्ष्य: ') + (this.state.hgoal || this.goalDefault())] : [L('No summary shared. The agent will ask about your case.', 'कोई सारांश साझा नहीं हुआ। एजेंट आपके मामले के बारे में पूछेगा।')] });
+  }
+  route(text) {
+    const t = text.toLowerCase();
+    if (/^\D{0,12}\d{4,6}\D{0,3}$/.test(text.trim()) || /\b(pin|cvv|password)\b/.test(t)) return this.intentOtp();
+    if (/\d[\d\s-]{6,}/.test(text) || /[a-z]{5}\d{4}[a-z]/i.test(text)) return [this.mk({ isSecure: true, t: this.T(), act: () => this.goSecure() })];
+    if (/approv|will i get|chance|मंज़ूर|मंजूर|स्वीकृत|अप्रूव|manzoor/.test(t)) return this.intentApproval();
+    if (/person|human|agent|someone|insaan|baat|व्यक्ति|इंसान|एजेंट|बात/.test(t)) return this.intentHandoff();
+    if (/fee|charge|cost|price|शुल्क|फीस|फ़ीस/.test(t)) return (this.props.mvp ?? true) ? this.intentAbstain() : this.intentFees();
+    if (/rate|interest|ब्याज/.test(t)) return this.intentAbstain();
+    if (/safe|scam|fraud|privacy|data|trust|सुरक्षित|धोखा|डेटा|भरोसा/.test(t)) return this.intentSafety();
+    if (/branch|visit|offline|in person|शाखा|जाना/.test(t)) return this.intentBranch();
+    if (/(what is|meaning|matlab|kya hai|explain|मतलब|क्या है).*(kyc|pan|aadhaar|aadhar|आधार|पैन|केवाईसी)/.test(t)) return this.intentGlossary();
+    if (/otp|link|लिंक|ओटीपी/.test(t)) return this.intentAadhaar();
+    if (/name|naam|mismatch|नाम|अलग/.test(t)) return this.intentName();
+    if (this.state.held && /extra|additional|flag|hold|अतिरिक्त/.test(t)) return this.intentHeld();
+    if (/reject|fail|blur|why|error|204|kyun|क्यों|अस्वीकार|रिजेक्ट/.test(t)) return (this.state.id === 'rejected' || this.state.selfie === 'rejected') ? this.intentFix() : this.intentStatus();
+    if (/left|status|next|progress|where|baki|aage|बाकी|स्थिति|आगे/.test(t)) return this.intentStatus();
+    if (/selfie|video|kyc|face|liveness|वीडियो|केवाईसी/.test(t)) return this.intentSelfie();
+    if (/address|proof|utility|bill|statement|rent|pata|पता|पते/.test(t) || (this.state.id === 'done' && /document|accept/.test(t))) return this.intentAddr();
+    if (/id|passport|licen|document|accept|pan|aadhaar|aadhar|digilocker|आधार|पैन|दस्तावेज/.test(t)) return this.intentDocs();
+    return this.intentAbstain();
+  }
+  goSecure() { if (this.state.mob !== 'done') { this.setState({ screen: 'mobile', sheet: false, mobStage: 'enter', otp: '', otpErr: '', mobErr: '' }); return; } if (this.state.det !== 'done') { this.setState({ screen: 'details', sheet: false, dErr: '' }); return; } if (this.state.addr === 'done' && this.state.selfie !== 'done' && this.state.selfie !== 'pending') { this.setState({ screen: 'vkyc', sheet: false, vk: 'ready', vkT: 0, muted: false }); setTimeout(() => this.startCam(), 100); return; } if (this.state.selfie === 'done') { this.setState({ screen: 'review', sheet: false, consent: false }); return; } this.setState({ screen: 'secure', sheet: false, shot: false, url: '', camErr: false }); setTimeout(() => this.startCam(), 100); }
+  renderVals() {
+    this.inRender = true; Promise.resolve().then(() => { this.inRender = false; this.flushUI(); });
+    const s = this.state, id = s.id;
+    const ad = s.addr, sf = s.selfie, mob = s.mob, det = s.det, mvp = this.props.mvp ?? true, full = !mvp; const done = ((mob === 'done' ? 1 : 0) + (det === 'done' ? 1 : 0) + (id === 'done' ? 1 : 0)) + (ad === 'done' ? 1 : 0) + (sf === 'done' ? 1 : 0);
+    const mkStep = (n, label, sub, st) => {
+      const d = st === 'done', cur = st === 'cur', bad = st === 'bad', wait = st === 'wait';
+      return { label, sub, glyph: d ? '✓' : bad ? '!' : n, dotBg: d ? 'oklch(0.5 0.09 175)' : bad ? 'oklch(0.5 0.09 50)' : cur ? '#1d2420' : '#e3dfd6', dotFg: d || bad || cur ? '#fff' : '#6b7370', border: cur || bad ? '#1d2420' : '#e3dfd6' };
+    };
+    const idSub = id === 'done' ? 'Verified · Aadhaar via OTP' : id === 'rejected' ? 'Not accepted · ' + ({ blur: 'ID-204', name: 'ID-310', otp: 'ID-120' }[s.reason] || 'ID-204') : id === 'pending' ? 'Submitted · in verification' : det !== 'done' ? 'Locked until details are saved' : 'Photo of PAN · Aadhaar by OTP';
+    const steps = [mkStep(1, 'Mobile number', mob === 'done' ? 'Verified by OTP' : 'About 1 minute', mob === 'done' ? 'done' : 'cur'), mkStep(2, 'Personal details', det === 'done' ? 'Saved' : mob === 'done' ? 'Pre-filled · about 1 minute' : 'Locked until mobile verified', det === 'done' ? 'done' : mob === 'done' ? 'cur' : 'x'), mkStep(3, 'PAN card', idSub, id === 'done' ? 'done' : id === 'rejected' ? 'bad' : id === 'pending' ? 'wait' : det !== 'done' ? 'x' : 'cur'), mkStep(4, 'Address proof', ad === 'done' ? 'Verified' : ad === 'pending' ? 'Submitted · in verification' : id === 'done' ? 'About 2 minutes' : 'Locked until ID verified', ad === 'done' ? 'done' : ad === 'pending' ? 'wait' : id === 'done' ? 'cur' : 'x'), mkStep(5, 'Video KYC', sf === 'done' ? 'Verified' : sf === 'pending' ? 'Submitted · in verification' : sf === 'rejected' ? 'Not completed · VK-301' : ad === 'done' ? 'About 5 minutes · live agent' : 'Locked', sf === 'done' ? 'done' : sf === 'pending' ? 'wait' : sf === 'rejected' ? 'bad' : ad === 'done' ? 'cur' : 'x'), mkStep(6, 'Review and submit', s.held ? 'Extra check in progress' : s.submitted ? 'Submitted · in review' : sf === 'done' ? 'Ready when you are' : 'Locked', s.submitted ? 'wait' : sf === 'done' ? 'cur' : 'x')];
+    const L = (x, y) => this.L(x, y);
+    const mkc = (label, fn) => ({ label, go: () => this.ask(label, fn()) });
+    const chips = [mkc(L("What's left?", 'क्या बाकी है?'), () => this.intentStatus()),
+      ad === 'done' ? mkc(L('How does Video KYC work?', 'वीडियो KYC कैसे होता है?'), () => this.intentSelfie()) : id === 'done' ? mkc(L('What counts as address proof?', 'पते का कौन-सा प्रमाण चलेगा?'), () => this.intentAddr()) : mkc(L('What do I need for identity?', 'पहचान के लिए क्या चाहिए?'), () => this.intentDocs())];
+    if (mob === 'done' && det !== 'done') chips.unshift(mkc(L('Why do you need these details?', 'ये जानकारी क्यों चाहिए?'), () => this.intentDetails()));
+    if (full && mob !== 'done') chips.unshift(mkc(L('Which mobile number do I use?', 'कौन-सा मोबाइल नंबर इस्तेमाल करूँ?'), () => this.intentAadhaar()));
+    if (id === 'rejected' || sf === 'rejected') chips.unshift(mkc(L('Why did this fail?', 'यह क्यों नहीं हुआ?'), () => this.intentFix()));
+    if (s.held) chips.unshift(mkc(L('Why an extra check?', 'अतिरिक्त जाँच क्यों?'), () => this.intentHeld()));
+    if (full && (id === 'todo' || id === 'rejected')) chips.push(mkc(L('Aadhaar not linked to my mobile', 'आधार मेरे मोबाइल से लिंक नहीं है'), () => this.intentAadhaar()), mkc(L('Name differs on PAN and Aadhaar', 'PAN और आधार में नाम अलग है'), () => this.intentName()));
+    if (full) chips.push(mkc(L('What is KYC?', 'KYC क्या है?'), () => this.intentGlossary()));
+    chips.push(mkc(L('Is my data safe?', 'क्या मेरा डेटा सुरक्षित है?'), () => this.intentSafety()));
+    if (full) chips.push(mkc(L('Do I need to visit a branch?', 'क्या मुझे शाखा जाना होगा?'), () => this.intentBranch()), mkc(L('What are the fees?', 'शुल्क कितना है?'), () => this.intentFees()));
+    chips.push(mkc(L('Will I be approved?', 'क्या मेरा आवेदन मंज़ूर होगा?'), () => this.intentApproval()));
+    const open = (first) => { this.setState({ sheet: true }); };
+    const send = () => { const t = s.draft.trim(); if (!t) return; this.setState({ draft: '' }); this.ask(t.replace(/\d[\d\s-]{6,}/g, '••••'), this.routeAsync(t)); };
+    const live = s.vk === 'live', prompts = ['Hello Chitra. Please look at the camera.', 'Please hold your PAN card next to your face.', 'Now turn your head slowly to the left, then right.', 'Thank you. Please stay on the line.'];
+    const validMob = /^[6-9]\d{9}$/.test(s.mobNum);
+const okName = s.dName.trim().length >= 3, m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(s.dDob), yr = m ? +m[3] : 0, okDob = !!m && +m[1] >= 1 && +m[1] <= 31 && +m[2] >= 1 && +m[2] <= 12 && yr >= 1900 && yr <= new Date().getFullYear() - 18, okMail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.dEmail), okPin = /^\d{6}$/.test(s.dPin);
+    const dv = {}; ['mobNum', 'otp', 'dName', 'dDob', 'dEmail', 'dPin'].forEach(k => { dv['v_' + k] = () => this.dictate(k); dv['vb_' + k] = s.dictating === k ? 'oklch(0.4 0.09 175)' : 'oklch(0.5 0.09 175)'; dv['va_' + k] = s.dictating === k ? 'pulse 1.1s infinite' : 'none'; });
+    const WHY = { mobNum: ['Your mobile number', 'To send your OTP and message you about each step of your application.', "We can't verify you or send updates, so you can't continue online."], dName: ['Your name, as on PAN', 'To match your PAN and Aadhaar records so verification does not fail later.', "We can't match your records, so verification can't complete."], dDob: ['Your date of birth', 'To confirm you are 18 or older and to match your records.', "We can't confirm your age or match your records."], dEmail: ['Your email', 'To send your account documents and updates.', 'You can still continue. Updates would come by SMS only (placeholder).'], dPin: ['Your PIN code', 'To check your address and route your application.', "We can't complete the address check."], pan: ['Your PAN card photo', 'To verify your tax identity, which KYC requires for an account.', "We can't verify your identity, so you can't continue online."], addr: ['Your address document', 'To confirm where you live, as KYC requires.', "We can't complete the address check."], vk: ['Your live video', 'To confirm you are the person in your documents.', "We can't finish identity verification online. You could use an assisted centre."] };
+    const wy = WHY[s.why] || ['', '', ''];
+    const stageKey = mob !== 'done' ? 'mob' : det !== 'done' ? 'det' : (id === 'todo' || id === 'rejected') ? 'id' : (id === 'done' && ad === 'todo') ? 'addr' : (ad === 'done' && (sf === 'todo' || sf === 'rejected')) ? 'vk' : '';
+    const NUD = { mob: ['Not sure which number to use?', () => this.intentAadhaar()], det: ['Wondering why we need these details?', () => this.intentDetails()], id: ['Not sure what the PAN step needs?', () => this.intentDocs()], addr: ['Which address documents work?', () => this.intentAddr()], vk: ['First time with Video KYC? See what to expect.', () => this.intentSelfie()] };
+    const nd = NUD[stageKey];
+    const offNudge = () => this.setState({ nudgeOff: Object.assign({}, s.nudgeOff, { [stageKey]: true }) });
+    ['dName', 'dDob', 'dEmail', 'dPin', 'mobNum', 'vk'].forEach(k => { dv['why_' + k] = () => this.setState({ why: k }); });
+    const um = s.msgs.filter(m => m.isText && m.align === 'flex-end'), bm = s.msgs.filter(m => (m.isText || m.isSource) && m.align !== 'flex-end');
+    const vl = []; for (let i = s.msgs.length - 1; i >= 0 && s.msgs[i].align !== 'flex-end'; i--) { const m = s.msgs[i]; if (m.isLink) vl.unshift({ label: m.label, act: m.act }); if (m.isSummary) vl.unshift({ label: m.t.sm3, act: m.confirmAct }, { label: m.t.sm4, act: m.declineAct }); }
+    return Object.assign(dv, {
+      vOverlay: s.sheet && s.vmode, voiceLinks: vl, lastUser: s.listening && s.live ? s.live : (um.length ? um[um.length - 1].text : ''), lastBot: bm.length ? bm[bm.length - 1].text : '',
+      orbBg: s.listening ? 'oklch(0.4 0.09 175)' : s.speaking ? 'oklch(0.5 0.09 175)' : '#1d2420', orbAnim: s.listening ? 'pulse 1.1s infinite' : 'none', orbText: s.listening ? L('Listening…', 'सुन रहा हूँ…') : s.typing ? L('Thinking…', 'सोच रहा हूँ…') : s.speaking ? L('Speaking…', 'बोल रहा हूँ…') : L('Tap to talk', 'बोलने के लिए टैप करें'), orbSub: s.micErr ? s.micErr : s.micBlocked ? L('The microphone is blocked here. Allow it in your browser, open this page in its own tab, or type below.', 'यहाँ माइक्रोफ़ोन बंद है। ब्राउज़र में अनुमति दें, इस पेज को अलग टैब में खोलें, या नीचे टाइप करें।') : s.listening ? L('Say your question. Tap to stop.', 'अपना सवाल बोलिए। रोकने के लिए टैप करें।') : s.speaking ? L('Tap to interrupt and speak.', 'बीच में बोलने के लिए टैप करें।') : L('Try: "what is left?" or "why was my photo rejected?"', 'बोलिए: "क्या बाकी है?" या "मेरी फ़ोटो क्यों अस्वीकार हुई?"'),
+      micBlocked: s.micBlocked, selfUrl: window.location.href, typeHere: L('Or type here', 'या यहाँ टाइप करें'), toggleOrb: () => { if (s.listening) this.stopListen(); else { this.stopSpeak(); this.setState({ micBlocked: false, micErr: '' }); this.startListen(); } }, typeInstead: () => { this.stopSpeak(); this.stopListen(); this.setState({ vmode: false }); }, toVoice: () => { this.setState({ vmode: true, speak: true }); setTimeout(() => this.greet(), 200); },
+      dataVal: s.data, setData: e => this.setState({ data: e.target.value }), downLabel: s.down ? 'On' : 'Off', toggleDown: () => this.setState({ down: !s.down }),
+      dataBanner: s.data !== 'fresh' && s.screen === 'home', dataMsg: s.data === 'stale' ? 'Status may be out of date. Last updated 20 minutes ago.' : "We can't load your latest status right now. Showing what we last had. Nothing was lost.", dataBtn: s.data === 'stale' ? 'Refresh' : 'Retry', dataFix: () => this.setState({ data: 'fresh' }),
+      nudgeOn: full && !!nd && !s.nudgeOff[stageKey] && !s.sheet && !s.down && s.screen === 'home', nudgeText: nd ? nd[0] : '', nudgeX: offNudge,
+      nudgeGo: () => { offNudge(); this.setState({ sheet: true }); if (nd) this.ask(nd[0], nd[1]()); },
+      fabLabel: s.down ? 'Help (offline)' : 'Help with this step', downOn: s.down,
+      whyOn: !!s.why, whyWhat: wy[0], whyWhy: wy[1], whyIfNot: wy[2], whyClose: () => this.setState({ why: '' }), whySecure: () => this.setState({ why: ad === 'done' ? 'vk' : id === 'done' ? 'addr' : 'pan' }),
+      onDetails: s.screen === 'details', dName: s.dName, dDob: s.dDob, dEmail: s.dEmail, dPin: s.dPin, dErr: s.dErr,
+      setDName: e => this.setState({ dName: e.target.value, dErr: '' }), setDDob: e => this.setState({ dDob: e.target.value.replace(/[^\d/]/g, '').slice(0, 10), dErr: '' }), setDEmail: e => this.setState({ dEmail: e.target.value, dErr: '' }), setDPin: e => this.setState({ dPin: e.target.value.replace(/\D/g, '').slice(0, 6), dErr: '' }),
+      demoDet: () => this.setState({ dEmail: 'chitra.sangatwani@example.com', dPin: '400001', dErr: '' }),
+      saveDet: () => { const e = !okName ? 'Enter your full name as on your PAN.' : !okDob ? 'Enter your date of birth as DD/MM/YYYY. You must be 18 or older.' : !okMail ? 'Enter a valid email address.' : !okPin ? 'Enter a 6-digit PIN code.' : ''; if (e) { this.setState({ dErr: e }); return; } this.setState({ det: 'done', screen: 'home', dErr: '' }); },
+      onMobile: s.screen === 'mobile', mobEnter: s.mobStage === 'enter', mobOtp: s.mobStage === 'otp', mobNum: s.mobNum, otp: s.otp, mobErr: s.mobErr || (s.mobNum.length === 10 && !validMob ? 'Indian mobile numbers start with 6, 7, 8 or 9. Try 9876543210 for the demo.' : ''), otpErr: s.otpErr, otpNote: s.otpNote, mobMasked: '••••••' + s.mobNum.slice(-4),
+      sendBg: validMob ? 'oklch(0.5 0.09 175)' : '#b9b3a6', verifyBg: s.otp.length === 6 ? 'oklch(0.5 0.09 175)' : '#b9b3a6',
+      setMobNum: e => this.setState({ mobNum: e.target.value.replace(/\D/g, '').slice(0, 10), mobErr: '' }), setOtp: e => this.setState({ otp: e.target.value.replace(/\D/g, '').slice(0, 6), otpErr: '' }),
+      sendOtp: () => { if (!validMob) { this.setState({ mobErr: 'Enter a valid 10-digit Indian mobile number.' }); return; } this.setState({ mobStage: 'otp', otp: '', otpErr: '', otpNote: '' }); },
+      verifyOtp: () => { if (s.otp.length !== 6) { this.setState({ otpErr: 'Enter all 6 digits.' }); return; } if (s.otp === '000000') { this.setState({ otpErr: "That OTP didn't match. Check the SMS and try again." }); return; } this.setState({ mob: 'done', screen: 'home' }); },
+      demoOtp: () => this.setState({ otp: '123456', otpErr: '' }), demoNum: () => this.setState({ mobNum: '9876543210', mobErr: '' }), resendOtp: () => this.setState({ otpNote: 'A new OTP was sent.', otp: '', otpErr: '' }), changeNum: () => this.setState({ mobStage: 'enter', otp: '', otpErr: '' }),
+      noOtp: () => { this.setState({ sheet: true }); this.ask(L("I didn't get the OTP", 'मुझे OTP नहीं मिला'), this.intentAadhaar()); },
+      onVk: s.screen === 'vkyc', vkReady: s.vk === 'ready', vkConnecting: s.vk === 'connecting', vkLive: live, vkPrompt: prompts[Math.min(3, Math.floor(s.vkT / 3))], vkTimer: '00:' + String(s.vkT).padStart(2, '0'), vkWeak: s.weak ? '. Your connection looks weak, so move closer to your router if you can.' : '', muteLabel: s.muted ? 'Unmute' : 'Mute', toggleMute: () => this.setState({ muted: !s.muted }), joinVk: () => this.joinVk(), hangUp: () => this.endCall('hang'), leaveVk: () => { this.endCall('hang'); },
+      vt: live ? 'auto' : '0', vl: live ? 'auto' : '0', vr: live ? '12px' : 'auto', vb: live ? '12px' : 'auto', vw: live ? '96px' : '100%', vh: live ? '128px' : '100%', vrad: live ? '12px' : '0', vbd: live ? '2px solid #fff' : '0',
+      weakOn: s.weak && full, full, mvpOn: mvp, scopeTag: mvp ? 'MVP' : 'FULL', voiceNote: full ? "Tap the mic beside any field to speak it. Voice uses your browser's speech service, so type if you prefer." : '', weakLabel: s.weak ? 'On' : 'Off', toggleWeak: () => this.setState({ weak: !s.weak }), showNeeds: id === 'todo', onFees: s.screen === 'fees', goFees: () => this.setState({ screen: 'fees', sheet: false, back: s.screen }), backFromFees: () => this.setState({ screen: s.back === 'review' ? 'review' : 'home' }),
+      feeRows: [{ label: 'Account opening', note: '₹0' }, { label: 'Minimum balance', note: '₹0' }, { label: 'Debit card, first year', note: '₹0' }, { label: 'SMS and email alerts', note: '₹0' }, { label: 'Full terms (PDF)', note: 'v1.0' }],
+      lowData: s.weak && full ? 'Low-data mode: your photo is compressed before it uploads.' : '', digiShow: ad !== 'done',
+      useDigi: () => { this.stopCam(); if (id !== 'done') { if (s.fail === 'name' || s.fail === 'otp') { this.setState({ screen: 'home', id: 'rejected', reason: s.fail, fail: 'none' }); return; } this.setState({ screen: 'home', id: 'pending', fail: s.fail === 'blur' ? 'none' : s.fail }); setTimeout(() => this.setState({ id: 'done' }), 2500); } else { this.setState({ screen: 'home', addr: 'pending' }); setTimeout(() => this.setState({ addr: 'done' }), 2500); } },
+      sSafe: L('Never share your OTP, PIN or password here. We will never ask for them.', 'यहाँ अपना OTP, PIN या पासवर्ड कभी न भेजें। हम इन्हें कभी नहीं माँगते।'),
+      micBg: s.listening ? 'oklch(0.4 0.09 175)' : 'oklch(0.5 0.09 175)', micAnim: s.listening ? 'pulse 1.1s infinite' : 'none', micTitle: s.listening ? L('Listening…', 'सुन रहा हूँ…') : L('Tap and speak', 'टैप करें और बोलें'), micSub: s.listening ? (s.live || L('Say your question. Tap to stop.', 'अपना सवाल बोलिए। रोकने के लिए टैप करें।')) : L('English, हिन्दी or Hinglish. Try “what is left?”', 'हिन्दी, English या Hinglish। बोलिए “क्या बाकी है?”'), toggleMic: () => { if (s.listening) this.stopListen(); else this.startListen(); }, speakLabel: s.speak ? L('Read aloud: On', 'बोलकर सुनाएँ: चालू') : L('Read aloud: Off', 'बोलकर सुनाएँ: बंद'), toggleSpeak: () => { this.stopSpeak(); this.setState({ speak: !s.speak }); },
+      sIntro: L("Hi Chitra, I'm an AI. I can explain steps, check your verified status and answer document questions from approved content. I can't approve anything or see your PAN or Aadhaar details. A person is always one tap away.", 'नमस्ते चित्रा, मैं एक AI हूँ। मैं चरण समझा सकता हूँ, आपकी सत्यापित स्थिति बता सकता हूँ और मंज़ूर जानकारी से दस्तावेज़ों के सवालों के जवाब दे सकता हूँ। मैं कुछ मंज़ूर नहीं कर सकता और आपके PAN या आधार की जानकारी नहीं देख सकता। एक व्यक्ति से बात हमेशा बस एक टैप दूर है।'), sTitle: L('Onboarding assistant', 'ऑनबोर्डिंग सहायक'), sPlaceholder: L('Ask about this step', 'इस चरण के बारे में पूछें'), sTalk: L('Talk to a person', 'किसी व्यक्ति से बात करें'), sOff: L('Turn off assistance', 'सहायता बंद करें'), lang: s.lang, sSub: s.translating ? 'Translating…' : L('Your onboarding', 'आपका ऑनबोर्डिंग'), setLang: e => { this.stopSpeak(); this.stopListen(); this.failed.clear(); this.setState({ lang: e.target.value }, () => { if (this.state.vmode && this.state.sheet) this.greet(); }); },
+      onHome: s.screen === 'home', onSecure: s.screen === 'secure', onReview: s.screen === 'review', isSubmitted: s.submitted, reviewRows: [{ label: 'Mobile number', note: 'Verified' }, { label: 'Personal details', note: 'Verified' }, { label: 'PAN card', note: 'Verified' }, { label: 'Address proof', note: 'Verified' }, { label: 'Video KYC', note: 'Verified' }], consentBg: s.consent ? '#1d2420' : '#fff', consentMark: s.consent ? '✓' : '', consentSubmitBg: s.consent ? 'oklch(0.5 0.09 175)' : '#b9b3a6', toggleConsent: () => this.setState({ consent: !s.consent }), submitApp: () => { if (s.consent) this.setState({ screen: 'home', submitted: true, held: s.fail === 'security', fail: s.fail === 'security' ? 'none' : s.fail }); }, sheetOpen: s.sheet, helpOn: s.helpOn,
+      doneCount: done, progressW: (done / 6 * 100) + '%', steps, isRejected: id === 'rejected' || sf === 'rejected',
+      canUpload: mob !== 'done' || det !== 'done' || id === 'todo' || id === 'rejected' || (id === 'done' && ad === 'todo') || (ad === 'done' && (sf === 'todo' || sf === 'rejected')) || (sf === 'done' && !s.submitted), ctaLabel: mob !== 'done' ? 'Verify mobile number' : det !== 'done' ? 'Fill personal details' : sf === 'rejected' ? 'Retry Video KYC' : sf === 'done' ? 'Review and submit' : ad === 'done' ? 'Start Video KYC' : id === 'done' ? 'Upload address proof' : id === 'rejected' ? 'Retake PAN photo' : 'Upload PAN photo', secTitle: ad === 'done' ? 'Video KYC' : id === 'done' ? 'Address proof' : 'PAN card', secHint: ad === 'done' ? 'Face the camera in good light and keep your original PAN card with you. An agent call replaces this in the live product.' : id === 'done' ? 'Aadhaar, passport, voter ID or driving licence showing your current address' : '', camFacing: ad === 'done' ? 'user' : 'environment',
+      msgs: s.msgs.map(m => m.isSummary ? Object.assign({}, m, { goal: s.hgoal !== '' ? s.hgoal : m.goal, onGoal: e => this.setState({ hgoal: e.target.value }) }) : m), typing: s.typing, chips, draft: s.draft, scrollRef: this.scrollRef,
+      onDraft: e => this.setState({ draft: e.target.value }), onKey: e => { if (e.key === 'Enter') send(); }, send,
+      failVal: s.fail, setFail: e => this.setState({ fail: e.target.value }),
+      banTitle: sf === 'rejected' ? "Video KYC didn't complete" : ({ blur: 'PAN photo not accepted', name: "Name doesn't match exactly", otp: 'Aadhaar OTP not received' }[s.reason] || 'PAN photo not accepted'),
+      banSub: sf === 'rejected' ? 'Code VK-301. Usually low light or a weak connection. Your other steps are safe.' : ({ blur: 'Image quality check failed · code ID-204. Your other steps are safe.', name: 'Code ID-310. Small differences, like an initial, are common. Your other steps are safe.', otp: 'Code ID-120. The OTP goes to the mobile linked to your Aadhaar. You have other ways to continue.' }[s.reason] || ''),
+      subTitle: s.held ? 'Extra verification in progress' : 'Application submitted',
+      subText: s.held ? "This is a routine extra check, not a rejection. A person will review it and message you. You don't need to do anything now." : "It's now in review. This isn't an approval yet. Next: review, then account ready. Reviews usually take 1 to 2 working days (placeholder). We'll message you on your registered mobile at each stage.",
+      isHeld: s.held, talkBtn: () => { this.setState({ sheet: true }); this.ask(L('Talk to a person', 'किसी व्यक्ति से बात करें'), this.intentHandoff()); },
+      savedOn: s.saved, saveLater: () => this.setState({ saved: true }), savedText: 'We sent a link to your mobile. Open it any time and you will continue at step ' + Math.min(done + 1, 6) + '.',
+      reset: () => this.setState({ data: 'fresh', down: false, why: '', hgoal: '', nudgeOff: {}, screen: 'home', sheet: false, helpOn: true, id: 'todo', msgs: [], typing: false, draft: '', checks: [false, false, false, false], mob: 'todo', mobStage: 'enter', mobNum: '', otp: '', otpErr: '', mobErr: '', otpNote: '', det: 'todo', dName: 'Chitra Sangatwani', dDob: '14/08/1994', dEmail: '', dPin: '', dErr: '', addr: 'todo', selfie: 'todo', consent: false, submitted: false, shot: false, url: '', reason: '', held: false, saved: false, fail: 'blur' }),
+      openSheet: () => { this.setState({ sheet: true, vmode: true, speak: true }); setTimeout(() => this.greet(), 300); },
+      openBlockerHelp: () => { this.setState({ sheet: true }); if (!s.msgs.length) this.ask(L('Why did this fail?', 'यह क्यों नहीं हुआ?'), this.intentFix()); },
+      closeSheet: () => { this.stopSpeak(); this.stopListen(); this.setState({ sheet: false }); },
+      goSecure: () => this.goSecure(), backHome: () => { this.stopCam(); this.setState({ screen: 'home' }); },
+      fileRef: this.fileRef, frameBg: s.url ? 'url(' + s.url + ')' : this.stripe, capture: () => { if (s.cam && !s.shot) { this.snap(); return; } if (s.shot) { this.setState({ shot: false, url: '' }); setTimeout(() => this.startCam(), 50); return; } if (s.camErr) { const i = this.fileRef.current; if (i) { i.value = ''; i.click(); } } else this.startCam(); }, videoDisplay: s.cam && !s.shot ? 'block' : 'none', mirror: ad === 'done' ? 'scaleX(-1)' : 'none', pickFile: () => { const i = this.fileRef.current; if (i) { i.value = ''; i.click(); } }, onFile: e => { const f = e.target.files && e.target.files[0]; if (f) this.setState({ shot: true, url: URL.createObjectURL(f) }); }, frameStyle: s.shot ? 'solid' : 'dashed', frameColor: s.shot ? 'oklch(0.5 0.09 175)' : '#b9b3a6', frameText: s.shot || s.cam ? '' : s.camErr ? 'Camera unavailable. Tap to choose a photo' : 'Starting camera…', captureLabel: s.shot ? 'Retake' : s.cam ? 'Capture photo' : s.camErr ? 'Choose a photo' : 'Capture photo', submitBg: '#1d2420', submitId: () => { this.stopCam(); if (ad === 'done') { if (s.fail === 'video') { this.setState({ screen: 'home', selfie: 'rejected', fail: 'none' }); return; } this.setState({ screen: 'home', selfie: 'pending' }); setTimeout(() => this.setState({ selfie: 'done' }), 4000); return; } if (id === 'done') { this.setState({ screen: 'home', addr: 'pending' }); setTimeout(() => this.setState({ addr: 'done' }), 4000); return; } const bad = ['blur', 'name', 'otp'].includes(s.fail); this.setState(bad ? { screen: 'home', id: 'rejected', reason: s.fail, fail: 'none' } : { screen: 'home', id: 'pending' }); if (!bad) setTimeout(() => this.setState({ id: 'done' }), 4000); },
+      talk: () => this.ask(L('Talk to a person', 'किसी व्यक्ति से बात करें'), this.intentHandoff()),
+      turnOff: () => this.setState({ helpOn: false, sheet: false })
+    });
+  }
+}
+</script>
+</body>
+</html>
