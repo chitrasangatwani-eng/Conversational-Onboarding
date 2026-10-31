@@ -1,5 +1,5 @@
 import { get, set, resetFlow, type Screen } from "./store";
-import { L, clearFailures } from "./i18n";
+import { L, clearFailures, loadLang } from "./i18n";
 import { ask, greet, intentFix, intentHandoff } from "./assistant";
 import { stopListen, stopSpeak } from "./voice";
 
@@ -52,8 +52,10 @@ export function setLang(code: string) {
   stopListen();
   clearFailures();
   set({ lang: code });
-  const s = get();
-  if (s.vmode && s.sheet) greet();
+  loadLang(code).catch(() => {}).then(() => {
+    const s = get();
+    if (s.lang === code && s.vmode && s.sheet) greet();
+  });
 }
 
 // ---- Mobile ----

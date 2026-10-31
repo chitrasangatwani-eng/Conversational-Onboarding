@@ -298,10 +298,39 @@ export function route(text: string): Msg[] {
   return intentAbstain();
 }
 
+// Suggested questions and their answers, matched against translated labels.
+const CHIP_INTENTS: [string, () => Msg[]][] = [
+  ["What's left?", () => intentStatus()], ["How does Video KYC work?", () => intentVideo()],
+  ["What counts as address proof?", () => intentAddr()], ["What do I need for identity?", () => intentDocs()],
+  ["Why do you need these details?", () => intentDetails()], ["Which mobile number do I use?", () => intentAadhaar()],
+  ["Why did this fail?", () => intentFix()], ["Why an extra check?", () => intentHeld()],
+  ["Aadhaar not linked to my mobile", () => intentAadhaar()], ["Name differs on PAN and Aadhaar", () => intentName()],
+  ["What is KYC?", () => intentGlossary()], ["Is my data safe?", () => intentSafety()],
+  ["Do I need to visit a branch?", () => intentBranch()], ["What are the fees?", () => (get().mvp ? intentAbstain() : intentFees())],
+  ["Will I be approved?", () => intentApproval()], ["Talk to a person", () => intentHandoff()],
+];
+const norm = (s: string) => s.toLowerCase().replace(/[\s\p{P}\p{S}]+/gu, " ").trim();
+
+function matchChip(text: string): (() => Msg[]) | null {
+  const t = norm(text);
+  if (t.length < 2) return null;
+  let best: (() => Msg[]) | null = null, bestLen = 0;
+  for (const [en, fn] of CHIP_INTENTS) {
+    const label = norm(L(en, en));
+    if (label.length < 2 || label === norm(en)) continue; // untranslated: leave to the classifier
+    const hit = t.includes(label) || (t.length >= 4 && label.includes(t));
+    if (hit && label.length > bestLen) { best = fn; bestLen = label.length; }
+  }
+  return best;
+}
+
 /** Route a question; non-local languages go to Claude for intent only. Sensitive text never leaves the device. */
 export async function routeAsync(text: string): Promise<Msg[]> {
   const q = get();
   if (isLocal(q.lang) || isSensitive(text) || /^\D{0,12}\d{4,6}\D{0,3}$/.test(text.trim())) return route(text);
+  // Without a server, a question that matches a suggested question in this language still gets its answer.
+  const byChip = matchChip(text);
+  if (byChip) return byChip();
   try {
     const c = await classify(text);
     if (c === "blocker") return q.id === "rejected" || q.selfie === "rejected" ? intentFix() : intentStatus();
