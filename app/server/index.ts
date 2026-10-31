@@ -47,7 +47,10 @@ function claude(): Anthropic {
   return client;
 }
 
+class BudgetError extends Error {}
+
 async function complete(prompt: string, schema: Record<string, unknown>, maxTokens: number) {
+  if (!takeCall()) throw new BudgetError("daily limit reached");
   const res = await claude().beta.messages.create({
     model: MODEL,
     max_tokens: maxTokens,
@@ -61,7 +64,22 @@ async function complete(prompt: string, schema: Record<string, unknown>, maxToke
   return JSON.parse(text) as unknown;
 }
 
+// The app's copy is fixed, so each string is translated once per language and
+// then served from memory to every visitor.
+const cache = new Map<string, string>();
+const MAX_CACHE = 20000;
+
 async function translate(language: string, strings: string[]): Promise<(string | null)[]> {
+  const key = (s: string) => language + "\u0000" + s;
+  const todo = [...new Set(strings.filter((s) => !cache.has(key(s))))];
+  if (todo.length) {
+    const out = await translateFresh(language, todo);
+    todo.forEach((s, i) => { const v = out[i]; if (v && cache.size < MAX_CACHE) cache.set(key(s), v); });
+  }
+  return strings.map((s) => cache.get(key(s)) ?? null);
+}
+
+async function translateFresh(language: string, strings: string[]): Promise<(string | null)[]> {
   const prompt =
     "Translate each string in this JSON array from English to " + LANGS[language] +
     " for an Indian fintech onboarding assistant. Write in the native script of that language. " +
@@ -123,6 +141,7 @@ function readJson(req: http.IncomingMessage): Promise<any> {
 }
 
 function errorStatus(e: unknown): number {
+  if (e instanceof BudgetError) return 429;
   if (e instanceof Anthropic.RateLimitError) return 429;
   if (e instanceof Anthropic.AuthenticationError) return 503;
   if (e instanceof Anthropic.APIConnectionError) return 502;
@@ -173,9 +192,68 @@ function serveStatic(res: http.ServerResponse, url: URL) {
   fs.createReadStream(file).pipe(res);
 }
 
+// ---- Exposure controls for a public deployment ----
+
+// Browsers may call the API only from these sites (plus the server's own pages).
+const ALLOWED_ORIGINS = new Set(
+  (process.env.ALLOWED_ORIGINS || "https://chitrasangatwani-eng.github.io")
+    .split(",").map((s) => s.trim()).filter(Boolean),
+);
+
+/** Returns false (and answers the request) when the origin is not allowed. */
+function cors(req: http.IncomingMessage, res: http.ServerResponse): boolean {
+  const origin = req.headers.origin;
+  if (!origin) return true; // same-origin navigation or a non-browser client; rate limits still apply
+  let sameHost = false;
+  try { sameHost = new URL(origin).host === req.headers.host; } catch { /* malformed */ }
+  if (!sameHost && !ALLOWED_ORIGINS.has(origin)) { send(res, 403, { error: "origin not allowed" }); return false; }
+  res.setHeader("access-control-allow-origin", origin);
+  res.setHeader("vary", "origin");
+  res.setHeader("access-control-allow-methods", "POST, OPTIONS");
+  res.setHeader("access-control-allow-headers", "content-type");
+  res.setHeader("access-control-max-age", "600");
+  return true;
+}
+
+// Per-visitor and per-day caps so a public key can't be run up.
+const PER_IP_LIMIT = Number(process.env.PER_IP_LIMIT || 120);       // requests per 10 minutes
+const DAILY_CALL_LIMIT = Number(process.env.DAILY_CALL_LIMIT || 2000); // Claude calls per day, all visitors
+const hits = new Map<string, { n: number; reset: number }>();
+let day = new Date().toISOString().slice(0, 10);
+let callsToday = 0;
+
+function clientIp(req: http.IncomingMessage): string {
+  const fwd = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
+  return fwd || req.socket.remoteAddress || "?";
+}
+function overIpLimit(req: http.IncomingMessage): boolean {
+  const now = Date.now(), ip = clientIp(req);
+  const h = hits.get(ip);
+  if (!h || h.reset < now) { hits.set(ip, { n: 1, reset: now + 10 * 60 * 1000 }); return false; }
+  h.n++;
+  return h.n > PER_IP_LIMIT;
+}
+setInterval(() => { const now = Date.now(); for (const [k, v] of hits) if (v.reset < now) hits.delete(k); }, 60_000).unref();
+
+/** Count one Claude call against today's budget; false when the budget is spent. */
+export function takeCall(): boolean {
+  const today = new Date().toISOString().slice(0, 10);
+  if (today !== day) { day = today; callsToday = 0; }
+  if (callsToday >= DAILY_CALL_LIMIT) return false;
+  callsToday++;
+  return true;
+}
+
 const server = http.createServer((req, res) => {
   const url = new URL(req.url || "/", "http://localhost");
-  if (url.pathname.startsWith("/api/")) { handleApi(req, res, url); return; }
+  if (url.pathname === "/api/health") { send(res, 200, { ok: true, model: MODEL, key: !!process.env.ANTHROPIC_API_KEY }); return; }
+  if (url.pathname.startsWith("/api/")) {
+    if (!cors(req, res)) return;
+    if (req.method === "OPTIONS") { res.writeHead(204); res.end(); return; }
+    if (overIpLimit(req)) { send(res, 429, { error: "too many requests" }); return; }
+    handleApi(req, res, url);
+    return;
+  }
   if (process.env.NODE_ENV === "production") { serveStatic(res, url); return; }
   res.writeHead(404); res.end();
 });

@@ -15,6 +15,17 @@ Production: `npm run build && npm start` serves the built app and the API on `:8
 
 English and Hindi work with no key; they are hand-written in the code. Without a key, the other languages fall back to English.
 
+## Hosting
+
+- **Static site (GitHub Pages):** build with `VITE_API_BASE=https://<your-server> npx vite build --base=./` and publish `dist/` to the `gh-pages` branch. Without `VITE_API_BASE`, only English and Hindi work.
+- **Translation server (Render):** `render.yaml` in the repo root is a Render Blueprint. Render then serves the app and `/api`, and asks once for `ANTHROPIC_API_KEY`.
+- **Public-deployment limits:** set with environment variables.
+  - `ALLOWED_ORIGINS`: the sites browsers may call the API from. The server's own pages are always allowed.
+  - `PER_IP_LIMIT`: requests per visitor per 10 minutes. Default 120.
+  - `DAILY_CALL_LIMIT`: Claude calls per day across all visitors. Default 2000.
+- **Translation cache:** translations are kept in memory, so each string costs one call per language until the server restarts.
+- **Health check:** `GET /api/health`.
+
 ## What's here
 
 - **Demo shell** (`src/DemoPanel.tsx`): the phone frame and the prototype controls from the design (failure simulator, stale/unavailable status, assistant down, weak connection, reset). The design's Tweaks "mvp" prop is now a **Scope** switch in this panel. `?scope=full` opens the full version.
