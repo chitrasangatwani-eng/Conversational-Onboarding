@@ -78,11 +78,11 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .screen-title { font-size: 24px; font-weight: 600; margin-top: -8px; }
 .screen-lede { font-size: 13.5px; color: var(--body); line-height: 1.45; }
 .back { align-self: flex-start; border: 0; background: none; font: inherit; font-size: 14px; color: var(--body); cursor: pointer; padding: 0; min-height: 44px; }
-.secure-note { display: flex; gap: 8px; align-items: center; background: var(--tint); border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.4; }
+.secure-note { display: flex; gap: 6px; align-items: center; color: var(--muted); font-size: 12px; line-height: 1.4; margin-top: -6px; }
 .why { border: 0; background: none; padding: 12px 4px; margin: -12px 0; font: inherit; font-size: 12.5px; font-weight: 600; color: var(--accent-ink); cursor: pointer; text-decoration: underline; }
 .link { border: 0; background: none; padding: 0; min-height: 44px; font: inherit; font-size: 13.5px; color: var(--body); cursor: pointer; text-decoration: underline; }
 .link-strong { border: 0; background: none; padding: 0; min-height: 44px; font: inherit; font-weight: 600; font-size: 13.5px; color: var(--accent-ink); cursor: pointer; text-decoration: underline; }
-.demo-fill { align-self: flex-start; border: 1px dashed var(--disabled); background: #fff; border-radius: 10px; padding: 0 12px; min-height: 44px; font: inherit; font-size: 13px; cursor: pointer; color: var(--ink); }
+.demo-fill { align-self: flex-start; border: 0; background: var(--intro); border-radius: 8px; padding: 0 10px; min-height: 32px; font: inherit; font-size: 12px; cursor: pointer; color: var(--muted); }
 .err { font-size: 12.5px; color: var(--err); min-height: 16px; }
 
 .btn-lg { border: 0; border-radius: 14px; padding: 0 16px; min-height: 50px; font: inherit; font-weight: 600; font-size: 16px; cursor: pointer; color: #fff; background: var(--accent); }
@@ -115,8 +115,12 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .panel { margin-top: 18px; border-radius: 14px; padding: 14px; }
 .panel.ok { background: var(--tint); border: 1px solid var(--tint-line); }
 .panel.warn { background: var(--warn-tint); border: 1px solid var(--warn-line); }
-.step { display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid var(--line-2); border-radius: 14px; padding: 12px 14px; }
-.step.cur { border-color: var(--ink); }
+.steps { margin-top: 18px; display: flex; flex-direction: column; gap: 2px; }
+.step { display: flex; align-items: center; gap: 12px; border: 1px solid transparent; border-radius: 14px; padding: 10px 12px; }
+.step.cur, .step.bad { background: #fff; border-color: var(--ink); padding: 14px 12px; margin: 4px 0; }
+.step.x { opacity: .55; padding: 8px 12px; }
+.step-label { font-size: 15px; font-weight: 500; }
+.step-sub { font-size: 12px; color: var(--muted); }
 .step-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; background: var(--line-2); color: var(--muted); }
 .step-dot.cur { background: var(--ink); color: #fff; }
 .step-dot.done { background: var(--accent); color: #fff; }
@@ -137,7 +141,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .frame.shot { border-style: solid; border-color: var(--accent); }
 .frame video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .btn-outline-lg { border: 1.5px solid var(--ink); background: transparent; color: var(--ink); border-radius: 14px; padding: 13px; font: inherit; font-weight: 600; font-size: 15px; cursor: pointer; }
-.btn-digi { border: 1.5px solid var(--accent); background: var(--tint); color: var(--ink); border-radius: 14px; padding: 12px; font: inherit; font-weight: 600; font-size: 14.5px; cursor: pointer; line-height: 1.35; }
+.btn-digi { border: 1px solid var(--line-3); background: #fff; color: var(--accent-ink); border-radius: 14px; padding: 0 12px; min-height: 48px; font: inherit; font-weight: 600; font-size: 14.5px; cursor: pointer; line-height: 1.35; }
 
 /* Sheets */
 .scrim { position: absolute; inset: 0; background: rgba(29, 36, 32, .4); }
@@ -181,3 +185,13 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .mic-wide .knob { width: 38px; height: 38px; border-radius: 50%; background: #fff; display: flex; align-items: center; justify-content: center; flex: none; }
 .mic-wide.on .knob { animation: pulse 1.1s infinite; }
 .mic-wide .knob span { width: 12px; height: 18px; border-radius: 6px; background: var(--accent); display: block; }
+.opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.opt { border: 1px solid var(--line-3); background: #fff; border-radius: 12px; min-height: 44px; padding: 8px 12px; font: inherit; font-size: 14px; color: var(--ink); cursor: pointer; text-align: center; }
+.opt.on { background: var(--ink); border-color: var(--ink); color: #fff; }
+.q { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+.demo-fold { border-top: 1px solid var(--line); padding-top: 10px; }
+.demo-fold > summary { cursor: pointer; font-size: 13px; color: var(--body); list-style: none; min-height: 32px; display: flex; align-items: center; }
+.demo-fold > summary::before { content: "▸"; margin-right: 6px; transition: transform .15s; }
+.demo-fold[open] > summary::before { transform: rotate(90deg); }
+.demo-fold > summary::-webkit-details-marker { display: none; }
+.demo-fold-body { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }

@@ -47,8 +47,7 @@ export function CaptureScreen() {
       <div style={{ fontSize: 12, color: "#4a534f" }}>{s.weak && !s.mvp ? "Low-data mode: your photo is compressed before it uploads." : ""}</div>
       {s.addr !== "done" && !(kind === "pan" && s.f60) && (
         <button className="btn-digi" onClick={useDigiLocker} aria-busy={s.dlBusy}>
-          {s.dlBusy ? "Waiting for DigiLocker…" : "Fetch from DigiLocker instead"}<br />
-          <span style={{ fontWeight: 400, fontSize: 12 }}>{s.dlBusy ? "Finish in the DigiLocker window, then come back here." : "No photo, nothing to type. You approve sharing on the DigiLocker screen."}</span>
+          {s.dlBusy ? "Waiting for DigiLocker… finish in its window" : "Use DigiLocker instead (no photo)"}
         </button>
       )}
       {s.dlErr && <div className="err" role="alert">{s.dlErr}</div>}
