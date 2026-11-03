@@ -26,6 +26,38 @@ English and Hindi work with no key; they are hand-written in the code. Without a
 - **Translation cache:** translations are kept in memory, so each string costs one call per language until the server restarts.
 - **Health check:** `GET /api/health`.
 
+## Integrations
+
+Each real-world service connects through the backend with one connector per service. A sandbox version works now, and a real provider can be swapped in by changing settings, with no change to the app.
+
+| Service | Status | Settings |
+| --- | --- | --- |
+| Mobile OTP by SMS | Built. Sandbox by default; MSG91 and Twilio connectors included but not yet tried against live accounts. | `OTP_PROVIDER` = `sandbox` / `msg91` / `twilio`, `OTP_SECRET`, and that provider's keys (see `server/otp/providers.ts`). App build: `VITE_BACKEND=server`. |
+| PAN and Aadhaar checks | Simulated in the app | Needs a licensed KYC provider; Aadhaar OTP is limited to UIDAI-approved entities. |
+| DigiLocker | Simulated | Needs DigiLocker partner approval. |
+| Video KYC | Simulated | Needs an RBI-compliant Video KYC vendor. |
+| Human handoff | Built. Sandbox by default; webhook and Slack destinations included. | `HANDOFF_PROVIDER` = `sandbox` / `webhook` / `slack`, with `HANDOFF_WEBHOOK_URL` (+ optional `HANDOFF_WEBHOOK_SECRET`) or `HANDOFF_SLACK_WEBHOOK_URL`. |
+
+**Mobile OTP rules.** The server creates and checks every code. Codes are stored only as keyed hashes. Each code:
+- expires after 5 minutes;
+- allows 5 tries;
+- can be resent after 30 seconds, at most 5 times an hour per number.
+
+A successful check returns a signed token. Codes are kept in memory, so running more than one server instance needs a shared store such as Redis.
+
+**Sandbox.** No SMS is sent, and the code appears in the app's demo button. Never use sandbox with real users.
+
+**Real SMS in India.** Real SMS needs DLT registration of the sender ID and the message template. For MSG91, the approved template's variable must be named `otp`.
+
+**Human handoff.** "Send summary and connect", "Connect without summary" and "Call me back" each create a ticket with a reference such as `HO-3F9A1C`.
+- **Summary language:** the summary goes to the team in English, whatever language the applicant uses. The goal is sent as the applicant typed it.
+- **Never sent:** PAN or Aadhaar numbers, documents, photos or OTPs. Text that looks like an ID, a phone number or a 6-digit code is refused.
+- **Mobile check:** if the applicant verified their mobile, the ticket says so and shows only its last 4 digits.
+- **Webhook signature:** webhook deliveries are signed with `X-Signature: sha256=<HMAC of the body>`.
+- **Queue numbers:** the queue position and wait are estimates from this server until a real helpdesk supplies them.
+
+**Backend modes.** The GitHub Pages build uses `VITE_BACKEND=local` (the default). It simulates OTP and handoff in the browser, because a static site can't run the backend. In the OTP demo any 6 digits work except `000000`.
+
 ## What's here
 
 - **Demo shell** (`src/DemoPanel.tsx`): the phone frame and the prototype controls from the design (failure simulator, stale/unavailable status, assistant down, weak connection, reset). The design's Tweaks "mvp" prop is now a **Scope** switch in this panel. `?scope=full` opens the full version.

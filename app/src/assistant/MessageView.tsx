@@ -81,7 +81,7 @@ export function MessageView({ m }: { m: Msg }) {
 
       {m.kind === "handoff" && (
         <div className="card">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><b style={{ fontSize: 14 }}>{t.h1}</b><span style={{ fontFamily: "var(--mono)", fontSize: 11, background: "oklch(0.95 0.03 175)", borderRadius: 6, padding: "2px 6px" }}>live</span></div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><b style={{ fontSize: 14 }}>{t.h1}</b><span style={{ fontFamily: "var(--mono)", fontSize: 11, background: "oklch(0.95 0.03 175)", borderRadius: 6, padding: "2px 6px" }}>{m.ref ? "live · " + m.ref : "live"}</span></div>
           <div style={{ fontSize: 22, fontWeight: 600, margin: "8px 0 2px" }}>{t.h2}</div>
           <div style={{ fontSize: 13, color: "#4a534f" }}>{t.h3}</div>
           <div style={{ marginTop: 10, paddingTop: 8, borderTop: "1px dashed #d6d1c6", fontSize: 12, lineHeight: 1.55, color: "#4a534f" }}>

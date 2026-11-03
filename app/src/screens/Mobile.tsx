@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { set, useAppState } from "../engine/store";
-import { backHome, sendOtp, validMobile, verifyOtp } from "../engine/flow";
+import { backHome, changeNumber, sendOtp, validMobile, verifyOtp } from "../engine/flow";
+import { OTP_MODE } from "../engine/otp";
 import { ask, intentAadhaar } from "../engine/assistant";
 import { L } from "../engine/i18n";
 import { MicButton, VOICE_NOTE } from "./fields";
@@ -8,6 +10,18 @@ export function MobileScreen() {
   const s = useAppState();
   const full = !s.mvp;
   const ok = validMobile(s.mobNum);
+  // Re-render once a second while the resend countdown runs.
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (s.resendAt <= Date.now()) return;
+    const t = setInterval(() => {
+      setTick((n) => n + 1);
+      if (s.resendAt <= Date.now()) clearInterval(t);
+    }, 1000);
+    return () => clearInterval(t);
+  }, [s.resendAt]);
+  const resendIn = Math.max(0, Math.ceil((s.resendAt - Date.now()) / 1000));
+  const demoCode = s.otpDemo || "123456";
   const mobErr = s.mobErr || (s.mobNum.length === 10 && !ok ? "Indian mobile numbers start with 6, 7, 8 or 9. Try 9876543210 for the demo." : "");
   return (
     <div className="screen">
@@ -24,7 +38,7 @@ export function MobileScreen() {
             {full && <MicButton field="mobNum" />}
           </div>
           <div className="err" role="alert">{mobErr}</div>
-          <button className={"btn-lg" + (ok ? "" : " is-off")} onClick={sendOtp}>Send OTP</button>
+          <button className={"btn-lg" + (ok ? "" : " is-off")} onClick={() => sendOtp()} aria-busy={s.otpBusy}>{s.otpBusy ? "Sending…" : "Send OTP"}</button>
         </>
       ) : (
         <>
@@ -34,13 +48,14 @@ export function MobileScreen() {
             {full && <MicButton field="otp" />}
           </div>
           <div className="err" role="alert">{s.otpErr}</div>
-          <button className={"btn-lg" + (s.otp.length === 6 ? "" : " is-off")} onClick={verifyOtp}>Verify</button>
+          <button className={"btn-lg" + (s.otp.length === 6 ? "" : " is-off")} onClick={verifyOtp} aria-busy={s.otpBusy}>{s.otpBusy ? "Checking…" : "Verify"}</button>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px" }}>
-            <button className="link-strong" style={{ textDecoration: "none" }} onClick={() => set({ otpNote: "A new OTP was sent.", otp: "", otpErr: "" })}>Resend OTP</button>
-            <button className="link" onClick={() => set({ mobStage: "enter", otp: "", otpErr: "" })}>Change number</button>
+            <button className="link-strong" style={{ textDecoration: "none", ...(resendIn ? { color: "#6b7370", cursor: "default" } : {}) }} aria-disabled={!!resendIn} onClick={() => { if (!resendIn) sendOtp(true); }}>{resendIn ? `Resend OTP in ${resendIn}s` : "Resend OTP"}</button>
+            <button className="link" onClick={changeNumber}>Change number</button>
             <button className="link" onClick={() => { set({ sheet: true }); ask(L("I didn't get the OTP", "मुझे OTP नहीं मिला"), intentAadhaar()); }}>Didn't get the OTP?</button>
           </div>
-          <button className="demo-fill" onClick={() => set({ otp: "123456", otpErr: "" })}>Demo: fill OTP 123456</button>
+          {OTP_MODE === "server" && s.otpDemo && <div style={{ fontSize: 12, color: "#6b7370" }}>Sandbox mode: no SMS was sent. Use the demo button below.</div>}
+          {(OTP_MODE === "local" || s.otpDemo) && <button className="demo-fill" onClick={() => set({ otp: demoCode, otpErr: "" })}>Demo: fill OTP {demoCode}</button>}
         </>
       )}
     </div>
