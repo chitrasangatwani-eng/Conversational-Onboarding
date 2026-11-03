@@ -54,6 +54,7 @@ export function Home() {
         <div style={{ fontSize: 28, fontWeight: 600, lineHeight: 1.1, margin: "4px 0 14px" }}>{done} of 6 steps done</div>
         <div className="progress"><div style={{ width: (done / 6) * 100 + "%" }} /></div>
 
+        {s.dlNote && <div className="banner ok"><b>From DigiLocker.</b> {s.dlNote}.</div>}
         {s.saved && <div className="banner ok"><b>Saved.</b> We sent a link to your mobile. Open it any time and you will continue at step {Math.min(done + 1, 6)}.</div>}
         {s.weak && full && <div className="banner warn"><b>Weak connection.</b> Your progress is saved. Photos are compressed and uploads retry on their own. You can also ask for a call back.</div>}
         {s.data !== "fresh" && (

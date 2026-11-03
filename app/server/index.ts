@@ -10,6 +10,8 @@
 // Secure-form integrations (identity data, never shown to the assistant):
 //   POST /api/otp/send    { mobile }            -> { requestId, maskedMobile, expiresIn, resendIn, sandboxCode? }
 //   POST /api/otp/verify  { requestId, code }   -> { verified, token? , reason?, attemptsLeft? }
+//   POST /api/digilocker/start  { purpose, expectedName } -> { state, url }   (open url in a window)
+//   GET  /api/digilocker/callback (DigiLocker redirects here)  POST /api/digilocker/result { state }
 //   POST /api/handoff     { kind, language, share, summary[], goal, mobileToken? } -> { ticketId, position, waitMinutes }
 // The SMS provider is chosen with OTP_PROVIDER (see otp/providers.ts) and the
 // handoff destination with HANDOFF_PROVIDER (see handoff/service.ts).
@@ -24,9 +26,15 @@ import Anthropic from "@anthropic-ai/sdk";
 import { OtpService } from "./otp/service";
 import { providerFromEnv } from "./otp/providers";
 import { HandoffService } from "./handoff/service";
+import { DigiLockerService, callbackPage, sandboxConsentPage } from "./digilocker/service";
 
 const otp = new OtpService(providerFromEnv());
 const handoff = new HandoffService();
+const digilocker = new DigiLockerService();
+
+/** This server's public origin (Render sits behind a proxy that sets x-forwarded-proto). */
+const originOf = (req: http.IncomingMessage) =>
+  (String(req.headers["x-forwarded-proto"] || "http").split(",")[0].trim()) + "://" + req.headers.host;
 
 const MODEL = process.env.CLAUDE_MODEL || "claude-opus-5-5";
 const PORT = Number(process.env.PORT || 8787);
@@ -206,6 +214,15 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse, ur
     return send(res, r.reason === "delivery_failed" ? 502 : r.reason === "sensitive" ? 422 : 400, { error: r.reason });
   }
 
+  if (url.pathname === "/api/digilocker/start") {
+    const r = digilocker.start(body?.purpose, body?.expectedName, originOf(req));
+    return r ? send(res, 200, r) : send(res, 400, { error: "invalid" });
+  }
+
+  if (url.pathname === "/api/digilocker/result") {
+    return send(res, 200, digilocker.result(body?.state));
+  }
+
   if (url.pathname === "/api/otp/verify") {
     const r = otp.verify(body?.requestId, typeof body?.code === "string" ? body.code.trim() : "");
     return send(res, 200, r.ok ? { verified: true, token: r.token } : { verified: false, reason: r.reason, attemptsLeft: r.attemptsLeft });
@@ -282,7 +299,21 @@ export function takeCall(): boolean {
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url || "/", "http://localhost");
-  if (url.pathname === "/api/health") { send(res, 200, { ok: true, model: MODEL, key: !!process.env.ANTHROPIC_API_KEY, otp: otp.providerName, handoff: handoff.providerName }); return; }
+  if (url.pathname === "/api/health") { send(res, 200, { ok: true, model: MODEL, key: !!process.env.ANTHROPIC_API_KEY, otp: otp.providerName, handoff: handoff.providerName, digilocker: digilocker.providerName }); return; }
+  // Pages opened in the DigiLocker consent window (top-level navigations, so no CORS check).
+  if (req.method === "GET" && url.pathname === "/api/digilocker/sandbox" && digilocker.providerName === "sandbox") {
+    res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
+    res.end(sandboxConsentPage(url.searchParams.get("state") || ""));
+    return;
+  }
+  if (req.method === "GET" && url.pathname === "/api/digilocker/callback") {
+    const state = url.searchParams.get("state") || "";
+    digilocker.callback(state, url.searchParams.get("code"), url.searchParams.get("error")).then((ok) => {
+      res.writeHead(ok ? 200 : 410, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
+      res.end(callbackPage(ok, state));
+    });
+    return;
+  }
   if (url.pathname.startsWith("/api/")) {
     if (!cors(req, res)) return;
     if (req.method === "OPTIONS") { res.writeHead(204); res.end(); return; }
