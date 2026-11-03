@@ -36,3 +36,8 @@ services:
       # optionally HANDOFF_WEBHOOK_SECRET), to reach a real team.
       - key: HANDOFF_PROVIDER
         value: sandbox
+      # DigiLocker fetch. sandbox shows a DigiLocker-style consent page with sample
+      # data. For the real DigiLocker set digilocker plus DIGILOCKER_CLIENT_ID,
+      # DIGILOCKER_CLIENT_SECRET and DIGILOCKER_REDIRECT_URI (see app/server/digilocker).
+      - key: DIGILOCKER_PROVIDER
+        value: sandbox

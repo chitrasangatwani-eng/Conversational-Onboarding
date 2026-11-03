@@ -38,7 +38,7 @@ Each real-world service connects through the backend with one connector per serv
 | --- | --- | --- |
 | Mobile OTP by SMS | Built. Sandbox by default; MSG91 and Twilio connectors included but not yet tried against live accounts. | `OTP_PROVIDER` = `sandbox` / `msg91` / `twilio`, `OTP_SECRET`, and that provider's keys (see `server/otp/providers.ts`). App build: `VITE_BACKEND=server`. |
 | PAN and Aadhaar checks | Simulated in the app | Needs a licensed KYC provider; Aadhaar OTP is limited to UIDAI-approved entities. |
-| DigiLocker | Simulated | Needs DigiLocker partner approval. |
+| DigiLocker | Built. Sandbox by default (DigiLocker-style consent page with sample data); official DigiLocker connector included but not yet run against DigiLocker. | `DIGILOCKER_PROVIDER` = `sandbox` / `digilocker`, with `DIGILOCKER_CLIENT_ID`, `DIGILOCKER_CLIENT_SECRET`, `DIGILOCKER_REDIRECT_URI` (as registered with DigiLocker), optional `DIGILOCKER_BASE_URL`. Needs approval as a DigiLocker partner. |
 | Video KYC | Simulated | Needs an RBI-compliant Video KYC vendor. |
 | Human handoff | Built. Sandbox by default; webhook and Slack destinations included. | `HANDOFF_PROVIDER` = `sandbox` / `webhook` / `slack`, with `HANDOFF_WEBHOOK_URL` (+ optional `HANDOFF_WEBHOOK_SECRET`) or `HANDOFF_SLACK_WEBHOOK_URL`. |
 
@@ -59,6 +59,13 @@ A successful check returns a signed token. Codes are kept in memory, so running 
 - **Mobile check:** if the applicant verified their mobile, the ticket says so and shows only its last 4 digits.
 - **Webhook signature:** webhook deliveries are signed with `X-Signature: sha256=<HMAC of the body>`.
 - **Queue numbers:** the queue position and wait are estimates from this server until a real helpdesk supplies them.
+
+**DigiLocker.** "Fetch from DigiLocker instead" on the PAN and address steps opens DigiLocker in a new window. The applicant signs in and approves sharing there.
+- **Exchange:** the server swaps the returned code for a token (OAuth 2.0 with PKCE), reads the issued-documents list and the e-Aadhaar address, then forgets the token.
+- **What the app receives:** whether a PAN is in the locker, its last 4 characters, whether the name matches the PAN name in the form, and the address PIN code and state.
+- **What the app never receives:** full numbers or documents. The assistant never sees any of it.
+- **Name mismatch:** this is treated as ID-310 (name differs).
+- **Before going live:** the real connector follows DigiLocker's Requester API (`/public/oauth2/1/authorize`, `/1/token`, `/2/files/issued`, `/3/xml/eaadhaar`). Check those paths and fields against the specification issued with your partner credentials.
 
 **Backend modes.** When the app starts, it checks `/api/health`. If the backend answers, OTP and handoff go through it. If not, as on GitHub Pages, they are simulated in the browser: in the OTP demo any 6 digits work except `000000`. `VITE_BACKEND=server` or `VITE_BACKEND=local` forces a mode at build time.
 

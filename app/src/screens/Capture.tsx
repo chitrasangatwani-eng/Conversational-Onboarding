@@ -44,10 +44,12 @@ export function CaptureScreen() {
       <button className="btn-outline-lg" onClick={capture}>{shot ? "Retake" : cam ? "Capture photo" : camErr ? "Choose a photo" : "Capture photo"}</button>
       <div style={{ fontSize: 12, color: "#4a534f" }}>{s.weak && !s.mvp ? "Low-data mode: your photo is compressed before it uploads." : ""}</div>
       {s.addr !== "done" && (
-        <button className="btn-digi" onClick={close(useDigiLocker)}>
-          Fetch from DigiLocker instead<br /><span style={{ fontWeight: 400, fontSize: 12 }}>No photo, nothing to type. You approve sharing on the DigiLocker screen.</span>
+        <button className="btn-digi" onClick={useDigiLocker} aria-busy={s.dlBusy}>
+          {s.dlBusy ? "Waiting for DigiLocker…" : "Fetch from DigiLocker instead"}<br />
+          <span style={{ fontWeight: 400, fontSize: 12 }}>{s.dlBusy ? "Finish in the DigiLocker window, then come back here." : "No photo, nothing to type. You approve sharing on the DigiLocker screen."}</span>
         </button>
       )}
+      {s.dlErr && <div className="err" role="alert">{s.dlErr}</div>}
       <button className="btn-block" onClick={close(submitCapture)}>Submit photo</button>
     </div>
   );

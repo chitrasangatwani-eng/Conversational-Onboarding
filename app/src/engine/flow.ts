@@ -1,6 +1,8 @@
 import { get, set, resetFlow, type Screen } from "./store";
 import { L, clearFailures, loadLang } from "./i18n";
 import { checkOtp, requestOtp } from "./otp";
+import { backend } from "./api";
+import { fetchFromDigiLocker } from "./digilocker";
 import { ask, greet, intentFix, intentHandoff } from "./assistant";
 import { stopListen, stopSpeak } from "./voice";
 
@@ -21,7 +23,7 @@ export function goSecure() {
   if (q.det !== "done") { set({ screen: "details", sheet: false, dErr: "" }); return; }
   if (q.addr === "done" && q.selfie !== "done" && q.selfie !== "pending") { set({ screen: "vkyc", sheet: false, vk: "ready", vkT: 0, muted: false }); return; }
   if (q.selfie === "done") { set({ screen: "review", sheet: false, consent: false }); return; }
-  set({ screen: "secure", sheet: false });
+  set({ screen: "secure", sheet: false, dlErr: "" });
 }
 
 export const backHome = () => set({ screen: "home" });
@@ -137,7 +139,40 @@ export function submitCapture() {
   later(() => set({ id: "done" }), 4000);
 }
 
+/** "Fetch from DigiLocker instead" on the PAN and address steps. Must be called from the click. */
 export function useDigiLocker() {
+  if (backend() === "local") { simulateDigiLocker(); return; }
+  const q = get();
+  if (q.dlBusy) return;
+  const purpose = q.id === "done" ? "address" : "pan";
+  set({ dlBusy: true, dlErr: "" });
+  fetchFromDigiLocker(purpose, q.dName).then((r) => {
+    set({ dlBusy: false });
+    if (!r.ok) {
+      set({ dlErr: {
+        blocked: "Your browser blocked the DigiLocker window. Allow pop-ups for this site and try again.",
+        denied: "You didn't allow sharing in DigiLocker. You can try again or upload a photo instead.",
+        error: "We couldn't get your documents from DigiLocker. Try again, or upload a photo instead.",
+        timeout: "DigiLocker took too long. Try again, or upload a photo instead.",
+      }[r.reason] });
+      return;
+    }
+    const d = r.summary;
+    if (purpose === "pan") {
+      if (!d.panIssued) { set({ dlErr: "No PAN card was found in your DigiLocker. Upload a photo of your PAN instead." }); return; }
+      if (!d.nameMatch) { set({ screen: "home", id: "rejected", reason: "name" }); return; }
+      set({ screen: "home", id: "pending", dlNote: "PAN ending " + (d.panLast4 ?? "") + " fetched from DigiLocker" });
+      later(() => set({ id: "done" }), 1500);
+      return;
+    }
+    if (!d.pincode) { set({ dlErr: "Your DigiLocker has no Aadhaar address we can use. Upload an address document instead." }); return; }
+    set({ screen: "home", addr: "pending", dlNote: "Address (PIN " + d.pincode + (d.state ? ", " + d.state : "") + ") fetched from DigiLocker" });
+    later(() => set({ addr: "done" }), 1500);
+  });
+}
+
+/** Static demo: no backend, so DigiLocker is simulated and the demo failure control applies. */
+function simulateDigiLocker() {
   const q = get();
   if (q.id !== "done") {
     // DigiLocker removes the photo-quality failure, not a name or OTP mismatch.
