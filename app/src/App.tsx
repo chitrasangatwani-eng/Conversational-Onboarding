@@ -4,6 +4,7 @@ import { Home } from "./screens/Home";
 import { MobileScreen } from "./screens/Mobile";
 import { DetailsScreen } from "./screens/Details";
 import { CaptureScreen } from "./screens/Capture";
+import { AadhaarScreen } from "./screens/Aadhaar";
 import { VideoKycScreen } from "./screens/VideoKyc";
 import { FeesScreen } from "./screens/Fees";
 import { ReviewScreen } from "./screens/Review";
@@ -20,6 +21,7 @@ export function App() {
         <div className="statusbar"><span>9:41</span><span className="net">LTE ▮▮▮</span></div>
         {s.screen === "home" && <Home />}
         {s.screen === "secure" && <CaptureScreen />}
+        {s.screen === "aadhaar" && <AadhaarScreen />}
         {s.screen === "details" && <DetailsScreen />}
         {s.screen === "mobile" && <MobileScreen />}
         {s.screen === "vkyc" && <VideoKycScreen />}

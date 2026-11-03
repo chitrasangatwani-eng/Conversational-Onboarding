@@ -41,3 +41,7 @@ services:
       # DIGILOCKER_CLIENT_SECRET and DIGILOCKER_REDIRECT_URI (see app/server/digilocker).
       - key: DIGILOCKER_PROVIDER
         value: sandbox
+      # Aadhaar OTP. sandbox shows the OTP in the app with sample data. A real
+      # connector for your licensed KYC provider is added in app/server/aadhaar.
+      - key: AADHAAR_PROVIDER
+        value: sandbox
