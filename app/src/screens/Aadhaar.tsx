@@ -26,7 +26,7 @@ export function AadhaarScreen() {
       <div className="secure-note"><span style={{ fontFamily: "var(--mono)" }}>🔒</span>Secure form. The assistant never sees your Aadhaar number or OTP.</div>
       {s.aadStage === "enter" ? (
         <>
-          <div className="screen-lede">Your PAN photo is accepted. Now we verify your Aadhaar with an OTP sent to the mobile linked to it. <button className="why" onClick={() => set({ why: "aadhaar" })}>Why we ask</button></div>
+          <div className="screen-lede">{s.f60 ? "Your ID photo is accepted." : "Your PAN photo is accepted."} Now we verify your Aadhaar with an OTP sent to the mobile linked to it. <button className="why" onClick={() => set({ why: "aadhaar" })}>Why we ask</button></div>
           <input className="input big" value={group(s.aadNum)} onChange={(e) => set({ aadNum: e.target.value.replace(/\D/g, "").slice(0, 12), aadErr: "" })}
             inputMode="numeric" placeholder="1234 5678 9012" aria-label="Aadhaar number" autoComplete="off" style={{ letterSpacing: ".08em" }} />
           <button role="checkbox" aria-checked={s.aadConsent} onClick={() => set({ aadConsent: !s.aadConsent, aadErr: "" })}

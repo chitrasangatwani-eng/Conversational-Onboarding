@@ -5,6 +5,7 @@ import { MobileScreen } from "./screens/Mobile";
 import { DetailsScreen } from "./screens/Details";
 import { CaptureScreen } from "./screens/Capture";
 import { AadhaarScreen } from "./screens/Aadhaar";
+import { Form60Screen } from "./screens/Form60";
 import { VideoKycScreen } from "./screens/VideoKyc";
 import { FeesScreen } from "./screens/Fees";
 import { ReviewScreen } from "./screens/Review";
@@ -22,6 +23,7 @@ export function App() {
         {s.screen === "home" && <Home />}
         {s.screen === "secure" && <CaptureScreen />}
         {s.screen === "aadhaar" && <AadhaarScreen />}
+        {s.screen === "form60" && <Form60Screen />}
         {s.screen === "details" && <DetailsScreen />}
         {s.screen === "mobile" && <MobileScreen />}
         {s.screen === "vkyc" && <VideoKycScreen />}

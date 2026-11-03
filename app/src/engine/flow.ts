@@ -151,6 +151,38 @@ export function submitCapture() {
   later(() => set({ id: "done" }), 4000);
 }
 
+// ---- Form 60 (no PAN) ----
+
+export const openForm60 = () => set({ screen: "form60", f60Err: "" });
+/** Go back to giving a PAN instead of Form 60. */
+export const usePanInstead = () => set({ screen: "secure", f60: false, f60Err: "" });
+
+/** Check a DD/MM/YYYY date that is not in the future. */
+function pastDate(v: string): boolean {
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(v.trim());
+  if (!m) return false;
+  const d = new Date(+m[3], +m[2] - 1, +m[1]);
+  return d.getDate() === +m[1] && d.getMonth() === +m[2] - 1 && d <= new Date() && +m[3] >= 1990;
+}
+
+export function form60Error(): string {
+  const q = get();
+  if (!q.f60Reason) return "Choose whether you've applied for a PAN.";
+  if (q.f60Reason === "applied") {
+    if (!/^\d{9,15}$/.test(q.f60Ack)) return "Enter the acknowledgement number from your PAN application (digits only).";
+    if (!pastDate(q.f60AckDate)) return "Enter the application date as DD/MM/YYYY.";
+  } else if (!q.f60Income) return "Choose your estimated income for this year.";
+  if (!q.f60Agri) return "Tell us whether you have agricultural income.";
+  if (!q.f60Consent) return "Tick the declaration to continue.";
+  return "";
+}
+
+export function submitForm60() {
+  const err = form60Error();
+  if (err) { set({ f60Err: err }); return; }
+  set({ f60: true, f60Err: "", screen: "secure" });
+}
+
 // ---- Aadhaar OTP (server mode) ----
 
 export async function sendAadhaarOtp() {
@@ -292,7 +324,7 @@ export function ctaLabel(): string | null {
   return q.mob !== "done" ? "Verify mobile number" : q.det !== "done" ? "Fill personal details"
     : sf === "rejected" ? "Retry Video KYC" : sf === "done" ? "Review and submit"
     : ad === "done" ? "Start Video KYC" : id === "done" ? "Upload address proof"
-    : id === "rejected" ? "Retake PAN photo" : q.panOk ? "Verify Aadhaar by OTP" : "Upload PAN photo";
+    : id === "rejected" ? (q.f60 ? "Retake ID photo" : "Retake PAN photo") : q.panOk ? "Verify Aadhaar by OTP" : q.f60 ? "Upload ID photo" : "Upload PAN photo";
 }
 
 export type { Screen };
