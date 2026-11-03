@@ -206,7 +206,7 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse, ur
     const r = await otp.send(mobile, email);
     if (r.ok) return send(res, 200, r);
     const status = r.reason === "invalid_mobile" || r.reason === "invalid_email" ? 400 : r.reason === "send_failed" ? 502 : 429;
-    return send(res, status, { error: r.reason, retryIn: r.retryIn });
+    return send(res, status, { error: r.reason, retryIn: r.retryIn, hint: r.hint, provider: r.provider });
   }
 
   if (url.pathname === "/api/handoff") {
