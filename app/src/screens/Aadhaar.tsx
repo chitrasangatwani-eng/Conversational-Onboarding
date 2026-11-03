@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { set, useAppState } from "../engine/store";
-import { aadhaarViaDigiLocker, backHome, sendAadhaarOtp, verifyAadhaarOtp } from "../engine/flow";
+import { aadhaarViaDigiLocker, chooseIdDoc, choosePan, sendAadhaarOtp, verifyAadhaarOtp } from "../engine/flow";
 
 // Secure Aadhaar OTP form. The full number goes only to the server, is never
 // shown to the assistant, and is cleared from the app once the OTP is sent.
@@ -21,12 +21,12 @@ export function AadhaarScreen() {
 
   return (
     <div className="screen">
-      <button className="back" onClick={backHome}>← Back</button>
+      <button className="back" onClick={chooseIdDoc}>← Back</button>
       <div className="screen-title">Verify Aadhaar</div>
       <div className="secure-note"><span style={{ fontFamily: "var(--mono)" }}>🔒</span>Secure form. The assistant never sees your Aadhaar number or OTP.</div>
       {s.aadStage === "enter" ? (
         <>
-          <div className="screen-lede">{s.f60 ? "Your ID photo is accepted." : "Your PAN photo is accepted."} Now we verify your Aadhaar with an OTP sent to the mobile linked to it. <button className="why" onClick={() => set({ why: "aadhaar" })}>Why we ask</button></div>
+          <div className="screen-lede">We'll send an OTP to the mobile linked to your Aadhaar. You don't need your PAN for this. <button className="why" onClick={() => set({ why: "aadhaar" })}>Why we ask</button></div>
           <input className="input big" value={group(s.aadNum)} onChange={(e) => set({ aadNum: e.target.value.replace(/\D/g, "").slice(0, 12), aadErr: "" })}
             inputMode="numeric" placeholder="1234 5678 9012" aria-label="Aadhaar number" autoComplete="off" style={{ letterSpacing: ".08em" }} />
           <button role="checkbox" aria-checked={s.aadConsent} onClick={() => set({ aadConsent: !s.aadConsent, aadErr: "" })}
@@ -36,7 +36,11 @@ export function AadhaarScreen() {
           </button>
           <div className="err" role="alert">{s.aadErr}</div>
           <button className={"btn-lg" + (ready ? "" : " is-off")} onClick={sendAadhaarOtp} aria-busy={s.aadBusy}>{s.aadBusy ? "Sending…" : "Send OTP"}</button>
-          <button className="link" onClick={aadhaarViaDigiLocker}>Use DigiLocker instead</button>
+          <div style={{ display: "flex", gap: 18 }}>
+            <button className="link" onClick={aadhaarViaDigiLocker} aria-busy={s.dlBusy}>{s.dlBusy ? "Waiting for DigiLocker…" : "Use DigiLocker instead"}</button>
+            <button className="link" onClick={choosePan}>Use PAN instead</button>
+          </div>
+          {s.dlErr && <div className="err" role="alert">{s.dlErr}</div>}
           <button className="demo-fill" onClick={() => set({ aadNum: DEMO_NUMBER, aadConsent: true, aadErr: "" })}>Demo: fill {group(DEMO_NUMBER)}</button>
         </>
       ) : (

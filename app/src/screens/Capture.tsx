@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { set, useAppState } from "../engine/store";
-import { backHome, captureKind, openForm60, submitCapture, useDigiLocker, usePanInstead } from "../engine/flow";
+import { backHome, captureKind, chooseAadhaar, chooseIdDoc, openForm60, submitCapture, useDigiLocker, usePanInstead } from "../engine/flow";
 import { useCamera } from "../engine/useCamera";
 
 // Secure capture for the PAN card and address proof. The image stays on the
@@ -33,7 +33,7 @@ export function CaptureScreen() {
 
   return (
     <div className="screen" style={{ overflow: "hidden" }}>
-      <button className="back" onClick={close(backHome)}>← Back</button>
+      <button className="back" onClick={close(kind === "pan" && !s.f60 ? chooseIdDoc : backHome)}>← Back</button>
       <div style={{ fontSize: 24, fontWeight: 600 }}>{copy.title}</div>
       <div style={{ fontSize: 13, color: "#3c4659", marginTop: -8 }}>{copy.hint} <button className="why" onClick={() => set({ why: kind })}>Why we ask</button></div>
       <div className="secure-note"><span style={{ fontFamily: "var(--mono)" }}>🔒</span>Secure upload. The assistant never sees this image, your PAN or your Aadhaar number.</div>
@@ -46,14 +46,17 @@ export function CaptureScreen() {
       <button className="btn-outline-lg" onClick={capture}>{shot ? "Retake" : cam ? "Capture photo" : camErr ? "Choose a photo" : "Capture photo"}</button>
       <div style={{ fontSize: 12, color: "#3c4659" }}>{s.weak && !s.mvp ? "Low-data mode: your photo is compressed before it uploads." : ""}</div>
       {s.addr !== "done" && !(kind === "pan" && s.f60) && (
-        <button className="btn-digi" onClick={useDigiLocker} aria-busy={s.dlBusy}>
+        <button className="btn-digi" onClick={() => useDigiLocker()} aria-busy={s.dlBusy}>
           {s.dlBusy ? "Waiting for DigiLocker… finish in its window" : "Use DigiLocker instead (no photo)"}
         </button>
       )}
       {s.dlErr && <div className="err" role="alert">{s.dlErr}</div>}
       {kind === "pan" && (s.f60
         ? <button className="link" style={{ alignSelf: "flex-start" }} onClick={close(usePanInstead)}>Have a PAN after all? Use your PAN</button>
-        : <button className="link" style={{ alignSelf: "flex-start" }} onClick={close(openForm60)}>Don't have a PAN? Fill Form 60 instead</button>)}
+        : <div style={{ display: "flex", flexWrap: "wrap", gap: "0 18px" }}>
+            <button className="link" onClick={close(chooseAadhaar)}>Use Aadhaar instead</button>
+            <button className="link" onClick={close(openForm60)}>No PAN? Fill Form 60</button>
+          </div>)}
       <button className="btn-block" onClick={close(submitCapture)}>Submit photo</button>
     </div>
   );

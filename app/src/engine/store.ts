@@ -7,7 +7,7 @@ import type { Msg } from "./types";
 
 export type StepState = "todo" | "pending" | "done" | "rejected";
 export type Fail = "none" | "blur" | "name" | "otp" | "video" | "security";
-export type Screen = "home" | "mobile" | "details" | "secure" | "aadhaar" | "form60" | "vkyc" | "fees" | "review";
+export type Screen = "home" | "mobile" | "details" | "secure" | "idchoice" | "aadhaar" | "form60" | "vkyc" | "fees" | "review";
 export type WhyKey = "" | "aadhaar" | "mobNum" | "dName" | "dDob" | "dEmail" | "dPin" | "pan" | "addr" | "vk";
 export type Field = "mobNum" | "otp" | "dName" | "dDob" | "dEmail" | "dPin";
 
@@ -46,8 +46,8 @@ export interface State {
   otpEmail: string;
   otpSentTo: string;
   dlBusy: boolean;
-  /** PAN photo accepted; Aadhaar OTP still to do (server mode). */
-  panOk: boolean;
+  /** Which document the applicant chose for the identity step. One is enough. */
+  idDoc: "" | "pan" | "aadhaar";
   /** Form 60 declared instead of a PAN; the identity step then takes another ID document. */
   f60: boolean;
   f60Reason: "" | "applied" | "none";
@@ -111,7 +111,7 @@ export interface State {
 const flowDefaults = {
   data: "fresh", down: false, why: "", hgoal: "", nudgeOff: {}, screen: "home", back: "home", sheet: false,
   helpOn: true, id: "todo", msgs: [], typing: false, draft: "", checks: [false, false, false, false],
-  mob: "todo", mobStage: "enter", mobNum: "", otp: "", otpErr: "", mobErr: "", otpNote: "", otpReq: "", otpDemo: "", otpBusy: false, resendAt: 0, mobToken: "", otpEmail: "", otpSentTo: "", dlBusy: false, dlErr: "", dlNote: "", panOk: false, f60: false, f60Reason: "", f60Ack: "", f60AckDate: "", f60Income: "", f60Agri: "", f60Consent: false, f60Err: "", aadStage: "enter", aadNum: "", aadConsent: false, aadOtp: "", aadRef: "", aadLast4: "", aadDemo: "", aadBusy: false, aadErr: "", aadResendAt: 0,
+  mob: "todo", mobStage: "enter", mobNum: "", otp: "", otpErr: "", mobErr: "", otpNote: "", otpReq: "", otpDemo: "", otpBusy: false, resendAt: 0, mobToken: "", otpEmail: "", otpSentTo: "", dlBusy: false, dlErr: "", dlNote: "", idDoc: "", f60: false, f60Reason: "", f60Ack: "", f60AckDate: "", f60Income: "", f60Agri: "", f60Consent: false, f60Err: "", aadStage: "enter", aadNum: "", aadConsent: false, aadOtp: "", aadRef: "", aadLast4: "", aadDemo: "", aadBusy: false, aadErr: "", aadResendAt: 0,
   det: "todo", dName: "Chitra Sangatwani", dDob: "14/08/1994", dEmail: "", dPin: "", dErr: "",
   addr: "todo", selfie: "todo", consent: false, submitted: false, reason: "", held: false, saved: false,
   fail: "blur", vk: "ready", vkT: 0, muted: false, feedback: {},
