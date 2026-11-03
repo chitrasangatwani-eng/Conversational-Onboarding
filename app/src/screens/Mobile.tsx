@@ -24,7 +24,7 @@ export function MobileScreen() {
   }, [s.resendAt]);
   const resendIn = Math.max(0, Math.ceil((s.resendAt - Date.now()) / 1000));
   const demoCode = s.otpDemo || "123456";
-  const mobErr = s.mobErr || (s.mobNum.length === 10 && !ok ? "Indian mobile numbers start with 6, 7, 8 or 9. Try 9876543210 for the demo." : "");
+  const mobErr = s.mobErr || (s.mobNum.length === 10 && !validMobile(s.mobNum) ? "Indian mobile numbers start with 6, 7, 8 or 9. Try 9876543210 for the demo." : "");
   return (
     <div className="screen">
       <button className="back" onClick={backHome}>← Back</button>
@@ -32,7 +32,7 @@ export function MobileScreen() {
       <div className="secure-note">Secure form. The assistant never sees your number or OTP.</div>
       {s.mobStage === "enter" ? (
         <>
-          <div className="screen-lede">Use the mobile number linked to your Aadhaar. We'll send a 6-digit OTP by SMS. {full ? VOICE_NOTE : ""} <button className="why" onClick={() => set({ why: "mobNum" })}>Why we ask</button></div>
+          <div className="screen-lede">{byEmail ? "Enter the mobile number linked to your Aadhaar, then your email address below. We'll email you a 6-digit OTP." : "Use the mobile number linked to your Aadhaar. We'll send a 6-digit OTP by SMS."} {full ? VOICE_NOTE : ""} <button className="why" onClick={() => set({ why: "mobNum" })}>Why we ask</button></div>
           <button className="demo-fill" onClick={() => set({ mobNum: "9876543210", mobErr: "" })}>Demo: fill 9876543210</button>
           <div className="field-row">
             <div className="input big" style={{ width: 72, flex: "none", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, letterSpacing: 0 }}>+91</div>
@@ -42,7 +42,7 @@ export function MobileScreen() {
           {byEmail && (
             <>
               <label>
-                <div className="field-head"><span>Email for your OTP</span></div>
+                <div className="field-head"><span>Email address (we'll send the OTP here)</span></div>
                 <input className="input" type="email" value={s.otpEmail} onChange={(e) => set({ otpEmail: e.target.value, mobErr: "" })} placeholder="name@example.com" autoComplete="email" aria-label="Email for your OTP" />
               </label>
               <div style={{ fontSize: 12, color: "#6b7370", lineHeight: 1.4 }}>Demo setup: SMS in India needs DLT business registration, so this version emails your OTP instead.</div>
