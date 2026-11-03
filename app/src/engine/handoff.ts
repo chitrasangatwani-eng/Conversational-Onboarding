@@ -1,4 +1,4 @@
-import { ApiError, BACKEND, post } from "./api";
+import { ApiError, backend, post } from "./api";
 
 // Creates a handoff ticket for a person on the support team. In "local" mode
 // (static demo) nothing is sent and the queue numbers are the design's examples.
@@ -10,7 +10,7 @@ export type HandoffResult =
 export async function createHandoff(input: {
   kind: "chat" | "callback"; share: boolean; summary: string[]; goal: string; language: string; mobileToken: string;
 }): Promise<HandoffResult> {
-  if (BACKEND === "local") return { ok: true, ticketId: "", position: 3, waitMinutes: 8 };
+  if (backend() === "local") return { ok: true, ticketId: "", position: 3, waitMinutes: 8 };
   try {
     const r = await post<{ ticketId: string; position: number; waitMinutes: number }>("/api/handoff", {
       kind: input.kind, share: input.share, language: input.language,

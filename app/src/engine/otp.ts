@@ -1,10 +1,9 @@
-import { ApiError, BACKEND, post } from "./api";
+import { ApiError, backend, post } from "./api";
 
 // Mobile OTP for the secure form. In "server" mode the backend creates, sends
 // and checks the code (see server/otp). In "local" mode, used for the static
 // demo site, nothing leaves the browser: any 6 digits work except 000000.
 
-export const OTP_MODE = BACKEND;
 
 export type OtpSend =
   | { ok: true; requestId: string; resendIn: number; sandboxCode?: string }
@@ -15,7 +14,7 @@ export type OtpVerify =
   | { ok: false; message: string; expired?: boolean };
 
 export async function requestOtp(mobile: string): Promise<OtpSend> {
-  if (OTP_MODE === "local") return { ok: true, requestId: "local", resendIn: 0, sandboxCode: "123456" };
+  if (backend() === "local") return { ok: true, requestId: "local", resendIn: 0, sandboxCode: "123456" };
   try {
     const r = await post<{ requestId: string; resendIn: number; sandboxCode?: string }>("/api/otp/send", { mobile });
     return { ok: true, requestId: r.requestId, resendIn: r.resendIn, sandboxCode: r.sandboxCode };
@@ -35,7 +34,7 @@ export async function requestOtp(mobile: string): Promise<OtpSend> {
 }
 
 export async function checkOtp(requestId: string, code: string): Promise<OtpVerify> {
-  if (OTP_MODE === "local") {
+  if (backend() === "local") {
     return code === "000000" ? { ok: false, message: "That OTP didn't match. Check the SMS and try again." } : { ok: true, token: "local" };
   }
   try {

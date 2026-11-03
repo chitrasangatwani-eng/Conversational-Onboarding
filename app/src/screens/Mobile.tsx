@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { set, useAppState } from "../engine/store";
 import { backHome, changeNumber, sendOtp, validMobile, verifyOtp } from "../engine/flow";
-import { OTP_MODE } from "../engine/otp";
+import { backend } from "../engine/api";
 import { ask, intentAadhaar } from "../engine/assistant";
 import { L } from "../engine/i18n";
 import { MicButton, VOICE_NOTE } from "./fields";
@@ -54,8 +54,8 @@ export function MobileScreen() {
             <button className="link" onClick={changeNumber}>Change number</button>
             <button className="link" onClick={() => { set({ sheet: true }); ask(L("I didn't get the OTP", "मुझे OTP नहीं मिला"), intentAadhaar()); }}>Didn't get the OTP?</button>
           </div>
-          {OTP_MODE === "server" && s.otpDemo && <div style={{ fontSize: 12, color: "#6b7370" }}>Sandbox mode: no SMS was sent. Use the demo button below.</div>}
-          {(OTP_MODE === "local" || s.otpDemo) && <button className="demo-fill" onClick={() => set({ otp: demoCode, otpErr: "" })}>Demo: fill OTP {demoCode}</button>}
+          {backend() === "server" && s.otpDemo && <div style={{ fontSize: 12, color: "#6b7370" }}>Sandbox mode: no SMS was sent. Use the demo button below.</div>}
+          {(backend() === "local" || s.otpDemo) && <button className="demo-fill" onClick={() => set({ otp: demoCode, otpErr: "" })}>Demo: fill OTP {demoCode}</button>}
         </>
       )}
     </div>

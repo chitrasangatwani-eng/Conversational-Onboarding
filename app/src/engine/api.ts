@@ -18,7 +18,22 @@ export async function post<T>(path: string, body: unknown): Promise<T> {
 /**
  * "server": integrations go through this app's backend (/api/otp, /api/handoff).
  * "local": the static demo (GitHub Pages) simulates them in the browser.
- * VITE_OTP_MODE=server is still accepted for older builds.
+ *
+ * Detected when the app starts: if the backend answers /api/health with its
+ * integrations, use it. VITE_BACKEND=server or =local forces a mode at build
+ * time (VITE_OTP_MODE=server is still accepted).
  */
-export const BACKEND: "server" | "local" =
-  import.meta.env.VITE_BACKEND === "server" || import.meta.env.VITE_OTP_MODE === "server" ? "server" : "local";
+let mode: "server" | "local" = "local";
+export const backend = () => mode;
+
+export async function detectBackend(): Promise<void> {
+  const forced = import.meta.env.VITE_BACKEND ?? (import.meta.env.VITE_OTP_MODE === "server" ? "server" : undefined);
+  if (forced === "server" || forced === "local") { mode = forced; return; }
+  try {
+    const r = await fetch(API_BASE + "/api/health", { signal: AbortSignal.timeout(4000) });
+    const h = (await r.json()) as { otp?: string; handoff?: string };
+    mode = r.ok && h.otp && h.handoff ? "server" : "local";
+  } catch {
+    mode = "local";
+  }
+}
