@@ -21,7 +21,7 @@ interface Pending { mobileKey: string; mobile10: string; codeHash: Buffer; expir
 
 export type SendResult =
   | { ok: true; requestId: string; maskedMobile: string; maskedEmail?: string; expiresIn: number; resendIn: number; sandboxCode?: string }
-  | { ok: false; reason: "invalid_mobile" | "invalid_email" | "too_soon" | "too_many_sends" | "send_failed"; retryIn?: number };
+  | { ok: false; reason: "invalid_mobile" | "invalid_email" | "too_soon" | "too_many_sends" | "send_failed"; retryIn?: number; hint?: SendHint; provider?: string };
 
 export type VerifyResult =
   | { ok: true; token: string }
@@ -65,7 +65,7 @@ export class OtpService {
       if (byEmail) console.log(`[otp:${this.provider.name}] code for ${mask(mobile10)} emailed to ${maskEmail(email)}`);
     } catch (e) {
       console.error(`[otp:${this.provider.name}] send to ${byEmail ? maskEmail(email) : mask(mobile10)} failed:`, (e as Error).message);
-      return { ok: false, reason: "send_failed" };
+      return { ok: false, reason: "send_failed", hint: sendHint(this.provider.name, (e as Error).message), provider: this.provider.name };
     }
     // A new code replaces any earlier one for the same number.
     for (const [id, p] of this.pending) if (p.mobileKey === mobileKey) this.pending.delete(id);
@@ -115,4 +115,19 @@ export class OtpService {
     for (const [id, p] of this.pending) if (now > p.expires) this.pending.delete(id);
     for (const [k, ts] of this.sends) if (!ts.some((t) => now - t < 3_600_000)) this.sends.delete(k);
   }
+}
+
+/** Why a provider refused a send, as a fixed category the app can explain. Never includes keys, addresses or provider text. */
+export type SendHint = "smtp_blocked" | "recipient_not_allowed" | "ip_blocked" | "sender_not_verified" | "bad_key" | "account_not_active" | "provider_rate_limit" | "other";
+
+export function sendHint(provider: string, message: string): SendHint {
+  const m = message.toLowerCase();
+  if (provider === "smtp" && /timeout|timed out|etimedout|econnrefused|econnreset|enetunreach|connection|greeting/.test(m)) return "smtp_blocked";
+  if (/only send testing emails|own email address|verify a domain|recipient.*not allowed/.test(m)) return "recipient_not_allowed";
+  if (/unrecogni[sz]ed ip|authori[sz]ed ip|ip address/.test(m)) return "ip_blocked";
+  if (/not yet activated|not activated|suspended|account.*(blocked|disabled)/.test(m)) return "account_not_active";
+  if (/sender|from address|from field|domain.*not verified|not verified|dkim|dmarc/.test(m)) return "sender_not_verified";
+  if (/\b401\b|unauthori[sz]ed|api key|api-key|key not found|invalid key|invalid_api_key|authentication|535/.test(m)) return "bad_key";
+  if (/\b429\b|rate limit|too many/.test(m)) return "provider_rate_limit";
+  return "other";
 }
