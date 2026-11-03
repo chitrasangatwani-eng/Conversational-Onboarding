@@ -7,8 +7,8 @@ import type { Msg } from "./types";
 
 export type StepState = "todo" | "pending" | "done" | "rejected";
 export type Fail = "none" | "blur" | "name" | "otp" | "video" | "security";
-export type Screen = "home" | "mobile" | "details" | "secure" | "vkyc" | "fees" | "review";
-export type WhyKey = "" | "mobNum" | "dName" | "dDob" | "dEmail" | "dPin" | "pan" | "addr" | "vk";
+export type Screen = "home" | "mobile" | "details" | "secure" | "aadhaar" | "vkyc" | "fees" | "review";
+export type WhyKey = "" | "aadhaar" | "mobNum" | "dName" | "dDob" | "dEmail" | "dPin" | "pan" | "addr" | "vk";
 export type Field = "mobNum" | "otp" | "dName" | "dDob" | "dEmail" | "dPin";
 
 export interface State {
@@ -43,6 +43,18 @@ export interface State {
   /** Signed proof from the server that the mobile was verified. */
   mobToken: string;
   dlBusy: boolean;
+  /** PAN photo accepted; Aadhaar OTP still to do (server mode). */
+  panOk: boolean;
+  aadStage: "enter" | "otp";
+  aadNum: string;
+  aadConsent: boolean;
+  aadOtp: string;
+  aadRef: string;
+  aadLast4: string;
+  aadDemo: string;
+  aadBusy: boolean;
+  aadErr: string;
+  aadResendAt: number;
   dlErr: string;
   /** What DigiLocker supplied, shown on the step (masked). */
   dlNote: string;
@@ -87,7 +99,7 @@ export interface State {
 const flowDefaults = {
   data: "fresh", down: false, why: "", hgoal: "", nudgeOff: {}, screen: "home", back: "home", sheet: false,
   helpOn: true, id: "todo", msgs: [], typing: false, draft: "", checks: [false, false, false, false],
-  mob: "todo", mobStage: "enter", mobNum: "", otp: "", otpErr: "", mobErr: "", otpNote: "", otpReq: "", otpDemo: "", otpBusy: false, resendAt: 0, mobToken: "", dlBusy: false, dlErr: "", dlNote: "",
+  mob: "todo", mobStage: "enter", mobNum: "", otp: "", otpErr: "", mobErr: "", otpNote: "", otpReq: "", otpDemo: "", otpBusy: false, resendAt: 0, mobToken: "", dlBusy: false, dlErr: "", dlNote: "", panOk: false, aadStage: "enter", aadNum: "", aadConsent: false, aadOtp: "", aadRef: "", aadLast4: "", aadDemo: "", aadBusy: false, aadErr: "", aadResendAt: 0,
   det: "todo", dName: "Chitra Sangatwani", dDob: "14/08/1994", dEmail: "", dPin: "", dErr: "",
   addr: "todo", selfie: "todo", consent: false, submitted: false, reason: "", held: false, saved: false,
   fail: "blur", vk: "ready", vkT: 0, muted: false, feedback: {},

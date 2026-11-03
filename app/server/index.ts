@@ -10,6 +10,8 @@
 // Secure-form integrations (identity data, never shown to the assistant):
 //   POST /api/otp/send    { mobile }            -> { requestId, maskedMobile, expiresIn, resendIn, sandboxCode? }
 //   POST /api/otp/verify  { requestId, code }   -> { verified, token? , reason?, attemptsLeft? }
+//   POST /api/aadhaar/otp     { aadhaar, consent: true }      -> { ref, last4, sandboxCode? }
+//   POST /api/aadhaar/verify  { ref, otp, expectedName }      -> { verified, last4, nameMatch, pincode, state }
 //   POST /api/digilocker/start  { purpose, expectedName } -> { state, url }   (open url in a window)
 //   GET  /api/digilocker/callback (DigiLocker redirects here)  POST /api/digilocker/result { state }
 //   POST /api/handoff     { kind, language, share, summary[], goal, mobileToken? } -> { ticketId, position, waitMinutes }
@@ -27,10 +29,12 @@ import { OtpService } from "./otp/service";
 import { providerFromEnv } from "./otp/providers";
 import { HandoffService } from "./handoff/service";
 import { DigiLockerService, callbackPage, sandboxConsentPage } from "./digilocker/service";
+import { AadhaarService } from "./aadhaar/service";
 
 const otp = new OtpService(providerFromEnv());
 const handoff = new HandoffService();
 const digilocker = new DigiLockerService();
+const aadhaar = new AadhaarService();
 
 /** This server's public origin (Render sits behind a proxy that sets x-forwarded-proto). */
 const originOf = (req: http.IncomingMessage) =>
@@ -214,6 +218,18 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse, ur
     return send(res, r.reason === "delivery_failed" ? 502 : r.reason === "sensitive" ? 422 : 400, { error: r.reason });
   }
 
+  if (url.pathname === "/api/aadhaar/otp") {
+    const r = await aadhaar.start(body?.aadhaar, body?.consent);
+    if (r.ok) return send(res, 200, r);
+    const status = r.reason === "provider_error" ? 502 : r.reason === "too_soon" ? 429 : 400;
+    return send(res, status, { error: r.reason, retryIn: r.retryIn });
+  }
+
+  if (url.pathname === "/api/aadhaar/verify") {
+    const r = await aadhaar.verify(body?.ref, typeof body?.otp === "string" ? body.otp.trim() : "", body?.expectedName);
+    return send(res, r.ok ? 200 : r.reason === "provider_error" ? 502 : 200, r.ok ? { verified: true, ...r } : { verified: false, reason: r.reason, attemptsLeft: r.attemptsLeft });
+  }
+
   if (url.pathname === "/api/digilocker/start") {
     const r = digilocker.start(body?.purpose, body?.expectedName, originOf(req));
     return r ? send(res, 200, r) : send(res, 400, { error: "invalid" });
@@ -299,7 +315,7 @@ export function takeCall(): boolean {
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url || "/", "http://localhost");
-  if (url.pathname === "/api/health") { send(res, 200, { ok: true, model: MODEL, key: !!process.env.ANTHROPIC_API_KEY, otp: otp.providerName, handoff: handoff.providerName, digilocker: digilocker.providerName }); return; }
+  if (url.pathname === "/api/health") { send(res, 200, { ok: true, model: MODEL, key: !!process.env.ANTHROPIC_API_KEY, otp: otp.providerName, handoff: handoff.providerName, digilocker: digilocker.providerName, aadhaar: aadhaar.providerName }); return; }
   // Pages opened in the DigiLocker consent window (top-level navigations, so no CORS check).
   if (req.method === "GET" && url.pathname === "/api/digilocker/sandbox" && digilocker.providerName === "sandbox") {
     res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });

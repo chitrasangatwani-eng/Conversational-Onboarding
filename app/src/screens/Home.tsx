@@ -9,7 +9,7 @@ const CODE: Record<string, string> = { blur: "ID-204", name: "ID-310", otp: "ID-
 
 function steps(s: State): Step[] {
   const { mob, det, id, addr: ad, selfie: sf } = s;
-  const idSub = id === "done" ? "Verified · Aadhaar via OTP" : id === "rejected" ? "Not accepted · " + (CODE[s.reason] || "ID-204") : id === "pending" ? "Submitted · in verification" : det !== "done" ? "Locked until details are saved" : "Photo of PAN · Aadhaar by OTP";
+  const idSub = id === "done" ? "Verified · Aadhaar via OTP" : id === "rejected" ? "Not accepted · " + (CODE[s.reason] || "ID-204") : id === "pending" ? "Submitted · in verification" : det !== "done" ? "Locked until details are saved" : s.panOk ? "PAN accepted · Aadhaar OTP next" : "Photo of PAN · Aadhaar by OTP";
   return [
     { n: 1, label: "Mobile number", sub: mob === "done" ? "Verified by OTP" : "About 1 minute", look: mob === "done" ? "done" : "cur" },
     { n: 2, label: "Personal details", sub: det === "done" ? "Saved" : mob === "done" ? "Pre-filled · about 1 minute" : "Locked until mobile verified", look: det === "done" ? "done" : mob === "done" ? "cur" : "x" },

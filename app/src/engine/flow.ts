@@ -3,6 +3,7 @@ import { L, clearFailures, loadLang } from "./i18n";
 import { checkOtp, requestOtp } from "./otp";
 import { backend } from "./api";
 import { fetchFromDigiLocker } from "./digilocker";
+import { checkAadhaarOtp, requestAadhaarOtp } from "./aadhaar";
 import { ask, greet, intentFix, intentHandoff } from "./assistant";
 import { stopListen, stopSpeak } from "./voice";
 
@@ -23,6 +24,7 @@ export function goSecure() {
   if (q.det !== "done") { set({ screen: "details", sheet: false, dErr: "" }); return; }
   if (q.addr === "done" && q.selfie !== "done" && q.selfie !== "pending") { set({ screen: "vkyc", sheet: false, vk: "ready", vkT: 0, muted: false }); return; }
   if (q.selfie === "done") { set({ screen: "review", sheet: false, consent: false }); return; }
+  if (q.panOk && q.id === "todo") { set({ screen: "aadhaar", sheet: false, aadErr: "" }); return; }
   set({ screen: "secure", sheet: false, dlErr: "" });
 }
 
@@ -135,9 +137,45 @@ export function submitCapture() {
   }
   const f = q.fail;
   if (f === "blur" || f === "name" || f === "otp") { set({ screen: "home", id: "rejected", reason: f, fail: "none" }); return; }
+  // With a backend, Aadhaar is then verified by OTP before the step completes.
+  if (backend() === "server") {
+    set({ screen: "aadhaar", panOk: true, id: "todo", aadStage: "enter", aadOtp: "", aadErr: "", aadRef: "", aadDemo: "" });
+    return;
+  }
   set({ screen: "home", id: "pending" });
   later(() => set({ id: "done" }), 4000);
 }
+
+// ---- Aadhaar OTP (server mode) ----
+
+export async function sendAadhaarOtp() {
+  const q = get();
+  if (q.aadBusy) return;
+  set({ aadBusy: true, aadErr: "" });
+  const r = await requestAadhaarOtp(q.aadNum, q.aadConsent);
+  if (!r.ok) { set({ aadBusy: false, aadErr: r.message }); return; }
+  set({
+    aadBusy: false, aadStage: "otp", aadRef: r.ref, aadLast4: r.last4, aadDemo: r.sandboxCode ?? "", aadOtp: "",
+    aadNum: "", // the full number isn't kept in the app once the OTP is requested
+    aadResendAt: Date.now() + 30_000,
+  });
+}
+
+export async function verifyAadhaarOtp() {
+  const q = get();
+  if (q.aadBusy) return;
+  if (q.aadOtp.length !== 6) { set({ aadErr: "Enter all 6 digits." }); return; }
+  set({ aadBusy: true, aadErr: "" });
+  const r = await checkAadhaarOtp(q.aadRef, q.aadOtp, q.dName);
+  if (!r.ok) { set({ aadBusy: false, aadErr: r.message, ...(r.restart ? { aadStage: "enter", aadOtp: "", aadRef: "", aadDemo: "" } : {}) }); return; }
+  set({ aadBusy: false, aadRef: "", aadDemo: "", aadOtp: "" });
+  if (!r.nameMatch) { set({ screen: "home", id: "rejected", reason: "name", panOk: false }); return; }
+  set({ screen: "home", id: "pending", panOk: false, dlNote: `Aadhaar ending ${r.last4} verified by OTP` + (r.pincode ? ` (PIN ${r.pincode}${r.state ? ", " + r.state : ""})` : "") });
+  later(() => set({ id: "done" }), 1500);
+}
+
+/** From the Aadhaar screen: use DigiLocker instead (it carries the verified Aadhaar). */
+export const aadhaarViaDigiLocker = () => set({ screen: "secure", aadErr: "", dlErr: "" });
 
 /** "Fetch from DigiLocker instead" on the PAN and address steps. Must be called from the click. */
 export function useDigiLocker() {
@@ -160,8 +198,8 @@ export function useDigiLocker() {
     const d = r.summary;
     if (purpose === "pan") {
       if (!d.panIssued) { set({ dlErr: "No PAN card was found in your DigiLocker. Upload a photo of your PAN instead." }); return; }
-      if (!d.nameMatch) { set({ screen: "home", id: "rejected", reason: "name" }); return; }
-      set({ screen: "home", id: "pending", dlNote: "PAN ending " + (d.panLast4 ?? "") + " fetched from DigiLocker" });
+      if (!d.nameMatch) { set({ screen: "home", id: "rejected", reason: "name", panOk: false }); return; }
+      set({ screen: "home", id: "pending", panOk: false, dlNote: "PAN ending " + (d.panLast4 ?? "") + " fetched from DigiLocker" });
       later(() => set({ id: "done" }), 1500);
       return;
     }
@@ -249,7 +287,7 @@ export function ctaLabel(): string | null {
   return q.mob !== "done" ? "Verify mobile number" : q.det !== "done" ? "Fill personal details"
     : sf === "rejected" ? "Retry Video KYC" : sf === "done" ? "Review and submit"
     : ad === "done" ? "Start Video KYC" : id === "done" ? "Upload address proof"
-    : id === "rejected" ? "Retake PAN photo" : "Upload PAN photo";
+    : id === "rejected" ? "Retake PAN photo" : q.panOk ? "Verify Aadhaar by OTP" : "Upload PAN photo";
 }
 
 export type { Screen };

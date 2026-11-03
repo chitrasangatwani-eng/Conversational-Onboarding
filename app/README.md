@@ -37,7 +37,8 @@ Each real-world service connects through the backend with one connector per serv
 | Service | Status | Settings |
 | --- | --- | --- |
 | Mobile OTP by SMS | Built. Sandbox by default; MSG91 and Twilio connectors included but not yet tried against live accounts. | `OTP_PROVIDER` = `sandbox` / `msg91` / `twilio`, `OTP_SECRET`, and that provider's keys (see `server/otp/providers.ts`). App build: `VITE_BACKEND=server`. |
-| PAN and Aadhaar checks | Simulated in the app | Needs a licensed KYC provider; Aadhaar OTP is limited to UIDAI-approved entities. |
+| Aadhaar OTP | Built. Sandbox only; the connector for your provider is added once you choose one. | `AADHAAR_PROVIDER` = `sandbox`. Needs a KYC provider holding a UIDAI licence (Setu, Surepass, Signzy, IDfy…). |
+| PAN check | Photo or DigiLocker | A PAN verification API from the same KYC provider can be added the same way. |
 | DigiLocker | Built. Sandbox by default (DigiLocker-style consent page with sample data); official DigiLocker connector included but not yet run against DigiLocker. | `DIGILOCKER_PROVIDER` = `sandbox` / `digilocker`, with `DIGILOCKER_CLIENT_ID`, `DIGILOCKER_CLIENT_SECRET`, `DIGILOCKER_REDIRECT_URI` (as registered with DigiLocker), optional `DIGILOCKER_BASE_URL`. Needs approval as a DigiLocker partner. |
 | Video KYC | Simulated | Needs an RBI-compliant Video KYC vendor. |
 | Human handoff | Built. Sandbox by default; webhook and Slack destinations included. | `HANDOFF_PROVIDER` = `sandbox` / `webhook` / `slack`, with `HANDOFF_WEBHOOK_URL` (+ optional `HANDOFF_WEBHOOK_SECRET`) or `HANDOFF_SLACK_WEBHOOK_URL`. |
@@ -66,6 +67,14 @@ A successful check returns a signed token. Codes are kept in memory, so running 
 - **What the app never receives:** full numbers or documents. The assistant never sees any of it.
 - **Name mismatch:** this is treated as ID-310 (name differs).
 - **Before going live:** the real connector follows DigiLocker's Requester API (`/public/oauth2/1/authorize`, `/1/token`, `/2/files/issued`, `/3/xml/eaadhaar`). Check those paths and fields against the specification issued with your partner credentials.
+
+**Aadhaar OTP.** With a backend, an accepted PAN photo leads to a secure Aadhaar screen.
+- **Flow:** the applicant enters their Aadhaar number and ticks the consent box. An OTP goes to the Aadhaar-linked mobile, and the verified name is compared with the PAN name. A mismatch is treated as ID-310.
+- **Number handling:** the number is checked with the Aadhaar Verhoeff checksum and sent once to the server. It's cleared from the app after the OTP request, and it is never stored or logged. The server keeps only a keyed hash and the last 4 digits while the OTP is pending.
+- **Limits:** the OTP expires after 10 minutes and allows 5 tries. A new OTP can be requested after 30 seconds.
+- **Sandbox test numbers:** `2345 6789 0124` is the normal case, and `9876 5009 0000` returns a different name.
+- **DigiLocker:** applicants who use DigiLocker skip this screen, because DigiLocker already provides the verified Aadhaar.
+- **Adding a real provider:** implement `AadhaarProvider` (`requestOtp`, `verifyOtp`) in `server/aadhaar/service.ts` against your provider's API.
 
 **Backend modes.** When the app starts, it checks `/api/health`. If the backend answers, OTP and handoff go through it. If not, as on GitHub Pages, they are simulated in the browser: in the OTP demo any 6 digits work except `000000`. `VITE_BACKEND=server` or `VITE_BACKEND=local` forces a mode at build time.
 

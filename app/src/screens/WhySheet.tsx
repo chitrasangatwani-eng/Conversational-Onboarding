@@ -7,6 +7,7 @@ const WHY: Record<string, [what: string, why: string, ifNot: string]> = {
   dDob: ["Your date of birth", "To confirm you are 18 or older and to match your records.", "We can't confirm your age or match your records."],
   dEmail: ["Your email", "To send your account documents and updates.", "You can still continue. Updates would come by SMS only (placeholder)."],
   dPin: ["Your PIN code", "To check your address and route your application.", "We can't complete the address check."],
+  aadhaar: ["Your Aadhaar number", "To verify your identity and address with UIDAI by an OTP to your Aadhaar-linked mobile, as KYC allows.", "You can use DigiLocker or another document instead (placeholder, Compliance to confirm)."],
   pan: ["Your PAN card photo", "To verify your tax identity, which KYC requires for an account.", "We can't verify your identity, so you can't continue online."],
   addr: ["Your address document", "To confirm where you live, as KYC requires.", "We can't complete the address check."],
   vk: ["Your live video", "To confirm you are the person in your documents.", "We can't finish identity verification online. You could use an assisted centre."],
