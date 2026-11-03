@@ -23,8 +23,10 @@ services:
       - key: NODE_VERSION
         value: "22"
       # Mobile OTP integration. sandbox shows the code in the app and sends no SMS.
-      # For real SMS set OTP_PROVIDER to msg91 or twilio and add that provider's keys
-      # (see app/server/otp/providers.ts).
+      # Real delivery: msg91 or twilio (SMS, needs DLT in India), or smtp / resend
+      # to email the code (no business registration needed). For Gmail set
+      # OTP_PROVIDER=smtp, SMTP_USER=you@gmail.com, SMTP_PASS=<Gmail app password>.
+      # See app/server/otp/providers.ts.
       - key: VITE_BACKEND
         value: server
       - key: OTP_PROVIDER

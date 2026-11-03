@@ -6,26 +6,27 @@ import { ApiError, backend, post } from "./api";
 
 
 export type OtpSend =
-  | { ok: true; requestId: string; resendIn: number; sandboxCode?: string }
+  | { ok: true; requestId: string; resendIn: number; sandboxCode?: string; maskedEmail?: string }
   | { ok: false; message: string };
 
 export type OtpVerify =
   | { ok: true; token: string }
   | { ok: false; message: string; expired?: boolean };
 
-export async function requestOtp(mobile: string): Promise<OtpSend> {
+export async function requestOtp(mobile: string, email = ""): Promise<OtpSend> {
   if (backend() === "local") return { ok: true, requestId: "local", resendIn: 0, sandboxCode: "123456" };
   try {
-    const r = await post<{ requestId: string; resendIn: number; sandboxCode?: string }>("/api/otp/send", { mobile });
-    return { ok: true, requestId: r.requestId, resendIn: r.resendIn, sandboxCode: r.sandboxCode };
+    const r = await post<{ requestId: string; resendIn: number; sandboxCode?: string; maskedEmail?: string }>("/api/otp/send", { mobile, ...(email ? { email } : {}) });
+    return { ok: true, requestId: r.requestId, resendIn: r.resendIn, sandboxCode: r.sandboxCode, maskedEmail: r.maskedEmail };
   } catch (e) {
     if (e instanceof ApiError) {
       const wait = Number(e.body.retryIn) || 0;
       switch (e.body.error) {
         case "invalid_mobile": return { ok: false, message: "Enter a valid 10-digit Indian mobile number." };
+        case "invalid_email": return { ok: false, message: "Enter a valid email address to receive your OTP." };
         case "too_soon": return { ok: false, message: `Please wait ${wait} seconds before asking for another OTP.` };
         case "too_many_sends": return { ok: false, message: `Too many OTP requests for this number. Try again in ${Math.ceil(wait / 60)} minutes, or talk to a person.` };
-        case "send_failed": return { ok: false, message: "We couldn't send the SMS just now. Try again in a minute." };
+        case "send_failed": return { ok: false, message: email ? "We couldn't send the email just now. Check the address, or try again in a minute." : "We couldn't send the SMS just now. Try again in a minute." };
       }
       if (e.status === 429) return { ok: false, message: "Too many requests. Please wait a minute and try again." };
     }

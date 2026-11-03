@@ -1,7 +1,7 @@
 import { get, set, resetFlow, type Screen } from "./store";
 import { L, clearFailures, loadLang } from "./i18n";
 import { checkOtp, requestOtp } from "./otp";
-import { backend } from "./api";
+import { backend, otpChannel } from "./api";
 import { fetchFromDigiLocker } from "./digilocker";
 import { checkAadhaarOtp, requestAadhaarOtp } from "./aadhaar";
 import { ask, greet, intentFix, intentHandoff } from "./assistant";
@@ -71,12 +71,17 @@ export async function sendOtp(resend = false) {
   const q = get();
   if (q.otpBusy) return;
   if (!validMobile(q.mobNum)) { set({ mobErr: "Enter a valid 10-digit Indian mobile number." }); return; }
+  const email = otpChannel() === "email" ? q.otpEmail.trim() : "";
+  if (otpChannel() === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { set({ mobErr: "Enter a valid email address to receive your OTP." }); return; }
   set({ otpBusy: true, mobErr: "", otpErr: "" });
-  const r = await requestOtp(q.mobNum);
+  const r = await requestOtp(q.mobNum, email);
   if (!r.ok) { set(resend ? { otpBusy: false, otpErr: r.message } : { otpBusy: false, mobErr: r.message }); return; }
   set({
     otpBusy: false, mobStage: "otp", otp: "", otpReq: r.requestId, otpDemo: r.sandboxCode ?? "",
     resendAt: Date.now() + r.resendIn * 1000, otpNote: resend ? "A new OTP was sent." : "",
+    otpSentTo: r.maskedEmail ?? "",
+    // The address doubles as the email on the personal details step.
+    ...(email && !get().dEmail ? { dEmail: email } : {}),
   });
 }
 
