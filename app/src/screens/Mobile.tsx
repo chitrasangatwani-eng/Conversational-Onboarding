@@ -45,7 +45,7 @@ export function MobileScreen() {
                 <div className="field-head"><span>Email address (we'll send the OTP here)</span></div>
                 <input className="input" type="email" value={s.otpEmail} onChange={(e) => set({ otpEmail: e.target.value, mobErr: "" })} placeholder="name@example.com" autoComplete="email" aria-label="Email for your OTP" />
               </label>
-              <div style={{ fontSize: 12, color: "#6b7370", lineHeight: 1.4 }}>Demo setup: SMS in India needs DLT business registration, so this version emails your OTP instead.</div>
+              <div style={{ fontSize: 12, color: "#5f6b80", lineHeight: 1.4 }}>Demo setup: SMS in India needs DLT business registration, so this version emails your OTP instead.</div>
             </>
           )}
           <div className="err" role="alert">{mobErr}</div>
@@ -61,11 +61,11 @@ export function MobileScreen() {
           <div className="err" role="alert">{s.otpErr}</div>
           <button className={"btn-lg" + (s.otp.length === 6 ? "" : " is-off")} onClick={verifyOtp} aria-busy={s.otpBusy}>{s.otpBusy ? "Checking…" : "Verify"}</button>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px" }}>
-            <button className="link-strong" style={{ textDecoration: "none", ...(resendIn ? { color: "#6b7370", cursor: "default" } : {}) }} aria-disabled={!!resendIn} onClick={() => { if (!resendIn) sendOtp(true); }}>{resendIn ? `Resend OTP in ${resendIn}s` : "Resend OTP"}</button>
+            <button className="link-strong" style={{ textDecoration: "none", ...(resendIn ? { color: "#5f6b80", cursor: "default" } : {}) }} aria-disabled={!!resendIn} onClick={() => { if (!resendIn) sendOtp(true); }}>{resendIn ? `Resend OTP in ${resendIn}s` : "Resend OTP"}</button>
             <button className="link" onClick={changeNumber}>Change number</button>
             <button className="link" onClick={() => { set({ sheet: true }); ask(L("I didn't get the OTP", "मुझे OTP नहीं मिला"), intentAadhaar()); }}>Didn't get the OTP?</button>
           </div>
-          {backend() === "server" && s.otpDemo && <div style={{ fontSize: 12, color: "#6b7370" }}>Sandbox mode: no SMS was sent. Use the demo button below.</div>}
+          {backend() === "server" && s.otpDemo && <div style={{ fontSize: 12, color: "#5f6b80" }}>Sandbox mode: no SMS was sent. Use the demo button below.</div>}
           {(backend() === "local" || s.otpDemo) && <button className="demo-fill" onClick={() => set({ otp: demoCode, otpErr: "" })}>Demo: fill OTP {demoCode}</button>}
         </>
       )}

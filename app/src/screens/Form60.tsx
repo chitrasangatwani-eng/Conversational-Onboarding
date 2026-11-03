@@ -42,7 +42,7 @@ export function Form60Screen() {
       {s.f60Reason && <Opts label="Any agricultural income?" value={s.f60Agri} options={[["yes", "Yes"], ["no", "No"]]} onPick={(v) => set({ f60Agri: v, f60Err: "" })} />}
 
       {s.f60Reason && (
-        <button role="checkbox" aria-checked={s.f60Consent} onClick={() => set({ f60Consent: !s.f60Consent, f60Err: "" })} style={{ display: "flex", gap: 10, alignItems: "flex-start", textAlign: "left", border: 0, background: "none", font: "inherit", fontSize: 13, lineHeight: 1.45, padding: 0, cursor: "pointer", color: "#4a534f" }}>
+        <button role="checkbox" aria-checked={s.f60Consent} onClick={() => set({ f60Consent: !s.f60Consent, f60Err: "" })} style={{ display: "flex", gap: 10, alignItems: "flex-start", textAlign: "left", border: 0, background: "none", font: "inherit", fontSize: 13, lineHeight: 1.45, padding: 0, cursor: "pointer", color: "#3c4659" }}>
           <span className={"box" + (s.f60Consent ? " on" : "")}>{s.f60Consent ? "✓" : ""}</span>
           I declare I don't have a PAN and this is true. A false Form 60 declaration is an offence. (Placeholder, Legal to approve.)
         </button>

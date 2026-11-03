@@ -12,7 +12,7 @@ export function DemoPanel() {
       <div className="demo-eyebrow">PROTOTYPE · PRD v2</div>
       <div className="demo-title">Onboarding assistant<span className="tag">{s.mvp ? "MVP" : "FULL"}</span></div>
       <button className="ctl" onClick={() => set({ mvp: !s.mvp, ...(!s.mvp && ["otp", "video", "security"].includes(s.fail) ? { fail: "blur" as Fail } : {}) })} aria-pressed={s.mvp}>
-        Scope: <b>{s.mvp ? "MVP" : "Full"}</b> <span style={{ color: "#6b7370" }}>· switch to {s.mvp ? "full" : "MVP"}</span>
+        Scope: <b>{s.mvp ? "MVP" : "Full"}</b> <span style={{ color: "#5f6b80" }}>· switch to {s.mvp ? "full" : "MVP"}</span>
       </button>
       {s.mvp && (
         <details className="demo-fold"><summary>What's in the MVP</summary><div className="demo-scope">

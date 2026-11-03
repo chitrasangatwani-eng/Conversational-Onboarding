@@ -25,7 +25,7 @@ export function WhySheet() {
         <div style={{ marginTop: 8, fontSize: 13.5, lineHeight: 1.5 }}>
           <b>Why:</b> {why}<br /><b>Legal basis:</b> KYC rules for opening an account (placeholder, Legal to confirm).<br /><b>If you don't provide it:</b> {ifNot}
         </div>
-        <div style={{ marginTop: 8, fontFamily: "var(--mono)", fontSize: 11, color: "#6b7370" }}>Source: Data request explanations · v1.0 · 1 Sep 2026</div>
+        <div style={{ marginTop: 8, fontFamily: "var(--mono)", fontSize: 11, color: "#5f6b80" }}>Source: Data request explanations · v1.0 · 1 Sep 2026</div>
         <button className="btn" style={{ marginTop: 10, width: "100%" }} onClick={close} autoFocus>Got it</button>
       </div>
     </>
