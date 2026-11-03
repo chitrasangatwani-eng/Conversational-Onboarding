@@ -15,17 +15,18 @@ export function DemoPanel() {
         Scope: <b>{s.mvp ? "MVP" : "Full"}</b> <span style={{ color: "#6b7370" }}>· switch to {s.mvp ? "full" : "MVP"}</span>
       </button>
       {s.mvp && (
-        <div className="demo-scope">
+        <details className="demo-fold"><summary>What's in the MVP</summary><div className="demo-scope">
           <b>In the MVP</b><br />Verified status and next step<br />Plain-language help and "Why we ask"<br />Recovery for 2 frequent errors<br />DigiLocker fetch for PAN and address<br />Human handoff with reviewed summary<br />Secure forms, AI label, opt-out, offline fallback<br />Voice help in 10 Indian languages
           <b style={{ display: "block", marginTop: 6 }}>Deferred</b>Voice form entry, weak-network mode, proactive prompts, fee sheet, call-back and assisted centres
-        </div>
+        </div></details>
       )}
       {backend() === "local" && (
         <div className="demo-scope" role="note" style={{ background: "oklch(0.95 0.03 60)", borderColor: "oklch(0.85 0.05 60)" }}>
-          <b>Demo mode.</b> This copy runs only in your browser, so the mobile OTP and "Talk to a person" are simulated. The hosted version with a server checks OTPs and creates real handoff tickets.
+          <b>Demo mode.</b> OTP and handoff are simulated in this copy.
         </div>
       )}
-      <div className="demo-note">The flow is the system of record. Help is optional, reads verified state, and never approves anything. Try the chips, type a question, or paste a number.</div>
+      <details className="demo-fold"><summary>Demo controls</summary><div className="demo-fold-body">
+      <div className="demo-note">The flow is the system of record. Help is optional, reads verified state, and never approves anything.</div>
       <label className="ctl-label">Next failure to simulate
         <select className="ctl-select" value={s.fail} onChange={(e) => set({ fail: e.target.value as Fail })}>
           <option value="none">None (everything passes)</option>
@@ -47,6 +48,7 @@ export function DemoPanel() {
         </select>
       </label>
       <button className="ctl" onClick={() => set({ down: !s.down })}>Assistant service down: <b>{s.down ? "On" : "Off"}</b></button>
+      </div></details>
       <button className="ctl ctl-ghost" onClick={resetPrototype}>Reset prototype</button>
     </div>
   );

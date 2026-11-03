@@ -46,11 +46,7 @@ export function Home() {
   return (
     <>
       <div className="home">
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-          <div className="avatar">CS</div>
-          <div style={{ flex: 1 }}><div style={{ fontSize: 15, fontWeight: 600 }}>Chitra Sangatwani</div><div style={{ fontSize: 12, color: "#6b7370" }}>Signed in · Applicant</div></div>
-        </div>
-        <div style={{ fontSize: 13, color: "#6b7370" }}>Welcome back, Chitra. Open your account</div>
+        <div style={{ fontSize: 13, color: "#6b7370", marginTop: 6 }}>Hi Chitra · Open your account</div>
         <div style={{ fontSize: 28, fontWeight: 600, lineHeight: 1.1, margin: "4px 0 14px" }}>{done} of 6 steps done</div>
         <div className="progress"><div style={{ width: (done / 6) * 100 + "%" }} /></div>
 
@@ -63,14 +59,8 @@ export function Home() {
             <button className="banner-btn" onClick={() => set({ data: "fresh" })}>{s.data === "stale" ? "Refresh" : "Retry"}</button>
           </div>
         )}
-        {s.id === "todo" && (
-          <div style={{ marginTop: 14, background: "#fff", border: "1px solid #e3dfd6", borderRadius: 14, padding: "12px 14px", fontSize: 13.5, lineHeight: 1.5 }}>
-            <b style={{ fontSize: 14 }}>Before you start</b>
-            <div style={{ marginTop: 6 }}>· 100% online. No branch visit needed.</div>
-            <div>· Keep ready: PAN card (or Form 60 if you don't have one), the mobile linked to your Aadhaar, and an address document if your Aadhaar address is old.</div>
-            <div>· Your name, mobile and date of birth are already filled in. You won't type them again.</div>
-            {full && <button className="link-strong" style={{ marginTop: 6 }} onClick={openFees}>See fees and terms first</button>}
-          </div>
+        {done === 0 && s.mob !== "done" && (
+          <div style={{ marginTop: 12, fontSize: 13.5, color: "#4a534f", lineHeight: 1.45 }}>About 10 minutes, fully online. Keep your PAN (or Form 60) and your Aadhaar-linked mobile handy.</div>
         )}
         {s.submitted && (
           <div className="panel ok">
@@ -89,18 +79,20 @@ export function Home() {
           </div>
         )}
 
-        <div style={{ marginTop: 18, display: "flex", flexDirection: "column", gap: 8 }}>
+        <div className="steps">
           {list.map((st) => (
-            <div key={st.n} className={"step" + (st.look === "cur" || st.look === "bad" ? " cur" : "")}>
+            <div key={st.n} className={"step " + st.look}>
               <div className={"step-dot " + st.look}>{st.look === "done" ? "✓" : st.look === "bad" ? "!" : st.n}</div>
-              <div style={{ flex: 1 }}><div style={{ fontSize: 15, fontWeight: 500 }}>{st.label}</div><div style={{ fontSize: 12, color: "#6b7370" }}>{st.sub}</div></div>
+              <div style={{ flex: 1 }}><div className="step-label">{st.label}</div>{st.look !== "x" && <div className="step-sub">{st.sub}</div>}</div>
             </div>
           ))}
         </div>
 
-        {full && <button className="link" style={{ marginTop: 10 }} onClick={openFees}>Fees and terms</button>}
-        <button className="link" style={{ margin: "10px 0 0 18px" }} onClick={() => set({ saved: true })}>Finish later</button>
         {cta && <button className="btn-block" style={{ marginTop: 18, width: "100%" }} onClick={goSecure}>{cta}</button>}
+        <div style={{ display: "flex", gap: 18 }}>
+          <button className="link" onClick={() => set({ saved: true })}>Finish later</button>
+          {full && <button className="link" onClick={openFees}>Fees and terms</button>}
+        </div>
       </div>
 
       {s.helpOn && (
