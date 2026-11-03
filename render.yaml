@@ -23,9 +23,14 @@ services:
       # Mobile OTP integration. sandbox shows the code in the app and sends no SMS.
       # For real SMS set OTP_PROVIDER to msg91 or twilio and add that provider's keys
       # (see app/server/otp/providers.ts).
-      - key: VITE_OTP_MODE
+      - key: VITE_BACKEND
         value: server
       - key: OTP_PROVIDER
         value: sandbox
       - key: OTP_SECRET
         generateValue: true
+      # Human handoff. sandbox keeps tickets on the server. Set to slack with
+      # HANDOFF_SLACK_WEBHOOK_URL, or webhook with HANDOFF_WEBHOOK_URL (and
+      # optionally HANDOFF_WEBHOOK_SECRET), to reach a real team.
+      - key: HANDOFF_PROVIDER
+        value: sandbox

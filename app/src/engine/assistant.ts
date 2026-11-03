@@ -1,5 +1,8 @@
 import { get, set } from "./store";
 import { L, isLocal, translateMsgs, classify } from "./i18n";
+import { createHandoff } from "./handoff";
+
+const defaultL = L;
 import type { Msg, StatusRow, CardText } from "./types";
 import { speakMsgs, stopSpeak, listenAgain } from "./voice";
 import { goSecure, openFees } from "./flow";
@@ -126,7 +129,16 @@ export const talkLk = () => lk(talkLabel(), () => ask(talkLabel(), intentHandoff
 export const talkToPerson = () => ask(talkLabel(), intentHandoff());
 
 const centreText = () => L("Assisted centres, such as a Common Service Centre or partner branch, help you finish the same steps in person. It is optional, and your progress is saved.", "सहायता केंद्र, जैसे कॉमन सर्विस सेंटर या पार्टनर शाखा, वही चरण आमने-सामने पूरे करने में मदद करते हैं। यह वैकल्पिक है, और आपकी प्रगति सहेजी गई है।");
-const callMsg = () => say(L("Okay. We will call your registered mobile in about 8 minutes. You can close the app. Your progress is saved.", "ठीक है। हम लगभग 8 मिनट में आपके रजिस्टर्ड मोबाइल पर फ़ोन करेंगे। आप ऐप बंद कर सकते हैं। आपकी प्रगति सहेजी गई है।"));
+const callText = () => L("Okay. We will call your registered mobile in about 8 minutes. You can close the app. Your progress is saved.", "ठीक है। हम लगभग 8 मिनट में आपके रजिस्टर्ड मोबाइल पर फ़ोन करेंगे। आप ऐप बंद कर सकते हैं। आपकी प्रगति सहेजी गई है।");
+/** Put a live number into translated copy that carries an example number (e.g. "Position in queue: 3"). */
+const withNumber = (text: string, n: number) => text.replace(/\d+/, String(n));
+const unavailableMsg = () => say(L("We couldn't reach the support team just now. Your progress is saved. Please try again in a minute.", "हम अभी सहायता टीम तक नहीं पहुँच पाए। आपकी प्रगति सहेजी गई है। कृपया एक मिनट बाद फिर कोशिश करें।"));
+
+/** Ask the support team to call back. Sends no summary unless the applicant already chose to share one. */
+async function requestCallback(share = false) {
+  const r = await sendHandoff("callback", share);
+  add(r.ok ? say(withNumber(callText(), r.waitMinutes)) : r.reason === "sensitive" ? sensitiveGoalMsg() : unavailableMsg());
+}
 const feesLk = () => lk(L("Open fees and terms", "शुल्क और शर्तें खोलें"), () => openFees());
 
 export function fallback(): Msg[] {
@@ -199,7 +211,7 @@ const intentOtpFix = (): Msg[] => [
 const intentVideoFix = (): Msg[] => [
   say(L("Video KYC didn't complete (VK-301). Usual reasons: low light, a weak connection, or your face not matching your documents. Try a bright spot facing a window, stronger Wi-Fi or 4G, and remove glare from glasses or a cap. Your documents are fine.", "वीडियो KYC पूरा नहीं हुआ (VK-301)। आम वजहें: कम रोशनी, कमज़ोर कनेक्शन, या चेहरे का दस्तावेज़ों से न मिलना। खिड़की के सामने रोशनी में बैठें, बेहतर Wi-Fi या 4G लें, और चश्मे की चमक या टोपी हटाएँ। आपके दस्तावेज़ ठीक हैं।")),
   lk(L("Retry Video KYC", "वीडियो KYC दोबारा करें"), () => goSecure()),
-  lk(L("Call me back instead", "मुझे फ़ोन करें"), () => add(callMsg())),
+  lk(L("Call me back instead", "मुझे फ़ोन करें"), () => requestCallback()),
   talkLk(),
 ];
 
@@ -236,7 +248,10 @@ export const intentAbstain = (): Msg[] => [say(L("I don't have approved informat
 
 export const goalDefault = () => L("Finish opening my account today", "आज अपना खाता खुलवाना पूरा करना");
 
-function summaryFields(): string[] {
+type Tr = (en: string, hi: string) => string;
+const EN: Tr = (en) => en;
+
+function summaryFields(L: Tr = defaultL): string[] {
   const q = get(), none = L("none", "कोई नहीं");
   const stage =
     q.mob !== "done" ? L("Mobile verification", "मोबाइल सत्यापन")
@@ -259,20 +274,36 @@ function summaryFields(): string[] {
 export function intentHandoff(): Msg[] {
   return [mk({
     kind: "summary", t: T(), fields: summaryFields(), goal: goalDefault(),
-    confirmAct: () => ask(L("Send summary and connect", "सारांश भेजें और जुड़ें"), [handoffCard(true)]),
-    declineAct: () => ask(L("Connect without summary", "सारांश के बिना जुड़ें"), [handoffCard(false)]),
+    confirmAct: () => ask(L("Send summary and connect", "सारांश भेजें और जुड़ें"), connect(true)),
+    declineAct: () => ask(L("Connect without summary", "सारांश के बिना जुड़ें"), connect(false)),
   })];
 }
 
-function handoffCard(share: boolean): Msg {
-  return mk({
-    kind: "handoff", t: T(),
-    callAct: () => add(callMsg()),
+const sensitiveGoalMsg = () => say(L("Your goal has a number that looks like an ID, phone number or OTP, so I didn't send anything. Please remove it and try again.", "आपके लक्ष्य में एक नंबर है जो ID, फ़ोन नंबर या OTP जैसा लगता है, इसलिए मैंने कुछ नहीं भेजा। कृपया उसे हटाकर फिर कोशिश करें।"));
+
+/** Create the handoff ticket. The agent gets the summary in English; the applicant's goal is sent as typed. */
+function sendHandoff(kind: "chat" | "callback", share: boolean) {
+  const q = get();
+  return createHandoff({
+    kind, share, language: q.lang, mobileToken: q.mobToken,
+    summary: summaryFields(EN), goal: q.hgoal || goalDefault(),
+  });
+}
+
+async function connect(share: boolean): Promise<Msg[]> {
+  const r = await sendHandoff("chat", share);
+  if (!r.ok) return r.reason === "sensitive" ? [sensitiveGoalMsg()] : [unavailableMsg(), talkLk()];
+  const t = T();
+  t.h2 = withNumber(t.h2, r.position);
+  t.h3 = withNumber(t.h3, r.waitMinutes);
+  return [mk({
+    kind: "handoff", t, ref: r.ticketId,
+    callAct: () => requestCallback(share),
     centreAct: () => add(say(centreText())),
     fields: share
       ? [...summaryFields(), L("Your goal: ", "आपका लक्ष्य: ") + (get().hgoal || goalDefault())]
       : [L("No summary shared. The agent will ask about your case.", "कोई सारांश साझा नहीं हुआ। एजेंट आपके मामले के बारे में पूछेगा।")],
-  });
+  })];
 }
 
 /** Local intent match for English, Hindi and Hinglish. */

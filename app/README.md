@@ -32,11 +32,11 @@ Each real-world service connects through the backend with one connector per serv
 
 | Service | Status | Settings |
 | --- | --- | --- |
-| Mobile OTP by SMS | Built. Sandbox by default; MSG91 and Twilio connectors included but not yet tried against live accounts. | `OTP_PROVIDER` = `sandbox` / `msg91` / `twilio`, `OTP_SECRET`, and that provider's keys (see `server/otp/providers.ts`). App build: `VITE_OTP_MODE=server`. |
+| Mobile OTP by SMS | Built. Sandbox by default; MSG91 and Twilio connectors included but not yet tried against live accounts. | `OTP_PROVIDER` = `sandbox` / `msg91` / `twilio`, `OTP_SECRET`, and that provider's keys (see `server/otp/providers.ts`). App build: `VITE_BACKEND=server`. |
 | PAN and Aadhaar checks | Simulated in the app | Needs a licensed KYC provider; Aadhaar OTP is limited to UIDAI-approved entities. |
 | DigiLocker | Simulated | Needs DigiLocker partner approval. |
 | Video KYC | Simulated | Needs an RBI-compliant Video KYC vendor. |
-| Human handoff | Simulated | Needs a helpdesk or support inbox. |
+| Human handoff | Built. Sandbox by default; webhook and Slack destinations included. | `HANDOFF_PROVIDER` = `sandbox` / `webhook` / `slack`, with `HANDOFF_WEBHOOK_URL` (+ optional `HANDOFF_WEBHOOK_SECRET`) or `HANDOFF_SLACK_WEBHOOK_URL`. |
 
 **Mobile OTP rules.** The server creates and checks every code. Codes are stored only as keyed hashes. Each code:
 - expires after 5 minutes;
@@ -49,7 +49,14 @@ A successful check returns a signed token. Codes are kept in memory, so running 
 
 **Real SMS in India.** Real SMS needs DLT registration of the sender ID and the message template. For MSG91, the approved template's variable must be named `otp`.
 
-**OTP modes.** The GitHub Pages build uses `VITE_OTP_MODE=local`, an in-browser demo where any 6 digits work except `000000`. A static site can't run the backend.
+**Human handoff.** "Send summary and connect", "Connect without summary" and "Call me back" each create a ticket with a reference such as `HO-3F9A1C`.
+- **Summary language:** the summary goes to the team in English, whatever language the applicant uses. The goal is sent as the applicant typed it.
+- **Never sent:** PAN or Aadhaar numbers, documents, photos or OTPs. Text that looks like an ID, a phone number or a 6-digit code is refused.
+- **Mobile check:** if the applicant verified their mobile, the ticket says so and shows only its last 4 digits.
+- **Webhook signature:** webhook deliveries are signed with `X-Signature: sha256=<HMAC of the body>`.
+- **Queue numbers:** the queue position and wait are estimates from this server until a real helpdesk supplies them.
+
+**Backend modes.** The GitHub Pages build uses `VITE_BACKEND=local` (the default). It simulates OTP and handoff in the browser, because a static site can't run the backend. In the OTP demo any 6 digits work except `000000`.
 
 ## What's here
 

@@ -1,10 +1,10 @@
-import { ApiError, post } from "./api";
+import { ApiError, BACKEND, post } from "./api";
 
 // Mobile OTP for the secure form. In "server" mode the backend creates, sends
 // and checks the code (see server/otp). In "local" mode, used for the static
 // demo site, nothing leaves the browser: any 6 digits work except 000000.
 
-export const OTP_MODE: "server" | "local" = import.meta.env.VITE_OTP_MODE === "server" ? "server" : "local";
+export const OTP_MODE = BACKEND;
 
 export type OtpSend =
   | { ok: true; requestId: string; resendIn: number; sandboxCode?: string }

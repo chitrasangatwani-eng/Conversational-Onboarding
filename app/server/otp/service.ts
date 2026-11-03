@@ -92,6 +92,19 @@ export class OtpService {
     return payload + "." + this.hmac("token", payload).toString("base64url");
   }
 
+  /** Check a token from verify(). Returns the last 4 digits of the verified number, or null. */
+  readToken(token: unknown): { last4: string } | null {
+    if (typeof token !== "string" || !token.includes(".")) return null;
+    const [payload, sig] = token.split(".", 2);
+    const want = this.hmac("token", payload);
+    const got = Buffer.from(sig, "base64url");
+    if (got.length !== want.length || !crypto.timingSafeEqual(got, want)) return null;
+    try {
+      const p = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as { sub: string; exp: number };
+      return Date.now() < p.exp ? { last4: p.sub } : null;
+    } catch { return null; }
+  }
+
   private sweep() {
     const now = Date.now();
     for (const [id, p] of this.pending) if (now > p.expires) this.pending.delete(id);

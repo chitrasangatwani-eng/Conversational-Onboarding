@@ -13,7 +13,7 @@ export type Msg = Base & (
   | { kind: "source"; text: string; src: string; ver: string }
   | { kind: "checklist"; items: string[]; act: () => void }
   | { kind: "summary"; fields: string[]; goal: string; confirmAct: () => void; declineAct: () => void }
-  | { kind: "handoff"; fields: string[]; callAct: () => void; centreAct: () => void }
+  | { kind: "handoff"; fields: string[]; callAct: () => void; centreAct: () => void; /** Ticket reference from the support system; empty in the static demo. */ ref?: string }
   | { kind: "link"; label: string; act: () => void }
   | { kind: "secure"; act: () => void }
 );

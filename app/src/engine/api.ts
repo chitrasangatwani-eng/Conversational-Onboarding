@@ -14,3 +14,11 @@ export async function post<T>(path: string, body: unknown): Promise<T> {
   if (!r.ok) throw new ApiError(r.status, data);
   return data as T;
 }
+
+/**
+ * "server": integrations go through this app's backend (/api/otp, /api/handoff).
+ * "local": the static demo (GitHub Pages) simulates them in the browser.
+ * VITE_OTP_MODE=server is still accepted for older builds.
+ */
+export const BACKEND: "server" | "local" =
+  import.meta.env.VITE_BACKEND === "server" || import.meta.env.VITE_OTP_MODE === "server" ? "server" : "local";
