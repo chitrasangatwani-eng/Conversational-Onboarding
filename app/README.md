@@ -1,5 +1,9 @@
 # Onboarding Assistant
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/chitrasangatwani-eng/Conversational-Onboarding)
+
+The button hosts the full app with its backend, so the mobile OTP and the human handoff work for real, in sandbox mode. It needs no keys.
+
 React + Vite + TypeScript implementation of `project/Onboarding Assistant.dc.html` (the Claude Design handoff), with a small Node proxy for the Claude API.
 
 ## Run

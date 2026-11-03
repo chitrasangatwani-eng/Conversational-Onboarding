@@ -1,5 +1,9 @@
-# Render Blueprint: hosts the Onboarding Assistant app and its translation proxy.
-# Render > New > Blueprint > pick this repo. It asks for ANTHROPIC_API_KEY once.
+# Render Blueprint: hosts the Onboarding Assistant app with its backend
+# (mobile OTP, human handoff, translation proxy). Deploy with the button in
+# app/README.md, or Render > New > Blueprint > pick this repo.
+# OTP and handoff run in sandbox mode with no keys. To understand typed questions
+# in the 4 languages without built-in translations, add ANTHROPIC_API_KEY later
+# under the service's Environment settings.
 services:
   - type: web
     name: conversational-onboarding
@@ -10,8 +14,6 @@ services:
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
-      - key: ANTHROPIC_API_KEY
-        sync: false
       - key: ALLOWED_ORIGINS
         value: https://chitrasangatwani-eng.github.io
       - key: DAILY_CALL_LIMIT

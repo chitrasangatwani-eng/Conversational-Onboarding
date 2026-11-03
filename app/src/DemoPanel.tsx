@@ -1,5 +1,6 @@
 import { set, useAppState, type Fail, type State } from "./engine/store";
 import { resetPrototype } from "./engine/flow";
+import { BACKEND } from "./engine/api";
 
 // Left-hand prototype controls. Not part of the customer app.
 
@@ -17,6 +18,11 @@ export function DemoPanel() {
         <div className="demo-scope">
           <b>In the MVP</b><br />Verified status and next step<br />Plain-language help and "Why we ask"<br />Recovery for 2 frequent errors<br />DigiLocker fetch for PAN and address<br />Human handoff with reviewed summary<br />Secure forms, AI label, opt-out, offline fallback<br />Voice help in 10 Indian languages
           <b style={{ display: "block", marginTop: 6 }}>Deferred</b>Voice form entry, weak-network mode, proactive prompts, fee sheet, call-back and assisted centres
+        </div>
+      )}
+      {BACKEND === "local" && (
+        <div className="demo-scope" role="note" style={{ background: "oklch(0.95 0.03 60)", borderColor: "oklch(0.85 0.05 60)" }}>
+          <b>Demo mode.</b> This copy runs only in your browser, so the mobile OTP and "Talk to a person" are simulated. The hosted version with a server checks OTPs and creates real handoff tickets.
         </div>
       )}
       <div className="demo-note">The flow is the system of record. Help is optional, reads verified state, and never approves anything. Try the chips, type a question, or paste a number.</div>
