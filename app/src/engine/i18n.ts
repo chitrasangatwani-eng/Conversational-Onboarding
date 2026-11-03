@@ -46,6 +46,29 @@ const missing = new Set<string>();
 let busy = false;
 let scheduled = false;
 
+// Built-in translation tables: src/i18n/<code>.json holds one translation per
+// entry of en.json, in the same order. Each language loads only when chosen.
+// These are drafts for native-speaker and Compliance review.
+const tables = import.meta.glob<string[]>("../i18n/*.json", { import: "default" });
+const tablePath = (lang: string) => "../i18n/" + lang + ".json";
+/** True when the app ships a reviewed-able translation table for this language. */
+export const hasTable = (lang: string) => !isLocal(lang) && tablePath(lang) in tables;
+const loaded = new Set<string>();
+
+/** Load a language's built-in table into the cache. Safe to call repeatedly. */
+export async function loadLang(lang: string): Promise<void> {
+  if (!hasTable(lang) || loaded.has(lang)) return;
+  set({ translating: true });
+  try {
+    const [en, tr] = await Promise.all([tables[tablePath("en")](), tables[tablePath(lang)]()]);
+    const c = (cache[lang] = cache[lang] || {});
+    en.forEach((k, i) => { if (tr[i]) c[k] = tr[i]; });
+    loaded.add(lang);
+  } finally {
+    set((s) => ({ translating: false, trVersion: s.trVersion + 1 }));
+  }
+}
+
 /** Translate text for the current language. Never blocks: returns English until a translation is cached. */
 export function L(en: string, hi: string): string {
   const g = get().lang;
@@ -60,7 +83,8 @@ export function LR(en: string, hi: string): string {
   if (isLocal(g)) return L(en, hi);
   const c = cache[g]?.[en];
   if (c) return c;
-  if (!failed.has(g + "|" + en)) {
+  // Languages with a built-in table never fall through to live translation.
+  if (!hasTable(g) && !failed.has(g + "|" + en)) {
     missing.add(en);
     if (!scheduled) { scheduled = true; queueMicrotask(() => { scheduled = false; flushUI(); }); }
   }
@@ -126,7 +150,8 @@ function flushUI() {
 /** Translate every visible string inside assistant messages, in place. */
 export async function translateMsgs(msgs: Msg[]): Promise<Msg[]> {
   const lang = get().lang;
-  if (isLocal(lang)) return msgs;
+  // Built-in tables already translated each string when the message was made.
+  if (isLocal(lang) || hasTable(lang)) return msgs;
   const refs: [Record<string, unknown> | unknown[], string | number][] = [];
   for (const m of msgs) {
     const o = m as unknown as Record<string, unknown>;
