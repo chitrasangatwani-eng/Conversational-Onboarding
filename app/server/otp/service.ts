@@ -10,7 +10,7 @@
 // with several instances needs a shared store such as Redis.
 
 import crypto from "node:crypto";
-import { mask, type OtpProvider } from "./providers";
+import { mask, maskEmail, type OtpProvider } from "./providers";
 
 const CODE_TTL_MS = 5 * 60_000;
 const MAX_ATTEMPTS = 5;
@@ -20,8 +20,8 @@ const SENDS_PER_HOUR = 5;
 interface Pending { mobileKey: string; mobile10: string; codeHash: Buffer; expires: number; attempts: number }
 
 export type SendResult =
-  | { ok: true; requestId: string; maskedMobile: string; expiresIn: number; resendIn: number; sandboxCode?: string }
-  | { ok: false; reason: "invalid_mobile" | "too_soon" | "too_many_sends" | "send_failed"; retryIn?: number };
+  | { ok: true; requestId: string; maskedMobile: string; maskedEmail?: string; expiresIn: number; resendIn: number; sandboxCode?: string }
+  | { ok: false; reason: "invalid_mobile" | "invalid_email" | "too_soon" | "too_many_sends" | "send_failed"; retryIn?: number };
 
 export type VerifyResult =
   | { ok: true; token: string }
@@ -40,13 +40,17 @@ export class OtpService {
   }
 
   get providerName() { return this.provider.name; }
+  /** "email" when codes go by email, so the app asks for an address. */
+  get channel() { return this.provider.channel; }
 
   private hmac(...parts: string[]) {
     return crypto.createHmac("sha256", this.secret).update(parts.join("\u0000")).digest();
   }
 
-  async send(mobile10: string): Promise<SendResult> {
+  async send(mobile10: string, email = ""): Promise<SendResult> {
     if (!/^[6-9]\d{9}$/.test(mobile10)) return { ok: false, reason: "invalid_mobile" };
+    const byEmail = this.provider.channel === "email";
+    if (byEmail && (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) return { ok: false, reason: "invalid_email" };
     const mobileKey = this.hmac("mobile", mobile10).toString("hex");
     const now = Date.now();
     const recent = (this.sends.get(mobileKey) ?? []).filter((t) => now - t < 3_600_000);
@@ -57,9 +61,10 @@ export class OtpService {
     const code = String(crypto.randomInt(0, 1_000_000)).padStart(6, "0");
     const requestId = crypto.randomUUID();
     try {
-      await this.provider.send(mobile10, code);
+      await this.provider.send(mobile10, code, byEmail ? email : undefined);
+      if (byEmail) console.log(`[otp:${this.provider.name}] code for ${mask(mobile10)} emailed to ${maskEmail(email)}`);
     } catch (e) {
-      console.error(`[otp:${this.provider.name}] send to ${mask(mobile10)} failed:`, (e as Error).message);
+      console.error(`[otp:${this.provider.name}] send to ${byEmail ? maskEmail(email) : mask(mobile10)} failed:`, (e as Error).message);
       return { ok: false, reason: "send_failed" };
     }
     // A new code replaces any earlier one for the same number.
@@ -67,7 +72,7 @@ export class OtpService {
     this.pending.set(requestId, { mobileKey, mobile10, codeHash: this.hmac("code", requestId, code), expires: now + CODE_TTL_MS, attempts: 0 });
     this.sends.set(mobileKey, [...recent, now]);
     return {
-      ok: true, requestId, maskedMobile: mask(mobile10), expiresIn: CODE_TTL_MS / 1000, resendIn: RESEND_AFTER_MS / 1000,
+      ok: true, requestId, maskedMobile: mask(mobile10), ...(byEmail ? { maskedEmail: maskEmail(email) } : {}), expiresIn: CODE_TTL_MS / 1000, resendIn: RESEND_AFTER_MS / 1000,
       ...(this.provider.sandbox ? { sandboxCode: code } : {}),
     };
   }

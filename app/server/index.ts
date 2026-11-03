@@ -8,7 +8,7 @@
 // the client, so identity data never reaches the assistant.
 //
 // Secure-form integrations (identity data, never shown to the assistant):
-//   POST /api/otp/send    { mobile }            -> { requestId, maskedMobile, expiresIn, resendIn, sandboxCode? }
+//   POST /api/otp/send    { mobile, email? (email channel) }           -> { requestId, maskedMobile, expiresIn, resendIn, sandboxCode? }
 //   POST /api/otp/verify  { requestId, code }   -> { verified, token? , reason?, attemptsLeft? }
 //   POST /api/aadhaar/otp     { aadhaar, consent: true }      -> { ref, last4, sandboxCode? }
 //   POST /api/aadhaar/verify  { ref, otp, expectedName }      -> { verified, last4, nameMatch, pincode, state }
@@ -202,9 +202,10 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse, ur
 
   if (url.pathname === "/api/otp/send") {
     const mobile = typeof body?.mobile === "string" ? body.mobile.replace(/\D/g, "") : "";
-    const r = await otp.send(mobile);
+    const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
+    const r = await otp.send(mobile, email);
     if (r.ok) return send(res, 200, r);
-    const status = r.reason === "invalid_mobile" ? 400 : r.reason === "send_failed" ? 502 : 429;
+    const status = r.reason === "invalid_mobile" || r.reason === "invalid_email" ? 400 : r.reason === "send_failed" ? 502 : 429;
     return send(res, status, { error: r.reason, retryIn: r.retryIn });
   }
 
@@ -315,7 +316,7 @@ export function takeCall(): boolean {
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url || "/", "http://localhost");
-  if (url.pathname === "/api/health") { send(res, 200, { ok: true, model: MODEL, key: !!process.env.ANTHROPIC_API_KEY, otp: otp.providerName, handoff: handoff.providerName, digilocker: digilocker.providerName, aadhaar: aadhaar.providerName }); return; }
+  if (url.pathname === "/api/health") { send(res, 200, { ok: true, model: MODEL, key: !!process.env.ANTHROPIC_API_KEY, otp: otp.providerName, otpChannel: otp.channel, handoff: handoff.providerName, digilocker: digilocker.providerName, aadhaar: aadhaar.providerName }); return; }
   // Pages opened in the DigiLocker consent window (top-level navigations, so no CORS check).
   if (req.method === "GET" && url.pathname === "/api/digilocker/sandbox" && digilocker.providerName === "sandbox") {
     res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });

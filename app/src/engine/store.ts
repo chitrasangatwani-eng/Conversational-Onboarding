@@ -42,6 +42,9 @@ export interface State {
   resendAt: number;
   /** Signed proof from the server that the mobile was verified. */
   mobToken: string;
+  /** Email for OTP delivery when the backend sends codes by email. */
+  otpEmail: string;
+  otpSentTo: string;
   dlBusy: boolean;
   /** PAN photo accepted; Aadhaar OTP still to do (server mode). */
   panOk: boolean;
@@ -99,7 +102,7 @@ export interface State {
 const flowDefaults = {
   data: "fresh", down: false, why: "", hgoal: "", nudgeOff: {}, screen: "home", back: "home", sheet: false,
   helpOn: true, id: "todo", msgs: [], typing: false, draft: "", checks: [false, false, false, false],
-  mob: "todo", mobStage: "enter", mobNum: "", otp: "", otpErr: "", mobErr: "", otpNote: "", otpReq: "", otpDemo: "", otpBusy: false, resendAt: 0, mobToken: "", dlBusy: false, dlErr: "", dlNote: "", panOk: false, aadStage: "enter", aadNum: "", aadConsent: false, aadOtp: "", aadRef: "", aadLast4: "", aadDemo: "", aadBusy: false, aadErr: "", aadResendAt: 0,
+  mob: "todo", mobStage: "enter", mobNum: "", otp: "", otpErr: "", mobErr: "", otpNote: "", otpReq: "", otpDemo: "", otpBusy: false, resendAt: 0, mobToken: "", otpEmail: "", otpSentTo: "", dlBusy: false, dlErr: "", dlNote: "", panOk: false, aadStage: "enter", aadNum: "", aadConsent: false, aadOtp: "", aadRef: "", aadLast4: "", aadDemo: "", aadBusy: false, aadErr: "", aadResendAt: 0,
   det: "todo", dName: "Chitra Sangatwani", dDob: "14/08/1994", dEmail: "", dPin: "", dErr: "",
   addr: "todo", selfie: "todo", consent: false, submitted: false, reason: "", held: false, saved: false,
   fail: "blur", vk: "ready", vkT: 0, muted: false, feedback: {},
