@@ -33,6 +33,15 @@ export interface State {
   mobErr: string;
   otpErr: string;
   otpNote: string;
+  /** Server request id for the code just sent; empty before sending. */
+  otpReq: string;
+  /** Code to show in sandbox/demo mode only. */
+  otpDemo: string;
+  otpBusy: boolean;
+  /** Time (ms) when Resend OTP becomes available. */
+  resendAt: number;
+  /** Signed proof from the server that the mobile was verified. */
+  mobToken: string;
   det: "todo" | "done";
   dName: string;
   dDob: string;
@@ -74,7 +83,7 @@ export interface State {
 const flowDefaults = {
   data: "fresh", down: false, why: "", hgoal: "", nudgeOff: {}, screen: "home", back: "home", sheet: false,
   helpOn: true, id: "todo", msgs: [], typing: false, draft: "", checks: [false, false, false, false],
-  mob: "todo", mobStage: "enter", mobNum: "", otp: "", otpErr: "", mobErr: "", otpNote: "",
+  mob: "todo", mobStage: "enter", mobNum: "", otp: "", otpErr: "", mobErr: "", otpNote: "", otpReq: "", otpDemo: "", otpBusy: false, resendAt: 0, mobToken: "",
   det: "todo", dName: "Chitra Sangatwani", dDob: "14/08/1994", dEmail: "", dPin: "", dErr: "",
   addr: "todo", selfie: "todo", consent: false, submitted: false, reason: "", held: false, saved: false,
   fail: "blur", vk: "ready", vkT: 0, muted: false, feedback: {},

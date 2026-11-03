@@ -26,6 +26,31 @@ English and Hindi work with no key; they are hand-written in the code. Without a
 - **Translation cache:** translations are kept in memory, so each string costs one call per language until the server restarts.
 - **Health check:** `GET /api/health`.
 
+## Integrations
+
+Each real-world service connects through the backend with one connector per service. A sandbox version works now, and a real provider can be swapped in by changing settings, with no change to the app.
+
+| Service | Status | Settings |
+| --- | --- | --- |
+| Mobile OTP by SMS | Built. Sandbox by default; MSG91 and Twilio connectors included but not yet tried against live accounts. | `OTP_PROVIDER` = `sandbox` / `msg91` / `twilio`, `OTP_SECRET`, and that provider's keys (see `server/otp/providers.ts`). App build: `VITE_OTP_MODE=server`. |
+| PAN and Aadhaar checks | Simulated in the app | Needs a licensed KYC provider; Aadhaar OTP is limited to UIDAI-approved entities. |
+| DigiLocker | Simulated | Needs DigiLocker partner approval. |
+| Video KYC | Simulated | Needs an RBI-compliant Video KYC vendor. |
+| Human handoff | Simulated | Needs a helpdesk or support inbox. |
+
+**Mobile OTP rules.** The server creates and checks every code. Codes are stored only as keyed hashes. Each code:
+- expires after 5 minutes;
+- allows 5 tries;
+- can be resent after 30 seconds, at most 5 times an hour per number.
+
+A successful check returns a signed token. Codes are kept in memory, so running more than one server instance needs a shared store such as Redis.
+
+**Sandbox.** No SMS is sent, and the code appears in the app's demo button. Never use sandbox with real users.
+
+**Real SMS in India.** Real SMS needs DLT registration of the sender ID and the message template. For MSG91, the approved template's variable must be named `otp`.
+
+**OTP modes.** The GitHub Pages build uses `VITE_OTP_MODE=local`, an in-browser demo where any 6 digits work except `000000`. A static site can't run the backend.
+
 ## What's here
 
 - **Demo shell** (`src/DemoPanel.tsx`): the phone frame and the prototype controls from the design (failure simulator, stale/unavailable status, assistant down, weak connection, reset). The design's Tweaks "mvp" prop is now a **Scope** switch in this panel. `?scope=full` opens the full version.

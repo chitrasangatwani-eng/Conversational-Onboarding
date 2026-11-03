@@ -20,3 +20,12 @@ services:
         value: "120"
       - key: NODE_VERSION
         value: "22"
+      # Mobile OTP integration. sandbox shows the code in the app and sends no SMS.
+      # For real SMS set OTP_PROVIDER to msg91 or twilio and add that provider's keys
+      # (see app/server/otp/providers.ts).
+      - key: VITE_OTP_MODE
+        value: server
+      - key: OTP_PROVIDER
+        value: sandbox
+      - key: OTP_SECRET
+        generateValue: true

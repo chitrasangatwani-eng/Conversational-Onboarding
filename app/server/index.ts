@@ -1,11 +1,16 @@
-// Small proxy between the onboarding app and the Claude API.
+// Backend for the onboarding app: the Claude proxy and the integration layer.
 //
-// The browser never holds an API key. It may only send two kinds of request:
+// Assistant (no identity data allowed):
 //   POST /api/translate  { language, strings[] }  -> { strings: (string|null)[] }
 //   POST /api/classify   { language, text }       -> { code }
-// Both carry only static UI copy or a short free-text question. Anything that
+// These carry only static UI copy or a short free-text question. Anything that
 // looks like a PAN, Aadhaar, phone number or OTP is refused here as well as on
-// the client, so identity data never leaves the secure forms.
+// the client, so identity data never reaches the assistant.
+//
+// Secure-form integrations (identity data, never shown to the assistant):
+//   POST /api/otp/send    { mobile }            -> { requestId, maskedMobile, expiresIn, resendIn, sandboxCode? }
+//   POST /api/otp/verify  { requestId, code }   -> { verified, token? , reason?, attemptsLeft? }
+// The SMS provider is chosen with OTP_PROVIDER (see otp/providers.ts).
 //
 // In production (`npm start`) it also serves the built app from dist/.
 
@@ -14,6 +19,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import Anthropic from "@anthropic-ai/sdk";
+import { OtpService } from "./otp/service";
+import { providerFromEnv } from "./otp/providers";
+
+const otp = new OtpService(providerFromEnv());
 
 const MODEL = process.env.CLAUDE_MODEL || "claude-opus-5-5";
 const PORT = Number(process.env.PORT || 8787);
@@ -175,6 +184,19 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse, ur
     catch (e) { console.error("classify failed:", (e as Error).message); return send(res, errorStatus(e), { error: "classify failed" }); }
   }
 
+  if (url.pathname === "/api/otp/send") {
+    const mobile = typeof body?.mobile === "string" ? body.mobile.replace(/\D/g, "") : "";
+    const r = await otp.send(mobile);
+    if (r.ok) return send(res, 200, r);
+    const status = r.reason === "invalid_mobile" ? 400 : r.reason === "send_failed" ? 502 : 429;
+    return send(res, status, { error: r.reason, retryIn: r.retryIn });
+  }
+
+  if (url.pathname === "/api/otp/verify") {
+    const r = otp.verify(body?.requestId, typeof body?.code === "string" ? body.code.trim() : "");
+    return send(res, 200, r.ok ? { verified: true, token: r.token } : { verified: false, reason: r.reason, attemptsLeft: r.attemptsLeft });
+  }
+
   return send(res, 404, { error: "not found" });
 }
 
@@ -246,7 +268,7 @@ export function takeCall(): boolean {
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url || "/", "http://localhost");
-  if (url.pathname === "/api/health") { send(res, 200, { ok: true, model: MODEL, key: !!process.env.ANTHROPIC_API_KEY }); return; }
+  if (url.pathname === "/api/health") { send(res, 200, { ok: true, model: MODEL, key: !!process.env.ANTHROPIC_API_KEY, otp: otp.providerName }); return; }
   if (url.pathname.startsWith("/api/")) {
     if (!cors(req, res)) return;
     if (req.method === "OPTIONS") { res.writeHead(204); res.end(); return; }

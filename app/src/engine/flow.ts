@@ -1,5 +1,6 @@
 import { get, set, resetFlow, type Screen } from "./store";
 import { L, clearFailures, loadLang } from "./i18n";
+import { checkOtp, requestOtp } from "./otp";
 import { ask, greet, intentFix, intentHandoff } from "./assistant";
 import { stopListen, stopSpeak } from "./voice";
 
@@ -61,16 +62,31 @@ export function setLang(code: string) {
 // ---- Mobile ----
 
 export const validMobile = (n: string) => /^[6-9]\d{9}$/.test(n);
-export function sendOtp() {
-  if (!validMobile(get().mobNum)) { set({ mobErr: "Enter a valid 10-digit Indian mobile number." }); return; }
-  set({ mobStage: "otp", otp: "", otpErr: "", otpNote: "" });
+/** Ask the backend (or the local demo) to send a code. Also used for Resend OTP. */
+export async function sendOtp(resend = false) {
+  const q = get();
+  if (q.otpBusy) return;
+  if (!validMobile(q.mobNum)) { set({ mobErr: "Enter a valid 10-digit Indian mobile number." }); return; }
+  set({ otpBusy: true, mobErr: "", otpErr: "" });
+  const r = await requestOtp(q.mobNum);
+  if (!r.ok) { set(resend ? { otpBusy: false, otpErr: r.message } : { otpBusy: false, mobErr: r.message }); return; }
+  set({
+    otpBusy: false, mobStage: "otp", otp: "", otpReq: r.requestId, otpDemo: r.sandboxCode ?? "",
+    resendAt: Date.now() + r.resendIn * 1000, otpNote: resend ? "A new OTP was sent." : "",
+  });
 }
-export function verifyOtp() {
-  const otp = get().otp;
-  if (otp.length !== 6) { set({ otpErr: "Enter all 6 digits." }); return; }
-  if (otp === "000000") { set({ otpErr: "That OTP didn't match. Check the SMS and try again." }); return; }
-  set({ mob: "done", screen: "home" });
+
+export async function verifyOtp() {
+  const q = get();
+  if (q.otpBusy) return;
+  if (q.otp.length !== 6) { set({ otpErr: "Enter all 6 digits." }); return; }
+  set({ otpBusy: true, otpErr: "" });
+  const r = await checkOtp(q.otpReq, q.otp);
+  if (!r.ok) { set({ otpBusy: false, otpErr: r.message, ...(r.expired ? { otp: "", resendAt: 0 } : {}) }); return; }
+  set({ otpBusy: false, mob: "done", mobToken: r.token, screen: "home", otpReq: "", otpDemo: "" });
 }
+
+export const changeNumber = () => set({ mobStage: "enter", otp: "", otpErr: "", otpReq: "", otpDemo: "", otpNote: "" });
 
 // ---- Personal details ----
 
