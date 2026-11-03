@@ -36,7 +36,7 @@ Each real-world service connects through the backend with one connector per serv
 
 | Service | Status | Settings |
 | --- | --- | --- |
-| Mobile OTP | Built. Sandbox by default. Email delivery (Gmail SMTP or Resend) tested end to end against a local mail server. MSG91 and Twilio SMS connectors included but not yet tried against live accounts. | `OTP_PROVIDER` = `sandbox` / `smtp` / `resend` / `msg91` / `twilio`. For Gmail: `SMTP_USER`, `SMTP_PASS` (an app password). For Resend: `RESEND_API_KEY`. `OTP_SECRET`, and that provider's keys (see `server/otp/providers.ts`). App build: `VITE_BACKEND=server`. |
+| Mobile OTP | Built. Sandbox by default. Email delivery (Gmail SMTP or Resend) tested end to end against a local mail server. MSG91 and Twilio SMS connectors included but not yet tried against live accounts. | `OTP_PROVIDER` = `sandbox` / `brevo` / `smtp` / `resend` / `msg91` / `twilio`. For Brevo: `BREVO_API_KEY`, `OTP_EMAIL_FROM` (a sender verified in Brevo). For Gmail: `SMTP_USER`, `SMTP_PASS` (an app password); Render's free plan blocks SMTP, so use Brevo there. For Resend: `RESEND_API_KEY`. `OTP_SECRET`, and that provider's keys (see `server/otp/providers.ts`). App build: `VITE_BACKEND=server`. |
 | Aadhaar OTP | Built. Sandbox only; the connector for your provider is added once you choose one. | `AADHAAR_PROVIDER` = `sandbox`. Needs a KYC provider holding a UIDAI licence (Setu, Surepass, Signzy, IDfy…). |
 | PAN check | Photo or DigiLocker | A PAN verification API from the same KYC provider can be added the same way. |
 | DigiLocker | Built. Sandbox by default (DigiLocker-style consent page with sample data); official DigiLocker connector included but not yet run against DigiLocker. | `DIGILOCKER_PROVIDER` = `sandbox` / `digilocker`, with `DIGILOCKER_CLIENT_ID`, `DIGILOCKER_CLIENT_SECRET`, `DIGILOCKER_REDIRECT_URI` (as registered with DigiLocker), optional `DIGILOCKER_BASE_URL`. Needs approval as a DigiLocker partner. |
@@ -52,7 +52,7 @@ A successful check returns a signed token. Codes are kept in memory, so running 
 
 **Sandbox.** No SMS is sent, and the code appears in the app's demo button. Never use sandbox with real users.
 
-**OTP by email.** With `smtp` or `resend`, the mobile step also asks for an email address and the code is emailed there. The app never shows it. Use this for demos and projects that can't register for DLT. The same code rules apply, and the address is pre-filled on the personal details step.
+**OTP by email.** With `brevo`, `smtp` or `resend`, the mobile step also asks for an email address and the code is emailed there. The app never shows it. Use this for demos and projects that can't register for DLT. The same code rules apply, and the address is pre-filled on the personal details step.
 
 **Real SMS in India.** Real SMS needs DLT registration of the sender ID and the message template. For MSG91, the approved template's variable must be named `otp`.
 

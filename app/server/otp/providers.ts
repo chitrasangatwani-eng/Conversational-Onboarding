@@ -20,6 +20,10 @@ import nodemailer, { type Transporter } from "nodemailer";
 //   resend             Resend's email API. Env: RESEND_API_KEY, optional
 //                      OTP_EMAIL_FROM (default onboarding@resend.dev, which can
 //                      only send to your own Resend account address).
+//   brevo              Brevo's transactional email API over HTTPS. Works on
+//                      hosts that block SMTP ports, such as Render's free plan.
+//                      Env: BREVO_API_KEY, OTP_EMAIL_FROM (a sender address
+//                      verified in Brevo; defaults to SMTP_USER).
 //
 // The msg91 and twilio connectors follow each provider's documented REST API
 // but have not been run against a live account yet: test them with your own
@@ -134,6 +138,30 @@ class ResendProvider implements OtpProvider {
   }
 }
 
+class BrevoProvider implements OtpProvider {
+  readonly name = "brevo";
+  readonly sandbox = false;
+  readonly channel = "email" as const;
+  constructor(private key: string, private from: string) {}
+  async send(_mobile10: string, code: string, email?: string): Promise<void> {
+    if (!email) throw new Error("brevo: no email address");
+    const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: { "api-key": this.key, "content-type": "application/json", accept: "application/json" },
+      body: JSON.stringify({
+        sender: { name: "Onboarding", email: this.from },
+        to: [{ email }],
+        subject, textContent: text(code), htmlContent: html(code),
+      }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!res.ok) {
+      const body = (await res.json().catch(() => ({}))) as { message?: string };
+      throw new Error(`brevo ${res.status}: ${body.message ?? "send failed"}`);
+    }
+  }
+}
+
 function need(name: string): string {
   const v = process.env[name];
   if (!v) throw new Error(`OTP_PROVIDER needs ${name} to be set`);
@@ -155,6 +183,11 @@ export function providerFromEnv(): OtpProvider {
       });
     }
     case "resend": return new ResendProvider(need("RESEND_API_KEY"), process.env.OTP_EMAIL_FROM || "Onboarding <onboarding@resend.dev>");
-    default: throw new Error(`Unknown OTP_PROVIDER "${name}". Use sandbox, msg91, twilio, smtp or resend.`);
+    case "brevo": {
+      const from = process.env.OTP_EMAIL_FROM || process.env.SMTP_USER;
+      if (!from) throw new Error("OTP_PROVIDER=brevo needs OTP_EMAIL_FROM (a sender address verified in Brevo)");
+      return new BrevoProvider(need("BREVO_API_KEY").trim(), from.replace(/^.*<([^>]+)>.*$/, "$1").trim());
+    }
+    default: throw new Error(`Unknown OTP_PROVIDER "${name}". Use sandbox, msg91, twilio, smtp, resend or brevo.`);
   }
 }
