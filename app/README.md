@@ -60,7 +60,7 @@ A successful check returns a signed token. Codes are kept in memory, so running 
 - **Webhook signature:** webhook deliveries are signed with `X-Signature: sha256=<HMAC of the body>`.
 - **Queue numbers:** the queue position and wait are estimates from this server until a real helpdesk supplies them.
 
-**Backend modes.** The GitHub Pages build uses `VITE_BACKEND=local` (the default). It simulates OTP and handoff in the browser, because a static site can't run the backend. In the OTP demo any 6 digits work except `000000`.
+**Backend modes.** When the app starts, it checks `/api/health`. If the backend answers, OTP and handoff go through it. If not, as on GitHub Pages, they are simulated in the browser: in the OTP demo any 6 digits work except `000000`. `VITE_BACKEND=server` or `VITE_BACKEND=local` forces a mode at build time.
 
 ## What's here
 

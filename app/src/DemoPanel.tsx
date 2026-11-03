@@ -1,6 +1,6 @@
 import { set, useAppState, type Fail, type State } from "./engine/store";
 import { resetPrototype } from "./engine/flow";
-import { BACKEND } from "./engine/api";
+import { backend } from "./engine/api";
 
 // Left-hand prototype controls. Not part of the customer app.
 
@@ -20,7 +20,7 @@ export function DemoPanel() {
           <b style={{ display: "block", marginTop: 6 }}>Deferred</b>Voice form entry, weak-network mode, proactive prompts, fee sheet, call-back and assisted centres
         </div>
       )}
-      {BACKEND === "local" && (
+      {backend() === "local" && (
         <div className="demo-scope" role="note" style={{ background: "oklch(0.95 0.03 60)", borderColor: "oklch(0.85 0.05 60)" }}>
           <b>Demo mode.</b> This copy runs only in your browser, so the mobile OTP and "Talk to a person" are simulated. The hosted version with a server checks OTPs and creates real handoff tickets.
         </div>
