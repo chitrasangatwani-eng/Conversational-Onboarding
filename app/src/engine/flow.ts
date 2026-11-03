@@ -24,7 +24,7 @@ export function goSecure() {
   if (q.det !== "done") { set({ screen: "details", sheet: false, dErr: "" }); return; }
   if (q.addr === "done" && q.selfie !== "done" && q.selfie !== "pending") { set({ screen: "vkyc", sheet: false, vk: "ready", vkT: 0, muted: false }); return; }
   if (q.selfie === "done") { set({ screen: "review", sheet: false, consent: false }); return; }
-  if (q.panOk && q.id === "todo") { set({ screen: "aadhaar", sheet: false, aadErr: "" }); return; }
+  if ((q.id === "todo" || q.id === "rejected") && !q.f60) { set({ screen: "idchoice", sheet: false, dlErr: "" }); return; }
   set({ screen: "secure", sheet: false, dlErr: "" });
 }
 
@@ -142,11 +142,6 @@ export function submitCapture() {
   }
   const f = q.fail;
   if (f === "blur" || f === "name" || f === "otp") { set({ screen: "home", id: "rejected", reason: f, fail: "none" }); return; }
-  // With a backend, Aadhaar is then verified by OTP before the step completes.
-  if (backend() === "server") {
-    set({ screen: "aadhaar", panOk: true, id: "todo", aadStage: "enter", aadOtp: "", aadErr: "", aadRef: "", aadDemo: "" });
-    return;
-  }
   set({ screen: "home", id: "pending" });
   later(() => set({ id: "done" }), 4000);
 }
@@ -155,7 +150,7 @@ export function submitCapture() {
 
 export const openForm60 = () => set({ screen: "form60", f60Err: "" });
 /** Go back to giving a PAN instead of Form 60. */
-export const usePanInstead = () => set({ screen: "secure", f60: false, f60Err: "" });
+export const usePanInstead = () => set({ screen: "idchoice", f60: false, f60Err: "" });
 
 /** Check a DD/MM/YYYY date that is not in the future. */
 function pastDate(v: string): boolean {
@@ -180,7 +175,7 @@ export function form60Error(): string {
 export function submitForm60() {
   const err = form60Error();
   if (err) { set({ f60Err: err }); return; }
-  set({ f60: true, f60Err: "", screen: "secure" });
+  set({ f60: true, idDoc: "", f60Err: "", screen: "secure" });
 }
 
 // ---- Aadhaar OTP (server mode) ----
@@ -206,20 +201,27 @@ export async function verifyAadhaarOtp() {
   const r = await checkAadhaarOtp(q.aadRef, q.aadOtp, q.dName);
   if (!r.ok) { set({ aadBusy: false, aadErr: r.message, ...(r.restart ? { aadStage: "enter", aadOtp: "", aadRef: "", aadDemo: "" } : {}) }); return; }
   set({ aadBusy: false, aadRef: "", aadDemo: "", aadOtp: "" });
-  if (!r.nameMatch) { set({ screen: "home", id: "rejected", reason: "name", panOk: false }); return; }
-  set({ screen: "home", id: "pending", panOk: false, dlNote: `Aadhaar ending ${r.last4} verified by OTP` + (r.pincode ? ` (PIN ${r.pincode}${r.state ? ", " + r.state : ""})` : "") });
+  if (!r.nameMatch) { set({ screen: "home", id: "rejected", reason: "name" }); return; }
+  set({ screen: "home", id: "pending", dlNote: `Aadhaar ending ${r.last4} verified by OTP` + (r.pincode ? ` (PIN ${r.pincode}${r.state ? ", " + r.state : ""})` : "") });
   later(() => set({ id: "done" }), 1500);
 }
 
 /** From the Aadhaar screen: use DigiLocker instead (it carries the verified Aadhaar). */
-export const aadhaarViaDigiLocker = () => set({ screen: "secure", aadErr: "", dlErr: "" });
+// ---- Identity: PAN or Aadhaar (one is enough) ----
+
+export const chooseIdDoc = () => set({ screen: "idchoice", dlErr: "", aadErr: "" });
+export const choosePan = () => set({ idDoc: "pan", f60: false, screen: "secure", dlErr: "" });
+export const chooseAadhaar = () => set({ idDoc: "aadhaar", f60: false, screen: "aadhaar", aadStage: "enter", aadOtp: "", aadErr: "", aadRef: "", aadDemo: "", dlErr: "" });
+/** Verify Aadhaar through DigiLocker's e-Aadhaar instead of an OTP. Must be called from the click. */
+export const aadhaarViaDigiLocker = () => useDigiLocker("aadhaar");
 
 /** "Fetch from DigiLocker instead" on the PAN and address steps. Must be called from the click. */
-export function useDigiLocker() {
+export function useDigiLocker(kind: "doc" | "aadhaar" = "doc") {
   if (backend() === "local") { simulateDigiLocker(); return; }
   const q = get();
   if (q.dlBusy) return;
-  const purpose = q.id === "done" ? "address" : "pan";
+  const forAadhaar = kind === "aadhaar" && q.id !== "done";
+  const purpose = q.id === "done" || forAadhaar ? "address" : "pan";
   set({ dlBusy: true, dlErr: "" });
   fetchFromDigiLocker(purpose, q.dName).then((r) => {
     set({ dlBusy: false });
@@ -233,10 +235,17 @@ export function useDigiLocker() {
       return;
     }
     const d = r.summary;
+    if (forAadhaar) {
+      if (!d.pincode) { set({ dlErr: "We couldn't find your e-Aadhaar in DigiLocker. Use the Aadhaar OTP or your PAN instead." }); return; }
+      if (!d.nameMatch) { set({ screen: "home", id: "rejected", reason: "name" }); return; }
+      set({ screen: "home", id: "pending", dlNote: "Aadhaar fetched from DigiLocker (PIN " + d.pincode + (d.state ? ", " + d.state : "") + ")" });
+      later(() => set({ id: "done" }), 1500);
+      return;
+    }
     if (purpose === "pan") {
       if (!d.panIssued) { set({ dlErr: "No PAN card was found in your DigiLocker. Upload a photo of your PAN instead." }); return; }
-      if (!d.nameMatch) { set({ screen: "home", id: "rejected", reason: "name", panOk: false }); return; }
-      set({ screen: "home", id: "pending", panOk: false, dlNote: "PAN ending " + (d.panLast4 ?? "") + " fetched from DigiLocker" });
+      if (!d.nameMatch) { set({ screen: "home", id: "rejected", reason: "name" }); return; }
+      set({ screen: "home", id: "pending", dlNote: "PAN ending " + (d.panLast4 ?? "") + " fetched from DigiLocker" });
       later(() => set({ id: "done" }), 1500);
       return;
     }
@@ -324,7 +333,7 @@ export function ctaLabel(): string | null {
   return q.mob !== "done" ? "Verify mobile number" : q.det !== "done" ? "Fill personal details"
     : sf === "rejected" ? "Retry Video KYC" : sf === "done" ? "Review and submit"
     : ad === "done" ? "Start Video KYC" : id === "done" ? "Upload address proof"
-    : id === "rejected" ? (q.f60 ? "Retake ID photo" : "Retake PAN photo") : q.panOk ? "Verify Aadhaar by OTP" : q.f60 ? "Upload ID photo" : "Upload PAN photo";
+    : id === "rejected" ? (q.f60 ? "Retake ID photo" : "Try identity again") : q.f60 ? "Upload ID photo" : "Verify your identity";
 }
 
 export type { Screen };

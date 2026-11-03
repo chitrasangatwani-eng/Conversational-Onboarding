@@ -70,12 +70,14 @@ A successful check returns a signed token. Codes are kept in memory, so running 
 - **Name mismatch:** this is treated as ID-310 (name differs).
 - **Before going live:** the real connector follows DigiLocker's Requester API (`/public/oauth2/1/authorize`, `/1/token`, `/2/files/issued`, `/3/xml/eaadhaar`). Check those paths and fields against the specification issued with your partner credentials.
 
-**Aadhaar OTP.** With a backend, an accepted PAN photo leads to a secure Aadhaar screen.
-- **Flow:** the applicant enters their Aadhaar number and ticks the consent box. An OTP goes to the Aadhaar-linked mobile, and the verified name is compared with the PAN name. A mismatch is treated as ID-310.
+**Identity: PAN or Aadhaar.** The identity step asks for one document, not both. The applicant picks PAN (photo or DigiLocker) or Aadhaar (OTP or DigiLocker's e-Aadhaar). Without a PAN they can fill Form 60 and photograph another ID.
+
+**Aadhaar OTP.**
+- **Flow:** the applicant enters their Aadhaar number and ticks the consent box. An OTP goes to the Aadhaar-linked mobile, and the verified name is compared with the name in the form. A mismatch is treated as ID-310.
+- **Demo site:** without a backend, any valid 12-digit number works and the OTP is `123456`.
 - **Number handling:** the number is checked with the Aadhaar Verhoeff checksum and sent once to the server. It's cleared from the app after the OTP request, and it is never stored or logged. The server keeps only a keyed hash and the last 4 digits while the OTP is pending.
 - **Limits:** the OTP expires after 10 minutes and allows 5 tries. A new OTP can be requested after 30 seconds.
 - **Sandbox test numbers:** `2345 6789 0124` is the normal case, and `9876 5009 0000` returns a different name.
-- **DigiLocker:** applicants who use DigiLocker skip this screen, because DigiLocker already provides the verified Aadhaar.
 - **Adding a real provider:** implement `AadhaarProvider` (`requestOtp`, `verifyOtp`) in `server/aadhaar/service.ts` against your provider's API.
 
 **Backend modes.** When the app starts, it checks `/api/health`. If the backend answers, OTP and handoff go through it. If not, as on GitHub Pages, they are simulated in the browser: in the OTP demo any 6 digits work except `000000`. `VITE_BACKEND=server` or `VITE_BACKEND=local` forces a mode at build time.
