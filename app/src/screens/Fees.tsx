@@ -20,7 +20,7 @@ export function FeesScreen() {
           <div key={r.label} className="list-row"><span style={{ flex: 1, fontSize: 14.5 }}>{r.label}</span><span style={{ fontFamily: "var(--mono)", fontSize: 13 }}>{r.note}</span></div>
         ))}
       </div>
-      <div style={{ fontFamily: "var(--mono)", fontSize: 11, color: "#6b7370", lineHeight: 1.5 }}>Fee sheet v1.0 · PLACEHOLDER VALUES. Replace with the Compliance-approved fee sheet before launch.</div>
+      <div style={{ fontFamily: "var(--mono)", fontSize: 11, color: "#5f6b80", lineHeight: 1.5 }}>Fee sheet v1.0 · PLACEHOLDER VALUES. Replace with the Compliance-approved fee sheet before launch.</div>
     </div>
   );
 }

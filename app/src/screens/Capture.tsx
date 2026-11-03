@@ -35,7 +35,7 @@ export function CaptureScreen() {
     <div className="screen" style={{ overflow: "hidden" }}>
       <button className="back" onClick={close(backHome)}>← Back</button>
       <div style={{ fontSize: 24, fontWeight: 600 }}>{copy.title}</div>
-      <div style={{ fontSize: 13, color: "#4a534f", marginTop: -8 }}>{copy.hint} <button className="why" onClick={() => set({ why: kind })}>Why we ask</button></div>
+      <div style={{ fontSize: 13, color: "#3c4659", marginTop: -8 }}>{copy.hint} <button className="why" onClick={() => set({ why: kind })}>Why we ask</button></div>
       <div className="secure-note"><span style={{ fontFamily: "var(--mono)" }}>🔒</span>Secure upload. The assistant never sees this image, your PAN or your Aadhaar number.</div>
       <input ref={fileRef} type="file" accept="image/*" capture={selfie ? "user" : "environment"} style={{ display: "none" }}
         onChange={(e) => { const f = e.target.files?.[0]; if (f) setUrl(URL.createObjectURL(f)); }} />
@@ -44,7 +44,7 @@ export function CaptureScreen() {
         {shot || cam ? "" : camErr ? "Camera unavailable. Tap to choose a photo" : "Starting camera…"}
       </div>
       <button className="btn-outline-lg" onClick={capture}>{shot ? "Retake" : cam ? "Capture photo" : camErr ? "Choose a photo" : "Capture photo"}</button>
-      <div style={{ fontSize: 12, color: "#4a534f" }}>{s.weak && !s.mvp ? "Low-data mode: your photo is compressed before it uploads." : ""}</div>
+      <div style={{ fontSize: 12, color: "#3c4659" }}>{s.weak && !s.mvp ? "Low-data mode: your photo is compressed before it uploads." : ""}</div>
       {s.addr !== "done" && !(kind === "pan" && s.f60) && (
         <button className="btn-digi" onClick={useDigiLocker} aria-busy={s.dlBusy}>
           {s.dlBusy ? "Waiting for DigiLocker… finish in its window" : "Use DigiLocker instead (no photo)"}

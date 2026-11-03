@@ -30,7 +30,7 @@ export function AadhaarScreen() {
           <input className="input big" value={group(s.aadNum)} onChange={(e) => set({ aadNum: e.target.value.replace(/\D/g, "").slice(0, 12), aadErr: "" })}
             inputMode="numeric" placeholder="1234 5678 9012" aria-label="Aadhaar number" autoComplete="off" style={{ letterSpacing: ".08em" }} />
           <button role="checkbox" aria-checked={s.aadConsent} onClick={() => set({ aadConsent: !s.aadConsent, aadErr: "" })}
-            style={{ display: "flex", gap: 10, alignItems: "flex-start", textAlign: "left", border: 0, background: "none", font: "inherit", fontSize: 13.5, lineHeight: 1.45, padding: 0, cursor: "pointer", color: "#1d2420" }}>
+            style={{ display: "flex", gap: 10, alignItems: "flex-start", textAlign: "left", border: 0, background: "none", font: "inherit", fontSize: 13.5, lineHeight: 1.45, padding: 0, cursor: "pointer", color: "#13203f" }}>
             <span className={"box" + (s.aadConsent ? " on" : "")}>{s.aadConsent ? "✓" : ""}</span>
             I consent to my Aadhaar number being used to verify my identity with UIDAI for opening this account (KYC). (Placeholder wording, Legal to approve.)
           </button>
@@ -48,13 +48,13 @@ export function AadhaarScreen() {
           <div className="err" role="alert">{s.aadErr}</div>
           <button className={"btn-lg" + (s.aadOtp.length === 6 ? "" : " is-off")} onClick={verifyAadhaarOtp} aria-busy={s.aadBusy}>{s.aadBusy ? "Checking…" : "Verify"}</button>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px" }}>
-            <button className="link-strong" style={{ textDecoration: "none", ...(resendIn ? { color: "#6b7370", cursor: "default" } : {}) }} aria-disabled={!!resendIn}
+            <button className="link-strong" style={{ textDecoration: "none", ...(resendIn ? { color: "#5f6b80", cursor: "default" } : {}) }} aria-disabled={!!resendIn}
               onClick={() => { if (!resendIn) set({ aadStage: "enter", aadOtp: "", aadErr: "Enter your Aadhaar number again to get a new OTP." }); }}>
               {resendIn ? `New OTP in ${resendIn}s` : "Get a new OTP"}
             </button>
             <button className="link" onClick={aadhaarViaDigiLocker}>Use DigiLocker instead</button>
           </div>
-          {s.aadDemo && <div style={{ fontSize: 12, color: "#6b7370" }}>Sandbox mode: no OTP was sent. Use the demo button below.</div>}
+          {s.aadDemo && <div style={{ fontSize: 12, color: "#5f6b80" }}>Sandbox mode: no OTP was sent. Use the demo button below.</div>}
           {s.aadDemo && <button className="demo-fill" onClick={() => set({ aadOtp: s.aadDemo, aadErr: "" })}>Demo: fill OTP {s.aadDemo}</button>}
         </>
       )}

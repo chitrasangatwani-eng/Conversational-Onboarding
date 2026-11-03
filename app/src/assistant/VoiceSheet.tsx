@@ -46,14 +46,14 @@ export function VoiceSheet() {
       <div className="sheet-strip">{LR("Never share your OTP, PIN or password here. We will never ask for them.", "यहाँ अपना OTP, PIN या पासवर्ड कभी न भेजें। हम इन्हें कभी नहीं माँगते।")}</div>
       {s.down && <div className="sheet-strip dark">The assistant is offline. Your application is not affected. Static help and a person are still available.</div>}
       <div style={{ flex: 1, overflow: "auto", padding: "14px 20px", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#4a534f" }}>Language<LangSelect style={{ padding: "0 12px", fontSize: 14, maxWidth: "none" }} /></label>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#3c4659" }}>Language<LangSelect style={{ padding: "0 12px", fontSize: 14, maxWidth: "none" }} /></label>
         <button className={"orb" + orbClass} onClick={toggleOrb} aria-label="Talk" aria-pressed={s.listening}><span /></button>
         <div style={{ fontWeight: 600, fontSize: 17 }} aria-live="polite">{orbText}</div>
-        <div style={{ fontSize: 13, color: "#4a534f", textAlign: "center", minHeight: 18 }}>{orbSub}</div>
+        <div style={{ fontSize: 13, color: "#3c4659", textAlign: "center", minHeight: 18 }}>{orbSub}</div>
         {s.micBlocked && <a href={window.location.href} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", minHeight: 44, fontWeight: 600, fontSize: 14 }}>Open in a new tab to use the microphone</a>}
         <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 8 }}>
-          <div style={{ fontSize: 13.5, color: "#4a534f", textAlign: "right", minHeight: 18 }}>{lastUser}</div>
-          <div style={{ fontSize: 15.5, lineHeight: 1.5, background: "#fff", border: "1px solid #e3dfd6", borderRadius: 14, padding: "12px 14px" }} aria-live="polite">{lastBot}</div>
+          <div style={{ fontSize: 13.5, color: "#3c4659", textAlign: "right", minHeight: 18 }}>{lastUser}</div>
+          <div style={{ fontSize: 15.5, lineHeight: 1.5, background: "#fff", border: "1px solid #e1e7f0", borderRadius: 14, padding: "12px 14px" }} aria-live="polite">{lastBot}</div>
           {links.map((l, i) => <button key={i} className="btn btn-12" style={{ textAlign: "left" }} onClick={l.act}>{l.label}</button>)}
         </div>
       </div>

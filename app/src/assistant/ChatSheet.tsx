@@ -23,7 +23,7 @@ export function ChatSheet() {
         <div className="sheet-head">
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 600, fontSize: 16, display: "flex", alignItems: "center", gap: 8 }}>{LR("Onboarding assistant", "ऑनबोर्डिंग सहायक")}<span className="ai-tag">AI</span></div>
-            <div style={{ fontSize: 12, color: "#6b7370" }}>{s.translating ? "Translating…" : LR("Your onboarding", "आपका ऑनबोर्डिंग")}</div>
+            <div style={{ fontSize: 12, color: "#5f6b80" }}>{s.translating ? "Translating…" : LR("Your onboarding", "आपका ऑनबोर्डिंग")}</div>
           </div>
           <LangSelect />
           <button className="btn accent btn-12" onClick={() => { set({ vmode: true, speak: true }); setTimeout(() => greet(), 200); }}>Talk</button>
@@ -32,7 +32,7 @@ export function ChatSheet() {
         <div className="sheet-strip">{LR("Never share your OTP, PIN or password here. We will never ask for them.", "यहाँ अपना OTP, PIN या पासवर्ड कभी न भेजें। हम इन्हें कभी नहीं माँगते।")}</div>
         {s.down && <div className="sheet-strip dark">The assistant is offline. Your application is not affected. Static help and a person are still available.</div>}
         <div ref={scroll} style={{ flex: 1, overflow: "auto", padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }} aria-live="polite">
-          <div style={{ fontSize: 12.5, lineHeight: 1.45, color: "#4a534f", background: "#ece9e1", borderRadius: 10, padding: "10px 12px" }}>
+          <div style={{ fontSize: 12.5, lineHeight: 1.45, color: "#3c4659", background: "#e8eef7", borderRadius: 10, padding: "10px 12px" }}>
             {LR("Hi Chitra, I'm an AI. I can explain steps, check your verified status and answer document questions from approved content. I can't approve anything or see your PAN or Aadhaar details. A person is always one tap away.", "नमस्ते चित्रा, मैं एक AI हूँ। मैं चरण समझा सकता हूँ, आपकी सत्यापित स्थिति बता सकता हूँ और मंज़ूर जानकारी से दस्तावेज़ों के सवालों के जवाब दे सकता हूँ। मैं कुछ मंज़ूर नहीं कर सकता और आपके PAN या आधार की जानकारी नहीं देख सकता। एक व्यक्ति से बात हमेशा बस एक टैप दूर है।")}
           </div>
           {s.msgs.map((m) => <MessageView key={m.id} m={m} />)}
