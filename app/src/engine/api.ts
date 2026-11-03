@@ -31,13 +31,14 @@ export const otpChannel = () => (mode === "server" ? channel : "sms");
 
 export async function detectBackend(): Promise<void> {
   const forced = import.meta.env.VITE_BACKEND ?? (import.meta.env.VITE_OTP_MODE === "server" ? "server" : undefined);
-  if (forced === "server" || forced === "local") { mode = forced; return; }
+  if (forced === "local") { mode = "local"; return; }
   try {
-    const r = await fetch(API_BASE + "/api/health", { signal: AbortSignal.timeout(4000) });
+    const r = await fetch(API_BASE + "/api/health", { signal: AbortSignal.timeout(8000) });
     const h = (await r.json()) as { otp?: string; otpChannel?: string; handoff?: string };
-    mode = r.ok && h.otp && h.handoff ? "server" : "local";
+    mode = forced === "server" || (r.ok && h.otp && h.handoff) ? "server" : "local";
     channel = h.otpChannel === "email" ? "email" : "sms";
   } catch {
-    mode = "local";
+    // A forced server build keeps server mode even if the health check is slow.
+    mode = forced === "server" ? "server" : "local";
   }
 }
