@@ -9,11 +9,11 @@ const CODE: Record<string, string> = { blur: "ID-204", name: "ID-310", otp: "ID-
 
 function steps(s: State): Step[] {
   const { mob, det, id, addr: ad, selfie: sf } = s;
-  const idSub = id === "done" ? "Verified · Aadhaar via OTP" : id === "rejected" ? "Not accepted · " + (CODE[s.reason] || "ID-204") : id === "pending" ? "Submitted · in verification" : det !== "done" ? "Locked until details are saved" : s.panOk ? "PAN accepted · Aadhaar OTP next" : "Photo of PAN · Aadhaar by OTP";
+  const idSub = id === "done" ? "Verified · Aadhaar via OTP" : id === "rejected" ? "Not accepted · " + (CODE[s.reason] || "ID-204") : id === "pending" ? "Submitted · in verification" : det !== "done" ? "Locked until details are saved" : s.panOk ? (s.f60 ? "ID accepted · Aadhaar OTP next" : "PAN accepted · Aadhaar OTP next") : s.f60 ? "Form 60 saved · photo of your ID next" : "Photo of PAN · Aadhaar by OTP";
   return [
     { n: 1, label: "Mobile number", sub: mob === "done" ? "Verified by OTP" : "About 1 minute", look: mob === "done" ? "done" : "cur" },
     { n: 2, label: "Personal details", sub: det === "done" ? "Saved" : mob === "done" ? "Pre-filled · about 1 minute" : "Locked until mobile verified", look: det === "done" ? "done" : mob === "done" ? "cur" : "x" },
-    { n: 3, label: "PAN card", sub: idSub, look: id === "done" ? "done" : id === "rejected" ? "bad" : id === "pending" ? "wait" : det !== "done" ? "x" : "cur" },
+    { n: 3, label: s.f60 ? "ID and Form 60" : "PAN card", sub: idSub, look: id === "done" ? "done" : id === "rejected" ? "bad" : id === "pending" ? "wait" : det !== "done" ? "x" : "cur" },
     { n: 4, label: "Address proof", sub: ad === "done" ? "Verified" : ad === "pending" ? "Submitted · in verification" : id === "done" ? "About 2 minutes" : "Locked until ID verified", look: ad === "done" ? "done" : ad === "pending" ? "wait" : id === "done" ? "cur" : "x" },
     { n: 5, label: "Video KYC", sub: sf === "done" ? "Verified" : sf === "pending" ? "Submitted · in verification" : sf === "rejected" ? "Not completed · VK-301" : ad === "done" ? "About 5 minutes · live agent" : "Locked", look: sf === "done" ? "done" : sf === "pending" ? "wait" : sf === "rejected" ? "bad" : ad === "done" ? "cur" : "x" },
     { n: 6, label: "Review and submit", sub: s.held ? "Extra check in progress" : s.submitted ? "Submitted · in review" : sf === "done" ? "Ready when you are" : "Locked", look: s.submitted ? "wait" : sf === "done" ? "cur" : "x" },
@@ -67,7 +67,7 @@ export function Home() {
           <div style={{ marginTop: 14, background: "#fff", border: "1px solid #e3dfd6", borderRadius: 14, padding: "12px 14px", fontSize: 13.5, lineHeight: 1.5 }}>
             <b style={{ fontSize: 14 }}>Before you start</b>
             <div style={{ marginTop: 6 }}>· 100% online. No branch visit needed.</div>
-            <div>· Keep ready: PAN card, the mobile linked to your Aadhaar, and an address document if your Aadhaar address is old.</div>
+            <div>· Keep ready: PAN card (or Form 60 if you don't have one), the mobile linked to your Aadhaar, and an address document if your Aadhaar address is old.</div>
             <div>· Your name, mobile and date of birth are already filled in. You won't type them again.</div>
             {full && <button className="link-strong" style={{ marginTop: 6 }} onClick={openFees}>See fees and terms first</button>}
           </div>

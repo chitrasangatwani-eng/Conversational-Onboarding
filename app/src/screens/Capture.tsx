@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { set, useAppState } from "../engine/store";
-import { backHome, captureKind, submitCapture, useDigiLocker } from "../engine/flow";
+import { backHome, captureKind, openForm60, submitCapture, useDigiLocker, usePanInstead } from "../engine/flow";
 import { useCamera } from "../engine/useCamera";
 
 // Secure capture for the PAN card and address proof. The image stays on the
@@ -9,12 +9,14 @@ import { useCamera } from "../engine/useCamera";
 const COPY = {
   pan: { title: "PAN card", hint: "" },
   addr: { title: "Address proof", hint: "Aadhaar, passport, voter ID or driving licence showing your current address" },
+  id: { title: "Identity document", hint: "You chose Form 60, so we need another ID: passport, voter ID, driving licence or Aadhaar card." },
   vk: { title: "Video KYC", hint: "Face the camera in good light and keep your original PAN card with you. An agent call replaces this in the live product." },
 };
 
 export function CaptureScreen() {
   const s = useAppState();
   const kind = captureKind();
+  const copy = COPY[kind === "pan" && s.f60 ? "id" : kind];
   const selfie = kind === "vk";
   const { videoRef, cam, camErr, start, stop, snap } = useCamera(selfie ? "user" : "environment");
   const fileRef = useRef<HTMLInputElement>(null);
@@ -32,8 +34,8 @@ export function CaptureScreen() {
   return (
     <div className="screen" style={{ overflow: "hidden" }}>
       <button className="back" onClick={close(backHome)}>← Back</button>
-      <div style={{ fontSize: 24, fontWeight: 600 }}>{COPY[kind].title}</div>
-      <div style={{ fontSize: 13, color: "#4a534f", marginTop: -8 }}>{COPY[kind].hint} <button className="why" onClick={() => set({ why: kind })}>Why we ask</button></div>
+      <div style={{ fontSize: 24, fontWeight: 600 }}>{copy.title}</div>
+      <div style={{ fontSize: 13, color: "#4a534f", marginTop: -8 }}>{copy.hint} <button className="why" onClick={() => set({ why: kind })}>Why we ask</button></div>
       <div className="secure-note"><span style={{ fontFamily: "var(--mono)" }}>🔒</span>Secure upload. The assistant never sees this image, your PAN or your Aadhaar number.</div>
       <input ref={fileRef} type="file" accept="image/*" capture={selfie ? "user" : "environment"} style={{ display: "none" }}
         onChange={(e) => { const f = e.target.files?.[0]; if (f) setUrl(URL.createObjectURL(f)); }} />
@@ -43,13 +45,16 @@ export function CaptureScreen() {
       </div>
       <button className="btn-outline-lg" onClick={capture}>{shot ? "Retake" : cam ? "Capture photo" : camErr ? "Choose a photo" : "Capture photo"}</button>
       <div style={{ fontSize: 12, color: "#4a534f" }}>{s.weak && !s.mvp ? "Low-data mode: your photo is compressed before it uploads." : ""}</div>
-      {s.addr !== "done" && (
+      {s.addr !== "done" && !(kind === "pan" && s.f60) && (
         <button className="btn-digi" onClick={useDigiLocker} aria-busy={s.dlBusy}>
           {s.dlBusy ? "Waiting for DigiLocker…" : "Fetch from DigiLocker instead"}<br />
           <span style={{ fontWeight: 400, fontSize: 12 }}>{s.dlBusy ? "Finish in the DigiLocker window, then come back here." : "No photo, nothing to type. You approve sharing on the DigiLocker screen."}</span>
         </button>
       )}
       {s.dlErr && <div className="err" role="alert">{s.dlErr}</div>}
+      {kind === "pan" && (s.f60
+        ? <button className="link" style={{ alignSelf: "flex-start" }} onClick={close(usePanInstead)}>Have a PAN after all? Use your PAN</button>
+        : <button className="link" style={{ alignSelf: "flex-start" }} onClick={close(openForm60)}>Don't have a PAN? Fill Form 60 instead</button>)}
       <button className="btn-block" onClick={close(submitCapture)}>Submit photo</button>
     </div>
   );
