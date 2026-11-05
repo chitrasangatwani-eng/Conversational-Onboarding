@@ -1,5 +1,5 @@
 import { set, useAppState, type Fail, type State } from "./engine/store";
-import { resetPrototype } from "./engine/flow";
+import { jumpToStep, resetPrototype } from "./engine/flow";
 import { backend } from "./engine/api";
 
 // Left-hand prototype controls. Not part of the customer app.
@@ -14,6 +14,17 @@ export function DemoPanel() {
       <button className="ctl" onClick={() => set({ mvp: !s.mvp, ...(!s.mvp && ["otp", "video", "security"].includes(s.fail) ? { fail: "blur" as Fail } : {}) })} aria-pressed={s.mvp}>
         Scope: <b>{s.mvp ? "MVP" : "Full"}</b> <span style={{ color: "#5f6b80" }}>· switch to {s.mvp ? "full" : "MVP"}</span>
       </button>
+      <label className="ctl-label">Jump to any step
+        <select className="ctl-select" value="" onChange={(e) => { if (e.target.value) jumpToStep(Number(e.target.value)); }}>
+          <option value="">Choose a step…</option>
+          <option value="1">1 · Mobile number</option>
+          <option value="2">2 · Personal details</option>
+          <option value="3">3 · PAN or Aadhaar</option>
+          <option value="4">4 · Address proof</option>
+          <option value="5">5 · Video KYC</option>
+          <option value="6">6 · Review and submit</option>
+        </select>
+      </label>
       {s.mvp && (
         <details className="demo-fold"><summary>What's in the MVP</summary><div className="demo-scope">
           <b>In the MVP</b><br />Verified status and next step<br />Plain-language help and "Why we ask"<br />Recovery for 2 frequent errors<br />DigiLocker fetch for PAN and address<br />Human handoff with reviewed summary<br />Secure forms, AI label, opt-out, offline fallback<br />Voice help in 10 Indian languages

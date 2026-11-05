@@ -19,6 +19,7 @@ function later(fn: () => void, ms: number) {
 
 /** Go to whichever secure step is current. */
 export function goSecure() {
+  set({ navNote: "" });
   const q = get();
   if (q.mob !== "done") { set({ screen: "mobile", sheet: false, mobStage: "enter", otp: "", otpErr: "", mobErr: "" }); return; }
   if (q.det !== "done") { set({ screen: "details", sheet: false, dErr: "" }); return; }
@@ -28,7 +29,7 @@ export function goSecure() {
   set({ screen: "secure", sheet: false, dlErr: "" });
 }
 
-export const backHome = () => set({ screen: "home" });
+export const backHome = () => set({ screen: "home", navNote: "" });
 export const openFees = () => set((s) => ({ screen: "fees", sheet: false, back: s.screen }));
 export const backFromFees = () => set((s) => ({ screen: s.back === "review" ? "review" : "home" }));
 
@@ -342,3 +343,40 @@ export function ctaLabel(): string | null {
 }
 
 export type { Screen };
+
+// ---- Step navigation (sidebar and step list) ----
+
+const STEP_NAMES = ["Mobile number", "Personal details", "", "Address proof", "Video KYC", "Review and submit"];
+
+/**
+ * Open step n (1-6) from the progress list. Finished mobile and details steps
+ * reopen for editing; the current step continues; verified and locked steps
+ * explain themselves instead of opening.
+ */
+export function openStep(n: number, look: "done" | "cur" | "bad" | "wait" | "x", label: string) {
+  const q = get();
+  set({ navNote: "", sheet: false });
+  if (look === "cur" || look === "bad") { goSecure(); return; }
+  if (look === "done") {
+    if (n === 1) { set({ screen: "mobile", mobStage: "enter", otp: "", otpErr: "", mobErr: "", navNote: "Your mobile is verified. Verify again only if you want to change it." }); return; }
+    if (n === 2) { set({ screen: "details", dErr: "" }); return; }
+    set({ screen: "home", navNote: `${label} is verified. Nothing to do here.` });
+    return;
+  }
+  if (look === "wait") { set({ screen: "home", navNote: `${label} is being checked. We'll update this when it's done.` }); return; }
+  const prev = n === 4 ? idStepLabel(q) : STEP_NAMES[n - 2] || idStepLabel(q);
+  set({ navNote: `${label} opens after ${prev}.` });
+}
+
+/** Demo only: mark earlier steps done and open step n, to show any screen in a presentation. */
+export function jumpToStep(n: number) {
+  timers.forEach(clearTimeout);
+  timers.clear();
+  set({
+    mob: n > 1 ? "done" : "todo", mobStage: "enter", det: n > 2 ? "done" : "todo",
+    id: n > 3 ? "done" : "todo", idDoc: n > 3 ? "pan" : "", f60: false, reason: "",
+    addr: n > 4 ? "done" : "todo", selfie: n > 5 ? "done" : "todo",
+    submitted: false, held: false, consent: false, navNote: "", dlNote: "", saved: false,
+  });
+  goSecure();
+}

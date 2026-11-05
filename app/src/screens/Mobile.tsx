@@ -30,6 +30,7 @@ export function MobileScreen() {
       <button className="back" onClick={backHome}>← Back</button>
       <div className="screen-title">Verify your mobile number</div>
       <div className="secure-note">Secure form. The assistant never sees your number or OTP.</div>
+      {s.navNote && s.mob === "done" && <div className="banner ok" role="status">{s.navNote}</div>}
       {s.mobStage === "enter" ? (
         <>
           <div className="screen-lede">{byEmail ? "Enter the mobile number linked to your Aadhaar, then your email address below. We'll email you a 6-digit OTP." : "Use the mobile number linked to your Aadhaar. We'll send a 6-digit OTP by SMS."} {full ? VOICE_NOTE : ""} <button className="why" onClick={() => set({ why: "mobNum" })}>Why we ask</button></div>

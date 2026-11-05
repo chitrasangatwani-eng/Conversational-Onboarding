@@ -59,11 +59,15 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .sidebar { width: 330px; flex: none; box-sizing: border-box; padding: 30px 14px 24px; display: flex; flex-direction: column; border-right: 1px solid var(--line-2); background: #fff; overflow: auto; }
 .sidebar-eyebrow { font-family: var(--mono); font-size: 13px; letter-spacing: .08em; color: var(--muted); margin: 0 12px 12px; }
 .side-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.side-step { display: flex; gap: 14px; align-items: center; padding: 14px 12px; border-radius: 14px; }
+.side-step { width: 100%; display: flex; gap: 14px; align-items: center; padding: 14px 12px; border-radius: 14px; border: 1px solid transparent; background: none; font: inherit; color: var(--ink); text-align: left; cursor: pointer; }
+.side-step:hover { background: #f3f6fb; }
+.side-step[aria-disabled] { cursor: not-allowed; }
+.side-step.here { border-color: oklch(0.47 0.17 262); }
+.side-note { margin: 10px 12px 0; min-height: 18px; font-size: 13.5px; color: var(--body); line-height: 1.4; }
 .side-step .step-dot { width: 36px; height: 36px; flex: none; }
 .side-label { font-size: 17px; font-weight: 500; }
 .side-sub { font-size: 14px; color: var(--muted); line-height: 1.3; }
-.side-step.cur, .side-step.bad { background: #eaf1ff; }
+.side-step.cur, .side-step.bad, .side-step.cur:hover, .side-step.bad:hover { background: #eaf1ff; }
 .side-step.cur .side-label, .side-step.bad .side-label { font-weight: 600; }
 .side-step.x .side-label { color: #5f6b80; }
 .side-step.x .side-sub { color: #969dad; }
@@ -145,7 +149,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .panel.ok { background: var(--tint); border: 1px solid var(--tint-line); }
 .panel.warn { background: var(--warn-tint); border: 1px solid var(--warn-line); }
 .steps { margin-top: 22px; display: flex; flex-direction: column; gap: 10px; }
-.step { display: flex; align-items: center; gap: 16px; background: #fff; border: 1px solid var(--line-2); border-radius: 14px; padding: 16px 18px; }
+.step { width: 100%; font: inherit; color: var(--ink); text-align: left; cursor: pointer; display: flex; align-items: center; gap: 16px; background: #fff; border: 1px solid var(--line-2); border-radius: 14px; padding: 16px 18px; }
 .step.cur, .step.bad { border-color: var(--ink); }
 .step .step-dot { width: 34px; height: 34px; }
 .step-label { font-size: 17px; font-weight: 500; }
