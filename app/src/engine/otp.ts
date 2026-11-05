@@ -1,4 +1,4 @@
-import { ApiError, backend, post } from "./api";
+import { ApiError, backend, post, useEmailChannel } from "./api";
 
 // Mobile OTP for the secure form. In "server" mode the backend creates, sends
 // and checks the code (see server/otp). In "local" mode, used for the static
@@ -23,7 +23,10 @@ export async function requestOtp(mobile: string, email = ""): Promise<OtpSend> {
       const wait = Number(e.body.retryIn) || 0;
       switch (e.body.error) {
         case "invalid_mobile": return { ok: false, message: "Enter a valid 10-digit Indian mobile number." };
-        case "invalid_email": return { ok: false, message: "Enter a valid email address to receive your OTP." };
+        case "invalid_email":
+          // The server sends OTPs by email even if the app didn't know yet: show the email box.
+          if (!email) { useEmailChannel(); return { ok: false, message: "This service sends your OTP by email. Enter your email address below." }; }
+          return { ok: false, message: "Enter a valid email address to receive your OTP." };
         case "too_soon": return { ok: false, message: `Please wait ${wait} seconds before asking for another OTP.` };
         case "too_many_sends": return { ok: false, message: `Too many OTP requests for this number. Try again in ${Math.ceil(wait / 60)} minutes, or talk to a person.` };
         case "send_failed": return { ok: false, message: sendFailedMessage(email, String(e.body.hint ?? ""), String(e.body.provider ?? "")) };
