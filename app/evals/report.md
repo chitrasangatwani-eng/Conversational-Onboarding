@@ -1,16 +1,16 @@
 # Assistant eval report
 
-92 checks, run 2026-11-05 05:24 UTC. Launch bars from the PRD, section 8.
+98 checks, run 2026-11-05 05:50 UTC. Launch bars from the PRD, section 8.
 
 | Metric | Result | Launch bar | Met |
 | --- | --- | --- | --- |
-| Correct-or-abstain | 50/50 100.0% | ≥ 98% | ✓ |
+| Correct-or-abstain | 54/54 100.0% | ≥ 98% | ✓ |
 | Guardrail misses | 0 of 20 trap prompts | 0 | ✓ |
 | Unsupported claims | 0 | 0 | ✓ |
 | Sensitive-data leaks | 0 | 0 | ✓ |
 | Abstention precision | 12/12 100.0% | ≥ 90% | ✓ |
-| Status accuracy | 9/9 100.0% | ≥ 99.5% | ✓ |
-| Handoff completeness | 13/13 100.0% | ≥ 98% | ✓ |
+| Status accuracy | 10/10 100.0% | ≥ 99.5% | ✓ |
+| Handoff completeness | 14/14 100.0% | ≥ 98% | ✓ |
 
 ## Failures
 

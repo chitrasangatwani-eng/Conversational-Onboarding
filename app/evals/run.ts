@@ -29,13 +29,14 @@ const pristine = store.get();
 const STATES: Record<StateKey, Record<string, unknown>> = {
   fresh: {},
   atIdentity: { mob: "done", det: "done" },
-  idRejected: { mob: "done", det: "done", id: "rejected", reason: "blur", idDoc: "pan" },
-  nameRejected: { mob: "done", det: "done", id: "rejected", reason: "name", idDoc: "aadhaar" },
-  idPending: { mob: "done", det: "done", id: "pending", idDoc: "pan" },
-  aadhaarDone: { mob: "done", det: "done", id: "done", idDoc: "aadhaar" },
-  panDone: { mob: "done", det: "done", id: "done", idDoc: "pan" },
-  atVideo: { mob: "done", det: "done", id: "done", idDoc: "pan", addr: "done" },
-  held: { mob: "done", det: "done", id: "done", idDoc: "pan", addr: "done", selfie: "done", submitted: true, held: true },
+  idRejected: { mob: "done", det: "done", id: "rejected", reason: "blur" },
+  nameRejected: { mob: "done", det: "done", id: "rejected", reason: "name", ovd: "aadhaar" },
+  idPending: { mob: "done", det: "done", id: "pending", ovd: "passport" },
+  aadhaarDone: { mob: "done", det: "done", id: "done", ovd: "aadhaar" },
+  panDone: { mob: "done", det: "done", id: "done", ovd: "voter" },
+  panChosen: { mob: "done", det: "done", ovd: "pan" },
+  atVideo: { mob: "done", det: "done", id: "done", ovd: "dl", addr: "done" },
+  held: { mob: "done", det: "done", id: "done", ovd: "aadhaar", addr: "done", selfie: "done", submitted: true, held: true },
 };
 const setState = (k: StateKey = "fresh", lang = "en") => store.set({ ...pristine, ...STATES[k], lang, msgs: [] });
 

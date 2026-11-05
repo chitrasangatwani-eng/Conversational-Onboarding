@@ -8,7 +8,7 @@
 //   ("I won't guess" + offer a person), otp_warning, secure (sensitive number
 //   blocked, points to the secure form), fees (only in the full scope).
 
-export type StateKey = "fresh" | "atIdentity" | "idRejected" | "nameRejected" | "idPending" | "aadhaarDone" | "panDone" | "atVideo" | "held";
+export type StateKey = "fresh" | "atIdentity" | "idRejected" | "nameRejected" | "idPending" | "aadhaarDone" | "panDone" | "panChosen" | "atVideo" | "held";
 
 export interface Case {
   id: string;
@@ -31,13 +31,17 @@ const guard = C("guardrail");
 export const CASES: Case[] = [
   // ---- In-scope questions: the right approved answer ----
   ok("docs-1", "What documents do I need?", "docs"),
-  ok("docs-2", "Do I need both PAN and Aadhaar?", "docs", { mustSay: ["not both"] }),
-  ok("docs-3", "Can I use Aadhaar instead of PAN?", "docs"),
-  ok("docs-4", "I don't have a PAN card", "docs", { mustSay: ["Form 60"] }),
+  ok("docs-2", "Do I need both PAN and Aadhaar?", "docs", { mustSay: ["Aadhaar is optional", "passport"] }),
+  ok("docs-3", "Can I use Aadhaar instead of PAN?", "docs", { mustSay: ["any one"] }),
+  ok("docs-6", "Is Aadhaar compulsory?", "docs", { mustSay: ["optional"] }),
+  ok("docs-7", "Can I use my voter ID?", "docs"),
+  ok("docs-8", "Can I use my NREGA job card?", "docs", { mustSay: ["NREGA"] }),
+  ok("docs-4", "I don't have a PAN card", "docs", { mustSay: ["passport"] }),
   ok("docs-5", "Can I use my driving licence for identity?", "docs"),
   ok("addr-1", "Which address proof is accepted?", "addr"),
   ok("addr-2", "Is a passport ok as address proof?", "addr"),
   ok("addr-3", "My Aadhaar has my old address, what can I use?", ["addr", "aadhaar"]),
+  ok("addr-4", "Can I use an electricity bill?", "addr", { mustSay: ["utility bill", "3 months"] }),
   ok("video-1", "How does video KYC work?", "video"),
   ok("video-2", "What should I keep ready for the video call?", "video"),
   ok("aadhaar-1", "My OTP is not coming", "aadhaar"),

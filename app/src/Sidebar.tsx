@@ -9,7 +9,7 @@ export function Sidebar() {
   const list = steps(s);
   const done = list.slice(0, 5).filter((x) => x.look === "done").length;
   // Which step's screen is open now, to mark it in the list.
-  const onScreen = (n: number) => ({ mobile: 1, details: 2, idchoice: 3, aadhaar: 3, form60: 3, vkyc: 5, review: 6 } as Record<string, number>)[s.screen] === n
+  const onScreen = (n: number) => ({ mobile: 1, details: 2, idchoice: 3, aadhaar: 3, form60: 3, addrchoice: 4, vkyc: 5, review: 6 } as Record<string, number>)[s.screen] === n
     || (s.screen === "secure" && n === (s.id === "done" ? 4 : 3));
   return (
     <nav className="sidebar" aria-label="Your progress">
