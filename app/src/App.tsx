@@ -15,16 +15,24 @@ import { VoiceSheet } from "./assistant/VoiceSheet";
 import { WhySheet } from "./screens/WhySheet";
 import { Sidebar } from "./Sidebar";
 
+const BRAND = import.meta.env.BASE_URL + "brand/";
+
 export function App() {
   const s = useAppState();
   return (
     <div className="stage">
       <div className="shell">
         <header className="topbar">
-          <div className="logo" aria-hidden="true" />
+          <img className="logo" src={BRAND + "logo.png"} alt="" />
+          <div className="brand">Artha</div>
           <div className="topbar-title">Open an account</div>
           <div className="topbar-user">Chitra Sangatwani · Applicant</div>
         </header>
+        <div className="trust-strip" role="note">
+          <span>Secure session</span>
+          <span>The assistant never sees your PAN or Aadhaar number</span>
+          <span>Video KYC is recorded only for KYC</span>
+        </div>
         <div className="shell-body">
           <Sidebar />
           <main className="phone">

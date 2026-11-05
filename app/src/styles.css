@@ -45,23 +45,29 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* ---- App shell: top bar, progress sidebar, main column ---- */
 .shell {
-  max-width: 1200px; margin: 0 auto; height: calc(100vh - 48px); min-height: 560px;
+  max-width: 1420px; margin: 0 auto; height: calc(100vh - 48px); min-height: 560px;
   display: flex; flex-direction: column; background: #fff; border: 1px solid var(--line-2);
   border-radius: 16px; overflow: hidden; box-shadow: 0 20px 50px -30px rgba(19, 32, 63, .35);
 }
-.topbar { flex: none; height: 66px; display: flex; align-items: center; gap: 14px; padding: 0 30px; border-bottom: 1px solid var(--line-2); background: #fff; }
-.logo { width: 34px; height: 34px; border-radius: 8px; background: oklch(0.5 0.17 262); flex: none; }
-.topbar-title { font-size: 19px; font-weight: 600; flex: 1; }
+.topbar { flex: none; height: 70px; display: flex; align-items: center; gap: 14px; padding: 0 30px; border-bottom: 1px solid var(--line-2); background: #fff; }
+.logo { width: 46px; height: 46px; border-radius: 50%; flex: none; object-fit: cover; box-shadow: 0 0 0 2px #fff, 0 0 0 3px var(--line-2); }
+.brand { font-size: 20px; font-weight: 700; letter-spacing: -.01em; padding-right: 16px; border-right: 1px solid var(--line-2); line-height: 26px; }
+.topbar-title { font-size: 18px; flex: 1; color: var(--body); }
 .topbar-user { font-size: 15px; color: var(--body); }
+.trust-strip { flex: none; display: flex; justify-content: center; flex-wrap: wrap; gap: 4px 24px; padding: 10px 20px; background: #e7f3ff; border-bottom: 1px solid var(--line-2); font-size: 14.5px; color: var(--body); }
 .shell-body { flex: 1; min-height: 0; display: flex; }
-.sidebar { width: 300px; flex: none; box-sizing: border-box; padding: 30px 24px; border-right: 1px solid var(--line-2); background: #fff; overflow: auto; }
-.sidebar-eyebrow { font-family: var(--mono); font-size: 13px; letter-spacing: .08em; color: var(--muted); margin-bottom: 16px; }
-.side-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 18px; }
-.side-step { display: flex; gap: 14px; align-items: flex-start; }
-.side-step .step-dot { width: 32px; height: 32px; flex: none; }
-.side-label { font-size: 16px; font-weight: 500; }
-.side-sub { font-size: 13.5px; color: var(--muted); line-height: 1.3; }
-.side-step.cur .side-label { font-weight: 600; }
+.sidebar { width: 330px; flex: none; box-sizing: border-box; padding: 30px 14px 24px; display: flex; flex-direction: column; border-right: 1px solid var(--line-2); background: #fff; overflow: auto; }
+.sidebar-eyebrow { font-family: var(--mono); font-size: 13px; letter-spacing: .08em; color: var(--muted); margin: 0 12px 12px; }
+.side-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.side-step { display: flex; gap: 14px; align-items: center; padding: 14px 12px; border-radius: 14px; }
+.side-step .step-dot { width: 36px; height: 36px; flex: none; }
+.side-label { font-size: 17px; font-weight: 500; }
+.side-sub { font-size: 14px; color: var(--muted); line-height: 1.3; }
+.side-step.cur, .side-step.bad { background: #eaf1ff; }
+.side-step.cur .side-label, .side-step.bad .side-label { font-weight: 600; }
+.side-step.x .side-label { color: #5f6b80; }
+.side-step.x .side-sub { color: #969dad; }
+.side-art { margin: 20px 12px 0; width: calc(100% - 24px); aspect-ratio: 16 / 9; object-fit: cover; border-radius: 14px; border: 1px solid var(--line-2); }
 
 /* ---- Demo controls drawer (not part of the customer app) ---- */
 .demo-drawer { position: fixed; left: 16px; bottom: 16px; z-index: 50; }
@@ -93,7 +99,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .topbar { padding: 0 16px; }
 }
 
-.home { position: absolute; inset: 0; overflow: auto; padding: 40px max(20px, calc((100% - 760px) / 2)) 110px; }
+.home { position: absolute; inset: 0; overflow: auto; padding: 40px max(20px, calc((100% - 830px) / 2)) 110px; }
 .screen {
   position: absolute; inset: 0; padding: 32px max(20px, calc((100% - 640px) / 2)) 40px;
   display: flex; flex-direction: column; gap: 14px; background: var(--phone); overflow: auto;
@@ -228,3 +234,23 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .choice:hover { border-color: var(--ink); }
 .choice-title { font-size: 17px; font-weight: 600; }
 .choice-sub { font-size: 14px; color: var(--muted); line-height: 1.4; }
+
+/* ---- "Up next" card on Home ---- */
+.upnext { margin-top: 22px; background: oklch(0.47 0.17 262); color: #fff; border-radius: 22px; padding: 28px 30px; box-shadow: 0 18px 40px -22px oklch(0.4 0.17 262); }
+.upnext.wait { background: var(--ink); }
+.upnext.bad { background: oklch(0.45 0.12 45); }
+.upnext-eyebrow { font-size: 13px; font-weight: 600; letter-spacing: .12em; opacity: .85; }
+.upnext-title { font-size: 30px; font-weight: 700; margin-top: 8px; line-height: 1.15; }
+.upnext-sub { font-size: 16px; opacity: .9; margin-top: 6px; }
+.upnext-btn { margin-top: 22px; border: 0; background: #fff; color: var(--ink); border-radius: 30px; padding: 0 30px; min-height: 58px; font: inherit; font-size: 18px; font-weight: 600; cursor: pointer; }
+.upnext-btn:hover { background: #eef3ff; }
+/* Wide screens show steps in the sidebar, so Home shows just the next one. */
+@media (min-width: 901px) { .home .steps { display: none; } }
+@media (max-width: 900px) {
+  .trust-strip { font-size: 12.5px; justify-content: flex-start; gap: 2px 14px; padding: 8px 16px; }
+  .brand { font-size: 18px; padding-right: 12px; }
+  .topbar-title { font-size: 15px; }
+  .logo { width: 38px; height: 38px; }
+  .upnext { padding: 22px; }
+  .upnext-title { font-size: 24px; }
+}
