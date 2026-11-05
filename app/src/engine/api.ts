@@ -28,17 +28,40 @@ export const backend = () => mode;
 let channel: "sms" | "email" = "sms";
 /** How the backend delivers mobile OTPs. "email" means the app also asks for an email address. */
 export const otpChannel = () => (mode === "server" ? channel : "sms");
+let onChange: () => void = () => {};
+/** Called when a late health answer or the server itself changes the mode or channel, so the UI can re-render. */
+export const onBackendChange = (fn: () => void) => { onChange = fn; };
+/** The server asked for an email address, so it delivers OTPs by email. */
+export const useEmailChannel = () => { if (channel !== "email") { channel = "email"; onChange(); } };
+
+async function readHealth(timeoutMs: number) {
+  const r = await fetch(API_BASE + "/api/health", { signal: AbortSignal.timeout(timeoutMs), cache: "no-store" });
+  const h = (await r.json()) as { otp?: string; otpChannel?: string; handoff?: string };
+  return { ok: r.ok && !!h.otp && !!h.handoff, email: h.otpChannel === "email" };
+}
 
 export async function detectBackend(): Promise<void> {
   const forced = import.meta.env.VITE_BACKEND ?? (import.meta.env.VITE_OTP_MODE === "server" ? "server" : undefined);
   if (forced === "local") { mode = "local"; return; }
   try {
-    const r = await fetch(API_BASE + "/api/health", { signal: AbortSignal.timeout(8000) });
-    const h = (await r.json()) as { otp?: string; otpChannel?: string; handoff?: string };
-    mode = forced === "server" || (r.ok && h.otp && h.handoff) ? "server" : "local";
-    channel = h.otpChannel === "email" ? "email" : "sms";
+    const h = await readHealth(8000);
+    mode = forced === "server" || h.ok ? "server" : "local";
+    channel = h.email ? "email" : "sms";
   } catch {
-    // A forced server build keeps server mode even if the health check is slow.
+    // A forced server build keeps server mode even if the health check is slow,
+    // and keeps asking in the background so the OTP channel is right once it answers.
     mode = forced === "server" ? "server" : "local";
+    if (forced === "server") void retryHealth();
+  }
+}
+
+async function retryHealth() {
+  for (let i = 0; i < 12; i++) {
+    await new Promise((r) => setTimeout(r, 5000));
+    try {
+      const h = await readHealth(10000);
+      if (h.email !== (channel === "email")) { channel = h.email ? "email" : "sms"; onChange(); }
+      return;
+    } catch { /* still waking up */ }
   }
 }
