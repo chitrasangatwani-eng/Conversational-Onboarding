@@ -46,6 +46,8 @@ export interface State {
   otpEmail: string;
   otpSentTo: string;
   dlBusy: boolean;
+  /** Short note after clicking a step that can't open, e.g. "Finish Mobile number first." */
+  navNote: string;
   /** Which document the applicant chose for the identity step. One is enough. */
   idDoc: "" | "pan" | "aadhaar";
   /** Form 60 declared instead of a PAN; the identity step then takes another ID document. */
@@ -111,7 +113,7 @@ export interface State {
 const flowDefaults = {
   data: "fresh", down: false, why: "", hgoal: "", nudgeOff: {}, screen: "home", back: "home", sheet: false,
   helpOn: true, id: "todo", msgs: [], typing: false, draft: "", checks: [false, false, false, false],
-  mob: "todo", mobStage: "enter", mobNum: "", otp: "", otpErr: "", mobErr: "", otpNote: "", otpReq: "", otpDemo: "", otpBusy: false, resendAt: 0, mobToken: "", otpEmail: "", otpSentTo: "", dlBusy: false, dlErr: "", dlNote: "", idDoc: "", f60: false, f60Reason: "", f60Ack: "", f60AckDate: "", f60Income: "", f60Agri: "", f60Consent: false, f60Err: "", aadStage: "enter", aadNum: "", aadConsent: false, aadOtp: "", aadRef: "", aadLast4: "", aadDemo: "", aadBusy: false, aadErr: "", aadResendAt: 0,
+  mob: "todo", mobStage: "enter", mobNum: "", otp: "", otpErr: "", mobErr: "", otpNote: "", otpReq: "", otpDemo: "", otpBusy: false, resendAt: 0, mobToken: "", otpEmail: "", otpSentTo: "", dlBusy: false, dlErr: "", dlNote: "", navNote: "", idDoc: "", f60: false, f60Reason: "", f60Ack: "", f60AckDate: "", f60Income: "", f60Agri: "", f60Consent: false, f60Err: "", aadStage: "enter", aadNum: "", aadConsent: false, aadOtp: "", aadRef: "", aadLast4: "", aadDemo: "", aadBusy: false, aadErr: "", aadResendAt: 0,
   det: "todo", dName: "Chitra Sangatwani", dDob: "14/08/1994", dEmail: "", dPin: "", dErr: "",
   addr: "todo", selfie: "todo", consent: false, submitted: false, reason: "", held: false, saved: false,
   fail: "blur", vk: "ready", vkT: 0, muted: false, feedback: {},

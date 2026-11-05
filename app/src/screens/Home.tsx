@@ -1,5 +1,5 @@
 import { set, useAppState, type State } from "../engine/store";
-import { ctaLabel, goSecure, idStepLabel, openBlockerHelp, openFees, openHelp, stageKey, talkFromHome } from "../engine/flow";
+import { ctaLabel, goSecure, idStepLabel, openStep, openBlockerHelp, openFees, openHelp, stageKey, talkFromHome } from "../engine/flow";
 import { ask, intentAadhaar, intentAddr, intentDetails, intentDocs, intentVideo } from "../engine/assistant";
 
 type StepLook = "done" | "cur" | "bad" | "wait" | "x";
@@ -56,6 +56,7 @@ export function Home() {
         <div style={{ fontSize: 34, fontWeight: 600, lineHeight: 1.15, margin: "6px 0 18px" }}>{done} of 6 steps done</div>
         <div className="progress"><div style={{ width: (done / 6) * 100 + "%" }} /></div>
 
+        {s.navNote && <div className="banner ok" role="status">{s.navNote}</div>}
         {s.dlNote && <div className="banner ok"><b>From DigiLocker.</b> {s.dlNote}.</div>}
         {s.saved && <div className="banner ok"><b>Saved.</b> We sent a link to your mobile. Open it any time and you will continue at step {Math.min(done + 1, 6)}.</div>}
         {s.weak && full && <div className="banner warn"><b>Weak connection.</b> Your progress is saved. Photos are compressed and uploads retry on their own. You can also ask for a call back.</div>}
@@ -102,10 +103,10 @@ export function Home() {
 
         <div className="steps">
           {list.map((st) => (
-            <div key={st.n} className={"step " + st.look}>
+            <button key={st.n} className={"step " + st.look} aria-disabled={st.look === "x" || undefined} onClick={() => openStep(st.n, st.look, st.label)}>
               <div className={"step-dot " + st.look}>{st.look === "done" ? "✓" : st.look === "bad" ? "!" : st.n}</div>
               <div style={{ flex: 1 }}><div className="step-label">{st.label}</div><div className="step-sub">{st.sub}</div></div>
-            </div>
+            </button>
           ))}
         </div>
 
