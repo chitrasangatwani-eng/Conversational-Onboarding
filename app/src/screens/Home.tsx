@@ -1,5 +1,5 @@
 import { set, useAppState, type State } from "../engine/store";
-import { ctaLabel, goSecure, openBlockerHelp, openFees, openHelp, stageKey, talkFromHome } from "../engine/flow";
+import { ctaLabel, goSecure, idStepLabel, openBlockerHelp, openFees, openHelp, stageKey, talkFromHome } from "../engine/flow";
 import { ask, intentAadhaar, intentAddr, intentDetails, intentDocs, intentVideo } from "../engine/assistant";
 
 type StepLook = "done" | "cur" | "bad" | "wait" | "x";
@@ -13,7 +13,7 @@ export function steps(s: State): Step[] {
   return [
     { n: 1, label: "Mobile number", sub: mob === "done" ? "Verified by OTP" : "About 1 minute", look: mob === "done" ? "done" : "cur" },
     { n: 2, label: "Personal details", sub: det === "done" ? "Saved" : mob === "done" ? "Pre-filled · about 1 minute" : "Locked until mobile verified", look: det === "done" ? "done" : mob === "done" ? "cur" : "x" },
-    { n: 3, label: s.f60 ? "ID and Form 60" : s.idDoc === "aadhaar" ? "Aadhaar" : s.idDoc === "pan" ? "PAN card" : "PAN or Aadhaar", sub: idSub, look: id === "done" ? "done" : id === "rejected" ? "bad" : id === "pending" ? "wait" : det !== "done" ? "x" : "cur" },
+    { n: 3, label: idStepLabel(s), sub: idSub, look: id === "done" ? "done" : id === "rejected" ? "bad" : id === "pending" ? "wait" : det !== "done" ? "x" : "cur" },
     { n: 4, label: "Address proof", sub: ad === "done" ? "Verified" : ad === "pending" ? "Submitted · in verification" : id === "done" ? "About 2 minutes" : "Locked until ID verified", look: ad === "done" ? "done" : ad === "pending" ? "wait" : id === "done" ? "cur" : "x" },
     { n: 5, label: "Video KYC", sub: sf === "done" ? "Verified" : sf === "pending" ? "Submitted · in verification" : sf === "rejected" ? "Not completed · VK-301" : ad === "done" ? "About 5 minutes · live agent" : "Locked", look: sf === "done" ? "done" : sf === "pending" ? "wait" : sf === "rejected" ? "bad" : ad === "done" ? "cur" : "x" },
     { n: 6, label: "Review and submit", sub: s.held ? "Extra check in progress" : s.submitted ? "Submitted · in review" : sf === "done" ? "Ready when you are" : "Locked", look: s.submitted ? "wait" : sf === "done" ? "cur" : "x" },

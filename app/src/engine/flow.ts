@@ -1,4 +1,4 @@
-import { get, set, resetFlow, type Screen } from "./store";
+import { get, set, resetFlow, type Screen, type State } from "./store";
 import { L, clearFailures, loadLang } from "./i18n";
 import { checkOtp, requestOtp } from "./otp";
 import { backend, otpChannel } from "./api";
@@ -208,6 +208,11 @@ export async function verifyAadhaarOtp() {
 
 /** From the Aadhaar screen: use DigiLocker instead (it carries the verified Aadhaar). */
 // ---- Identity: PAN or Aadhaar (one is enough) ----
+
+/** Name of the identity step, shared by Home, the assistant's status card and the handoff summary. */
+export function idStepLabel(q: State, tr: (en: string, hi: string) => string = (en) => en): string {
+  return q.f60 ? tr("ID and Form 60", "ID और Form 60") : q.idDoc === "aadhaar" ? tr("Aadhaar", "आधार") : q.idDoc === "pan" ? tr("PAN card", "PAN कार्ड") : tr("PAN or Aadhaar", "PAN या आधार");
+}
 
 export const chooseIdDoc = () => set({ screen: "idchoice", dlErr: "", aadErr: "" });
 export const choosePan = () => set({ idDoc: "pan", f60: false, screen: "secure", dlErr: "" });

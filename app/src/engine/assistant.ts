@@ -5,7 +5,7 @@ import { createHandoff } from "./handoff";
 const defaultL = L;
 import type { Msg, StatusRow, CardText } from "./types";
 import { speakMsgs, stopSpeak, listenAgain } from "./voice";
-import { goSecure, openFees } from "./flow";
+import { goSecure, idStepLabel, openFees } from "./flow";
 
 // The assistant only reads verified state and approved content. Replies are
 // fixed, cited copy chosen by intent; nothing here approves or changes the
@@ -28,7 +28,11 @@ const OK = "oklch(0.45 0.09 175)", WARN = "oklch(0.45 0.09 50)", MUTED = "#6b737
 const PAN_RE = /[a-z]{5}\d{4}[a-z]/i;
 const LONG_DIGITS_RE = /\d[\d\s-]{6,}/;
 export const isSensitive = (t: string) => LONG_DIGITS_RE.test(t) || PAN_RE.test(t);
-export const maskSensitive = (t: string) => t.replace(/\d[\d\s-]{6,}/g, "••••").replace(/[a-z]{5}\d{4}[a-z]/gi, "••••");
+export const maskSensitive = (t: string) => t
+  .replace(/\d[\d\s-]{6,}/g, "••••")
+  .replace(/[a-z]{5}\d{4}[a-z]/gi, "••••")
+  .replace(/\b(password|passcode|pwd|pin(?!\s*code)|cvv|otp)(\s*(?:is|:|=)?\s*)\S+/gi, "$1$2••••")
+  .replace(/\b\d{4,6}\b/g, "••••");
 
 /** Show a user turn, then the reply (which may still be resolving), translated and read aloud. */
 export function ask(label: string, reply: Msg[] | Promise<Msg[]>) {
@@ -97,12 +101,13 @@ function T(): CardText {
 export function statusRows(): StatusRow[] {
   const q = get(), id = q.id;
   const r = (glyph: string, label: string, state: string, color: string): StatusRow => ({ glyph, label, state, color });
+  const idl = idStepLabel(q);
   const pan =
-    id === "done" ? r("✓", "PAN card", "Done", OK)
-    : id === "rejected" ? r("!", "PAN card", "Needs action", WARN)
-    : id === "pending" ? r("…", "PAN card", "Pending", MUTED)
-    : q.det !== "done" ? r("·", "PAN card", "Next", MUTED)
-    : r("→", "PAN card", "Action needed", OK);
+    id === "done" ? r("✓", idl, "Done", OK)
+    : id === "rejected" ? r("!", idl, "Needs action", WARN)
+    : id === "pending" ? r("…", idl, "Pending", MUTED)
+    : q.det !== "done" ? r("·", idl, "Next", MUTED)
+    : r("→", idl, "Action needed", OK);
   const a = q.addr;
   const addr =
     a === "done" ? r("✓", "Address proof", "Done", OK)
@@ -164,8 +169,8 @@ export function intentStatus(): Msg[] {
     : q.det !== "done" ? L("Fill personal details", "व्यक्तिगत विवरण भरें")
     : q.addr === "done" ? L("Start Video KYC", "वीडियो KYC शुरू करें")
     : id === "done" ? L("Upload address proof", "पते का प्रमाण अपलोड करें")
-    : id === "rejected" ? L("Retake PAN photo", "PAN फ़ोटो दोबारा लें")
-    : L("Upload PAN photo", "PAN फ़ोटो अपलोड करें");
+    : id === "rejected" ? (q.f60 ? L("Retake ID photo", "ID फ़ोटो दोबारा लें") : L("Try identity again", "पहचान फिर से सत्यापित करें"))
+    : q.f60 ? L("Upload ID photo", "ID फ़ोटो अपलोड करें") : L("Verify your identity", "अपनी पहचान सत्यापित करें");
   return [
     say(pend ? L("Your submission is with verification. Nothing else is needed from you right now.", "आपका जमा किया हुआ सत्यापन में है। अभी आपको कुछ और करने की ज़रूरत नहीं है।") : L("Here's what the system shows right now.", "सिस्टम में अभी यह दिख रहा है।")),
     mk({ kind: "status", t: T(), rows: statusRows(), ...(pend ? {} : { nextLabel: L("Next: ", "अगला: ") + nl, act: () => goSecure() }) }),
@@ -254,9 +259,9 @@ const EN: Tr = (en) => en;
 function summaryFields(L: Tr = defaultL): string[] {
   const q = get(), none = L("none", "कोई नहीं");
   const stage =
-    q.mob !== "done" ? L("Mobile verification", "मोबाइल सत्यापन")
+    q.mob !== "done" ? L("Mobile number", "मोबाइल नंबर")
     : q.det !== "done" ? L("Personal details", "व्यक्तिगत विवरण")
-    : q.id !== "done" ? L("PAN card", "PAN कार्ड")
+    : q.id !== "done" ? idStepLabel(q, L)
     : q.addr !== "done" ? L("Address proof", "पते का प्रमाण")
     : q.selfie !== "done" ? L("Video KYC", "वीडियो KYC")
     : L("Review and submit", "समीक्षा और सबमिट");
@@ -309,7 +314,7 @@ async function connect(share: boolean): Promise<Msg[]> {
 /** Local intent match for English, Hindi and Hinglish. */
 export function route(text: string): Msg[] {
   const q = get(), t = text.toLowerCase();
-  if (/^\D{0,12}\d{4,6}\D{0,3}$/.test(text.trim()) || /\b(pin|cvv|password)\b/.test(t)) return intentOtp();
+  if (/^\D{0,12}\d{4,6}\D{0,3}$/.test(text.trim()) || /\b(pin(?!\s*code)|cvv|password)\b/.test(t)) return intentOtp();
   if (isSensitive(text)) return [mk({ kind: "secure", t: T(), act: () => goSecure() })];
   if (/approv|will i get|chance|मंज़ूर|मंजूर|स्वीकृत|अप्रूव|manzoor/.test(t)) return intentApproval();
   if (/person|human|agent|someone|insaan|baat|व्यक्ति|इंसान|एजेंट|बात/.test(t)) return intentHandoff();
@@ -317,9 +322,10 @@ export function route(text: string): Msg[] {
   if (/rate|interest|ब्याज/.test(t)) return intentAbstain();
   if (/safe|scam|fraud|privacy|data|trust|सुरक्षित|धोखा|डेटा|भरोसा/.test(t)) return intentSafety();
   if (/branch|visit|offline|in person|शाखा|जाना/.test(t)) return intentBranch();
-  if (/(what is|meaning|matlab|kya hai|explain|मतलब|क्या है).*(kyc|pan|aadhaar|aadhar|आधार|पैन|केवाईसी)/.test(t)) return intentGlossary();
-  if (/otp|link|लिंक|ओटीपी/.test(t)) return intentAadhaar();
+  if (/what is|what's|what does|\bmean|matlab|kya hai|kya hota|explain|मतलब|क्या है|क्या होता/.test(t) && /kyc|\bpan\b|aadhaar|aadhar|आधार|पैन|केवाईसी/.test(t) && !/need|chahiye|चाहिए|instead|both|dono|दोनों/.test(t)) return intentGlossary();
+  if (/otp|link|mobile|लिंक|ओटीपी|मोबाइल/.test(t)) return intentAadhaar();
   if (/name|naam|mismatch|नाम|अलग/.test(t)) return intentName();
+  if (/e-?mail|date of birth|\bdob\b|birth|pin ?code|why .*(need|ask).*detail|ईमेल|जन्म|पिन कोड/.test(t)) return intentDetails();
   if (q.held && /extra|additional|flag|hold|अतिरिक्त/.test(t)) return intentHeld();
   if (/reject|fail|blur|why|error|204|kyun|क्यों|अस्वीकार|रिजेक्ट/.test(t)) return q.id === "rejected" || q.selfie === "rejected" ? intentFix() : intentStatus();
   if (/left|status|next|progress|where|baki|aage|बाकी|स्थिति|आगे/.test(t)) return intentStatus();
