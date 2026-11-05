@@ -34,6 +34,8 @@ export function Home() {
   const list = steps(s);
   const done = list.slice(0, 5).filter((x) => x.look === "done").length;
   const cta = ctaLabel();
+  // The step the applicant acts on next, or the one being checked.
+  const hero = list.find((x) => x.look === "bad") ?? list.find((x) => x.look === "cur") ?? list.find((x) => x.look === "wait");
   const rejected = s.id === "rejected" || s.selfie === "rejected";
   const key = stageKey();
   const nudge = key ? NUDGES[key] : null;
@@ -89,6 +91,15 @@ export function Home() {
           </div>
         )}
 
+        {!s.submitted && hero && (
+          <div className={"upnext " + hero.look}>
+            <div className="upnext-eyebrow">{hero.look === "wait" ? "IN VERIFICATION" : hero.look === "bad" ? "NEEDS YOUR ATTENTION" : "UP NEXT"}</div>
+            <div className="upnext-title">{hero.label}</div>
+            <div className="upnext-sub">{hero.sub}</div>
+            {cta && <button className="upnext-btn" onClick={goSecure}>{cta}</button>}
+          </div>
+        )}
+
         <div className="steps">
           {list.map((st) => (
             <div key={st.n} className={"step " + st.look}>
@@ -98,7 +109,6 @@ export function Home() {
           ))}
         </div>
 
-        {cta && <button className="btn-block" style={{ marginTop: 18, width: "100%" }} onClick={goSecure}>{cta}</button>}
         <div style={{ display: "flex", gap: 18 }}>
           <button className="link" onClick={() => set({ saved: true })}>Finish later</button>
           {full && <button className="link" onClick={openFees}>Fees and terms</button>}

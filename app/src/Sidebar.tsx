@@ -18,6 +18,7 @@ export function Sidebar() {
           </li>
         ))}
       </ol>
+      <img className="side-art" src={import.meta.env.BASE_URL + "brand/illustration.jpg"} alt="" />
     </nav>
   );
 }
