@@ -70,7 +70,7 @@ A successful check returns a signed token. Codes are kept in memory, so running 
 - **Name mismatch:** this is treated as ID-310 (name differs).
 - **Before going live:** the real connector follows DigiLocker's Requester API (`/public/oauth2/1/authorize`, `/1/token`, `/2/files/issued`, `/3/xml/eaadhaar`). Check those paths and fields against the specification issued with your partner credentials.
 
-**Identity: PAN or Aadhaar.** The identity step asks for one document, not both. The applicant picks PAN (photo or DigiLocker) or Aadhaar (OTP or DigiLocker's e-Aadhaar). Without a PAN they can fill Form 60 and photograph another ID.
+**Identity proof.** Step 3 asks for **any one** identity proof: PAN card (photo or DigiLocker), Aadhaar (OTP or DigiLocker, optional), passport, voter ID, driving licence, NREGA job card or NPR letter. Step 4 takes any of those that show the current address, "my identity proof shows my current address", or for a limited time a deemed document (utility bill up to 2 months old, property or municipal tax receipt, pension payment order, employer accommodation letter). For full RBI KYC, Compliance may require PAN or Form 60 in addition; the Form 60 screen is kept in the code for that.
 
 **Aadhaar OTP.**
 - **Flow:** the applicant enters their Aadhaar number and ticks the consent box. An OTP goes to the Aadhaar-linked mobile, and the verified name is compared with the name in the form. A mismatch is treated as ID-310.

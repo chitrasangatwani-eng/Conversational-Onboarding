@@ -1,4 +1,4 @@
-import { get, set, resetFlow, type Screen, type State } from "./store";
+import { get, set, resetFlow, type Ovd, type Screen, type State } from "./store";
 import { L, clearFailures, loadLang } from "./i18n";
 import { checkOtp, requestOtp } from "./otp";
 import { backend, otpChannel } from "./api";
@@ -25,7 +25,8 @@ export function goSecure() {
   if (q.det !== "done") { set({ screen: "details", sheet: false, dErr: "" }); return; }
   if (q.addr === "done" && q.selfie !== "done" && q.selfie !== "pending") { set({ screen: "vkyc", sheet: false, vk: "ready", vkT: 0, muted: false }); return; }
   if (q.selfie === "done") { set({ screen: "review", sheet: false, consent: false }); return; }
-  if ((q.id === "todo" || q.id === "rejected") && !q.f60) { set({ screen: "idchoice", sheet: false, dlErr: "" }); return; }
+  if (q.id === "todo" || q.id === "rejected") { set({ screen: "idchoice", sheet: false, dlErr: "" }); return; }
+  if (q.id === "done" && q.addr !== "done" && q.addr !== "pending") { set({ screen: "addrchoice", sheet: false, dlErr: "" }); return; }
   set({ screen: "secure", sheet: false, dlErr: "" });
 }
 
@@ -127,9 +128,9 @@ export function saveDetails() {
 // ---- Document capture (PAN, address) ----
 
 /** Which document the secure capture screen is collecting. */
-export const captureKind = (): "pan" | "addr" | "vk" => {
+export const captureKind = (): "pan" | "ovd" | "addr" | "vk" => {
   const q = get();
-  return q.addr === "done" ? "vk" : q.id === "done" ? "addr" : "pan";
+  return q.addr === "done" ? "vk" : q.id === "done" ? "addr" : q.ovd === "pan" || !q.ovd ? "pan" : "ovd";
 };
 
 export function submitCapture() {
@@ -156,7 +157,7 @@ export function submitCapture() {
 
 export const openForm60 = () => set({ screen: "form60", f60Err: "" });
 /** Go back to giving a PAN instead of Form 60. */
-export const usePanInstead = () => set({ screen: "idchoice", f60: false, f60Err: "" });
+export const usePanInstead = () => set({ screen: "idchoice", f60: false, f60Err: "", dlErr: "" });
 
 /** Check a DD/MM/YYYY date that is not in the future. */
 function pastDate(v: string): boolean {
@@ -181,7 +182,7 @@ export function form60Error(): string {
 export function submitForm60() {
   const err = form60Error();
   if (err) { set({ f60Err: err }); return; }
-  set({ f60: true, idDoc: "", f60Err: "", screen: "secure" });
+  set({ f60: true, taxOk: true, f60Err: "", screen: "idchoice" });
 }
 
 // ---- Aadhaar OTP (server mode) ----
@@ -213,22 +214,55 @@ export async function verifyAadhaarOtp() {
 }
 
 /** From the Aadhaar screen: use DigiLocker instead (it carries the verified Aadhaar). */
-// ---- Identity: PAN or Aadhaar (one is enough) ----
+// ---- Identity (step 3): any one identity proof ----
+
+/** Identity proofs offered. Any one is enough; Aadhaar is optional. The address list reuses all but PAN. */
+export const ID_PROOFS: { id: Ovd; en: string; hi: string; how: string }[] = [
+  { id: "pan", en: "PAN card", hi: "PAN कार्ड", how: "Photo, or fetch from DigiLocker" },
+  { id: "aadhaar", en: "Aadhaar", hi: "आधार", how: "OTP to the linked mobile, or DigiLocker" },
+  { id: "passport", en: "Passport", hi: "पासपोर्ट", how: "Photo of the photo and address pages" },
+  { id: "voter", en: "Voter ID", hi: "वोटर ID", how: "Photo of both sides" },
+  { id: "dl", en: "Driving licence", hi: "ड्राइविंग लाइसेंस", how: "Photo of both sides" },
+  { id: "nrega", en: "NREGA job card", hi: "NREGA जॉब कार्ड", how: "Signed by a state government officer" },
+  { id: "npr", en: "NPR letter", hi: "NPR पत्र", how: "National Population Register letter with your name and address" },
+];
+/** Officially valid documents that also prove address (PAN doesn't show one). */
+export const OVDS = ID_PROOFS.filter((d) => d.id !== "pan");
+export const ovdName = (o: Ovd | "", tr: (en: string, hi: string) => string = (en) => en) => {
+  const d = ID_PROOFS.find((x) => x.id === o);
+  return d ? tr(d.en, d.hi) : tr("ID proof", "पहचान प्रमाण");
+};
 
 /** Name of the identity step, shared by Home, the assistant's status card and the handoff summary. */
 export function idStepLabel(q: State, tr: (en: string, hi: string) => string = (en) => en): string {
-  return q.f60 ? tr("ID and Form 60", "ID और Form 60") : q.idDoc === "aadhaar" ? tr("Aadhaar", "आधार") : q.idDoc === "pan" ? tr("PAN card", "PAN कार्ड") : tr("PAN or Aadhaar", "PAN या आधार");
+  return q.ovd ? ovdName(q.ovd, tr) : tr("Identity proof", "पहचान प्रमाण");
 }
 
 export const chooseIdDoc = () => set({ screen: "idchoice", dlErr: "", aadErr: "" });
-export const choosePan = () => set({ idDoc: "pan", f60: false, screen: "secure", dlErr: "" });
-export const chooseAadhaar = () => set({ idDoc: "aadhaar", f60: false, screen: "aadhaar", aadStage: "enter", aadOtp: "", aadErr: "", aadRef: "", aadDemo: "", dlErr: "" });
+export const choosePan = () => set({ ovd: "pan", screen: "secure", dlErr: "" });
+/** Pick the identity document (part 2). Aadhaar has its own OTP screen; the rest are photographed. */
+export const chooseOvd = (o: Ovd) => o === "pan" ? choosePan() : set(o === "aadhaar"
+  ? { ovd: o, screen: "aadhaar", aadStage: "enter", aadOtp: "", aadErr: "", aadRef: "", aadDemo: "", dlErr: "" }
+  : { ovd: o, screen: "secure", dlErr: "" });
+export const chooseAadhaar = () => chooseOvd("aadhaar");
+
+// ---- Address (step 4): an OVD, or a deemed OVD for a limited time ----
+
+/** Deemed OVDs: accepted for address when the ID proof's address isn't current; an updated OVD is due within 3 months. */
+export const DEEMED = ["Utility bill (up to 2 months old)", "Property or municipal tax receipt", "Pension payment order", "Employer accommodation allotment letter"];
+export const chooseAddrDoc = (doc: string) => set({ addrDoc: doc, screen: "secure", dlErr: "" });
+/** The identity document already shows the current address. */
+export function useIdForAddress() {
+  const q = get();
+  set({ addrDoc: ovdName(q.ovd) + " (same as ID proof)", screen: "home", addr: "pending" });
+  later(() => set({ addr: "done" }), 1500);
+}
 /** Verify Aadhaar through DigiLocker's e-Aadhaar instead of an OTP. Must be called from the click. */
 export const aadhaarViaDigiLocker = () => useDigiLocker("aadhaar");
 
 /** "Fetch from DigiLocker instead" on the PAN and address steps. Must be called from the click. */
 export function useDigiLocker(kind: "doc" | "aadhaar" = "doc") {
-  if (backend() === "local") { simulateDigiLocker(); return; }
+  if (backend() === "local") { simulateDigiLocker(kind); return; }
   const q = get();
   if (q.dlBusy) return;
   const forAadhaar = kind === "aadhaar" && q.id !== "done";
@@ -247,7 +281,7 @@ export function useDigiLocker(kind: "doc" | "aadhaar" = "doc") {
     }
     const d = r.summary;
     if (forAadhaar) {
-      if (!d.pincode) { set({ dlErr: "We couldn't find your e-Aadhaar in DigiLocker. Use the Aadhaar OTP or your PAN instead." }); return; }
+      if (!d.pincode) { set({ dlErr: "We couldn't find your e-Aadhaar in DigiLocker. Use the Aadhaar OTP or another ID proof instead." }); return; }
       if (!d.nameMatch) { set({ screen: "home", id: "rejected", reason: "name" }); return; }
       set({ screen: "home", id: "pending", dlNote: "Aadhaar fetched from DigiLocker (PIN " + d.pincode + (d.state ? ", " + d.state : "") + ")" });
       later(() => set({ id: "done" }), 1500);
@@ -256,7 +290,7 @@ export function useDigiLocker(kind: "doc" | "aadhaar" = "doc") {
     if (purpose === "pan") {
       if (!d.panIssued) { set({ dlErr: "No PAN card was found in your DigiLocker. Upload a photo of your PAN instead." }); return; }
       if (!d.nameMatch) { set({ screen: "home", id: "rejected", reason: "name" }); return; }
-      set({ screen: "home", id: "pending", dlNote: "PAN ending " + (d.panLast4 ?? "") + " fetched from DigiLocker" });
+      set({ screen: "home", id: "pending", ovd: "pan", dlNote: "PAN ending " + (d.panLast4 ?? "") + " fetched from DigiLocker" });
       later(() => set({ id: "done" }), 1500);
       return;
     }
@@ -267,12 +301,12 @@ export function useDigiLocker(kind: "doc" | "aadhaar" = "doc") {
 }
 
 /** Static demo: no backend, so DigiLocker is simulated and the demo failure control applies. */
-function simulateDigiLocker() {
+function simulateDigiLocker(kind: "doc" | "aadhaar") {
   const q = get();
   if (q.id !== "done") {
     // DigiLocker removes the photo-quality failure, not a name or OTP mismatch.
     if (q.fail === "name" || q.fail === "otp") { set({ screen: "home", id: "rejected", reason: q.fail, fail: "none" }); return; }
-    set({ screen: "home", id: "pending", fail: q.fail === "blur" ? "none" : q.fail });
+    set({ screen: "home", id: "pending", ovd: kind === "aadhaar" ? "aadhaar" : "pan", fail: q.fail === "blur" ? "none" : q.fail });
     later(() => set({ id: "done" }), 2500);
     return;
   }
@@ -344,7 +378,7 @@ export function ctaLabel(): string | null {
   return q.mob !== "done" ? "Verify mobile number" : q.det !== "done" ? "Fill personal details"
     : sf === "rejected" ? "Retry Video KYC" : sf === "done" ? "Review and submit"
     : ad === "done" ? "Start Video KYC" : id === "done" ? "Upload address proof"
-    : id === "rejected" ? (q.f60 ? "Retake ID photo" : "Try identity again") : q.f60 ? "Upload ID photo" : "Verify your identity";
+    : id === "rejected" ? "Try identity again" : "Verify your identity";
 }
 
 export type { Screen };
@@ -379,7 +413,7 @@ export function jumpToStep(n: number) {
   timers.clear();
   set({
     mob: n > 1 ? "done" : "todo", mobStage: "enter", det: n > 2 ? "done" : "todo",
-    id: n > 3 ? "done" : "todo", idDoc: n > 3 ? "pan" : "", f60: false, reason: "",
+    id: n > 3 ? "done" : "todo", ovd: n > 3 ? "aadhaar" : "", addrDoc: n > 4 ? "Aadhaar (same as ID proof)" : "", f60: false, reason: "",
     addr: n > 4 ? "done" : "todo", selfie: n > 5 ? "done" : "todo",
     submitted: false, held: false, consent: false, navNote: "", dlNote: "", saved: false,
   });
