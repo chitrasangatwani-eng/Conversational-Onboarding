@@ -8,7 +8,7 @@
 // the client, so identity data never reaches the assistant.
 //
 // Secure-form integrations (identity data, never shown to the assistant):
-//   POST /api/otp/send    { mobile, email? (email channel) }           -> { requestId, maskedMobile, expiresIn, resendIn, sandboxCode? }
+//   POST /api/otp/send    { mobile?, email? } (email if given, else SMS)           -> { requestId, maskedMobile, expiresIn, resendIn, sandboxCode? }
 //   POST /api/otp/verify  { requestId, code }   -> { verified, token? , reason?, attemptsLeft? }
 //   POST /api/aadhaar/otp     { aadhaar, consent: true }      -> { ref, last4, sandboxCode? }
 //   POST /api/aadhaar/verify  { ref, otp, expectedName }      -> { verified, last4, nameMatch, pincode, state }
@@ -26,12 +26,12 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import Anthropic from "@anthropic-ai/sdk";
 import { OtpService } from "./otp/service";
-import { providerFromEnv } from "./otp/providers";
+import { providersFromEnv } from "./otp/providers";
 import { HandoffService } from "./handoff/service";
 import { DigiLockerService, callbackPage, sandboxConsentPage } from "./digilocker/service";
 import { AadhaarService } from "./aadhaar/service";
 
-const otp = new OtpService(providerFromEnv());
+const otp = new OtpService(providersFromEnv());
 const handoff = new HandoffService();
 const digilocker = new DigiLockerService();
 const aadhaar = new AadhaarService();
@@ -205,7 +205,7 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse, ur
     const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
     const r = await otp.send(mobile, email);
     if (r.ok) return send(res, 200, r);
-    const status = r.reason === "invalid_mobile" || r.reason === "invalid_email" ? 400 : r.reason === "send_failed" ? 502 : 429;
+    const status = r.reason === "invalid_mobile" || r.reason === "invalid_email" || r.reason === "email_unavailable" ? 400 : r.reason === "send_failed" ? 502 : 429;
     return send(res, status, { error: r.reason, retryIn: r.retryIn, hint: r.hint, provider: r.provider });
   }
 
@@ -213,7 +213,7 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse, ur
     const verified = otp.readToken(body?.mobileToken);
     const r = await handoff.create({
       kind: body?.kind, language: body?.language, share: body?.share, summary: body?.summary, goal: body?.goal,
-      mobileVerified: verified ? verified.last4 : null,
+      mobileVerified: verified?.last4 || null,
     });
     if (r.ok) return send(res, 200, r);
     return send(res, r.reason === "delivery_failed" ? 502 : r.reason === "sensitive" ? 422 : 400, { error: r.reason });

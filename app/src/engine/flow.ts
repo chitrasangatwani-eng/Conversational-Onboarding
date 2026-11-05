@@ -71,11 +71,16 @@ export const validMobile = (n: string) => /^[6-9]\d{9}$/.test(n);
 export async function sendOtp(resend = false) {
   const q = get();
   if (q.otpBusy) return;
-  if (!validMobile(q.mobNum)) { set({ mobErr: "Enter a valid 10-digit Indian mobile number." }); return; }
-  const email = otpChannel() === "email" ? q.otpEmail.trim() : "";
-  if (otpChannel() === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { set({ mobErr: "Enter a valid email address to receive your OTP." }); return; }
+  // Either is enough: a valid email gets the code by email, otherwise a valid mobile gets it by SMS.
+  const typed = otpChannel() === "email" ? q.otpEmail.trim() : "";
+  const email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(typed) ? typed : "";
+  const mobile = validMobile(q.mobNum) ? q.mobNum : "";
+  if (!email && !mobile) {
+    set({ mobErr: typed ? "Enter a valid email address, or a 10-digit mobile number." : otpChannel() === "email" ? "Enter your mobile number or your email." : "Enter a valid 10-digit Indian mobile number." });
+    return;
+  }
   set({ otpBusy: true, mobErr: "", otpErr: "" });
-  const r = await requestOtp(q.mobNum, email);
+  const r = await requestOtp(mobile, email);
   if (!r.ok) { set(resend ? { otpBusy: false, otpErr: r.message } : { otpBusy: false, mobErr: r.message }); return; }
   set({
     otpBusy: false, mobStage: "otp", otp: "", otpReq: r.requestId, otpDemo: r.sandboxCode ?? "",

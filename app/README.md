@@ -52,7 +52,7 @@ A successful check returns a signed token. Codes are kept in memory, so running 
 
 **Sandbox.** No SMS is sent, and the code appears in the app's demo button. Never use sandbox with real users.
 
-**OTP by email.** With `brevo`, `smtp` or `resend`, the mobile step also asks for an email address and the code is emailed there. The app never shows it. Use this for demos and projects that can't register for DLT. The same code rules apply, and the address is pre-filled on the personal details step.
+**OTP by mobile or email.** With an email provider (`brevo`, `smtp` or `resend`), the first step accepts **either** a mobile number **or** an email address. Either one turns on Send OTP. With an email, the code is emailed and never shown in the app. With only a mobile number, it goes through `SMS_PROVIDER` (default `sandbox`, which shows the code in the app because real SMS in India needs DLT). The same code rules apply, and an email is pre-filled on the personal details step.
 
 **Real SMS in India.** Real SMS needs DLT registration of the sender ID and the message template. For MSG91, the approved template's variable must be named `otp`.
 

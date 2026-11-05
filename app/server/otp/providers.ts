@@ -168,9 +168,20 @@ function need(name: string): string {
   return v;
 }
 
-/** Build the provider named by OTP_PROVIDER. Fails at startup if its settings are missing. */
-export function providerFromEnv(): OtpProvider {
-  const name = (process.env.OTP_PROVIDER || "sandbox").toLowerCase();
+/**
+ * The delivery routes the app offers. OTP_PROVIDER picks one provider; if it is
+ * an email provider, SMS stays available through SMS_PROVIDER (default sandbox),
+ * so applicants can use either their mobile number or their email.
+ */
+export function providersFromEnv(): { sms: OtpProvider; email: OtpProvider | null } {
+  const main = providerFromEnv();
+  if (main.channel === "sms") return { sms: main, email: null };
+  return { sms: providerFromEnv(process.env.SMS_PROVIDER || "sandbox"), email: main };
+}
+
+/** Build the provider named by OTP_PROVIDER (or `name`). Fails at startup if its settings are missing. */
+export function providerFromEnv(nameArg?: string): OtpProvider {
+  const name = (nameArg ?? process.env.OTP_PROVIDER ?? "sandbox").toLowerCase();
   switch (name) {
     case "sandbox": return new SandboxProvider();
     case "msg91": return new Msg91Provider(need("MSG91_AUTH_KEY"), need("MSG91_TEMPLATE_ID"));

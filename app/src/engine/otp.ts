@@ -23,9 +23,10 @@ export async function requestOtp(mobile: string, email = ""): Promise<OtpSend> {
       const wait = Number(e.body.retryIn) || 0;
       switch (e.body.error) {
         case "invalid_mobile": return { ok: false, message: "Enter a valid 10-digit Indian mobile number." };
+        case "email_unavailable": return { ok: false, message: "Email OTP isn't available right now. Use your mobile number instead." };
         case "invalid_email":
           // The server sends OTPs by email even if the app didn't know yet: show the email box.
-          if (!email) { useEmailChannel(); return { ok: false, message: "This service sends your OTP by email. Enter your email address below." }; }
+          if (!email) { useEmailChannel(); return { ok: false, message: "Enter your email address below to get your OTP by email." }; }
           return { ok: false, message: "Enter a valid email address to receive your OTP." };
         case "too_soon": return { ok: false, message: `Please wait ${wait} seconds before asking for another OTP.` };
         case "too_many_sends": return { ok: false, message: `Too many OTP requests for this number. Try again in ${Math.ceil(wait / 60)} minutes, or talk to a person.` };
