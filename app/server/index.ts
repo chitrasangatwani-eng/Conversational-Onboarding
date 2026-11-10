@@ -3,6 +3,8 @@
 // Assistant (no identity data allowed):
 //   POST /api/translate  { language, strings[] }  -> { strings: (string|null)[] }
 //   POST /api/classify   { language, text }       -> { code }
+//   POST /api/answer     { language, question, step } -> { type: "answer", text, source } | { type: "action", action } | { type: "abstain" }
+//                        (Groq, when GROQ_API_KEY is set; answers only from src/engine/kb.ts)
 // These carry only static UI copy or a short free-text question. Anything that
 // looks like a PAN, Aadhaar, phone number or OTP is refused here as well as on
 // the client, so identity data never reaches the assistant.
@@ -26,12 +28,14 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import Anthropic from "@anthropic-ai/sdk";
 import { OtpService } from "./otp/service";
+import { GroqAnswers, GROQ_MODEL } from "./answer/groq";
 import { providersFromEnv } from "./otp/providers";
 import { HandoffService } from "./handoff/service";
 import { DigiLockerService, callbackPage, sandboxConsentPage } from "./digilocker/service";
 import { AadhaarService } from "./aadhaar/service";
 
 const otp = new OtpService(providersFromEnv());
+const groq = new GroqAnswers();
 const handoff = new HandoffService();
 const digilocker = new DigiLockerService();
 const aadhaar = new AadhaarService();
@@ -200,6 +204,18 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse, ur
     catch (e) { console.error("classify failed:", (e as Error).message); return send(res, errorStatus(e), { error: "classify failed" }); }
   }
 
+  if (url.pathname === "/api/answer") {
+    if (!groq.enabled) return send(res, 503, { error: "answers not configured" });
+    const { language, question, step } = body ?? {};
+    if (language !== "en" && !LANGS[language]) return send(res, 400, { error: "unsupported language" });
+    if (typeof question !== "string" || !question.trim() || question.length > 300) return send(res, 400, { error: "invalid question" });
+    if (SENSITIVE.some((r) => r.test(question))) return send(res, 422, { error: "sensitive data refused" });
+    if (!takeCall()) return send(res, 429, { error: "daily limit reached" });
+    const stepName = typeof step === "string" ? step.replace(/[^\p{L}\p{N} .,+()-]/gu, "").slice(0, 60) : "";
+    try { return send(res, 200, await groq.answer(question.trim(), language === "en" ? "English" : LANGS[language], stepName || "unknown")); }
+    catch (e) { console.error("[answer:groq] failed:", (e as Error).message); return send(res, 502, { error: "answer failed" }); }
+  }
+
   if (url.pathname === "/api/otp/send") {
     const mobile = typeof body?.mobile === "string" ? body.mobile.replace(/\D/g, "") : "";
     const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
@@ -316,7 +332,7 @@ export function takeCall(): boolean {
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url || "/", "http://localhost");
-  if (url.pathname === "/api/health") { send(res, 200, { ok: true, model: MODEL, key: !!process.env.ANTHROPIC_API_KEY, otp: otp.providerName, otpChannel: otp.channel, handoff: handoff.providerName, digilocker: digilocker.providerName, aadhaar: aadhaar.providerName }); return; }
+  if (url.pathname === "/api/health") { send(res, 200, { ok: true, model: MODEL, key: !!process.env.ANTHROPIC_API_KEY, otp: otp.providerName, otpChannel: otp.channel, answers: groq.enabled ? "groq" : "rules", answerModel: groq.enabled ? GROQ_MODEL : null, handoff: handoff.providerName, digilocker: digilocker.providerName, aadhaar: aadhaar.providerName }); return; }
   // Pages opened in the DigiLocker consent window (top-level navigations, so no CORS check).
   if (req.method === "GET" && url.pathname === "/api/digilocker/sandbox" && digilocker.providerName === "sandbox") {
     res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });

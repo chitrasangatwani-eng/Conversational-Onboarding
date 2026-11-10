@@ -20,6 +20,8 @@ services:
         value: "2000"
       - key: PER_IP_LIMIT
         value: "120"
+      # AI answers in the help assistant: add GROQ_API_KEY in the service's
+      # Environment settings (it is not stored here). Optional GROQ_MODEL.
       - key: NODE_VERSION
         value: "22"
       # Mobile OTP integration. sandbox shows the code in the app and sends no SMS.

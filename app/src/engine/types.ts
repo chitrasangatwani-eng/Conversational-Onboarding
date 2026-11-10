@@ -10,7 +10,7 @@ interface Base { id: number; t?: CardText }
 export type Msg = Base & (
   | { kind: "text"; text: string; mine?: boolean }
   | { kind: "status"; rows: StatusRow[]; nextLabel?: string; act?: () => void }
-  | { kind: "source"; text: string; src: string; ver: string }
+  | { kind: "source"; text: string; src: string; ver: string; /** Written by the AI in the applicant's language, so it is not translated again. */ localized?: boolean }
   | { kind: "checklist"; items: string[]; act: () => void }
   | { kind: "summary"; fields: string[]; goal: string; confirmAct: () => void; declineAct: () => void }
   | { kind: "handoff"; fields: string[]; callAct: () => void; centreAct: () => void; /** Ticket reference from the support system; empty in the static demo. */ ref?: string }

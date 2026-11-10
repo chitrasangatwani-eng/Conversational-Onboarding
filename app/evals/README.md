@@ -53,6 +53,8 @@ What they were:
 
 ## Not covered yet
 
+- **AI answers (Groq):** the evals score the rule-based routing and the safety checks. Scoring the model's own wording needs `GROQ_API_KEY` and a separate run.
+
 - **Other languages:** questions in the other 17 languages go to Claude to classify. Testing them needs `ANTHROPIC_API_KEY` and a separate run.
 - **Voice input** and **real-user phrasing**.
 - **Sample size:** the PRD asks for several hundred labelled, de-identified questions before 98% is statistically meaningful. This is a starter set.
