@@ -147,7 +147,7 @@ export async function translateMsgs(msgs: Msg[]): Promise<Msg[]> {
   const refs: [Record<string, unknown> | unknown[], string | number][] = [];
   for (const m of msgs) {
     const o = m as unknown as Record<string, unknown>;
-    if (m.kind === "text" || m.kind === "source") refs.push([o, "text"]);
+    if (m.kind === "text" || (m.kind === "source" && !m.localized)) refs.push([o, "text"]);
     if (m.kind === "status" && m.nextLabel) refs.push([o, "nextLabel"]);
     if (m.kind === "summary") refs.push([o, "goal"]);
     if (m.kind === "link") refs.push([o, "label"]);

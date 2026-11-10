@@ -1,11 +1,13 @@
 import { get, set } from "./store";
 import { L, isLocal, translateMsgs, classify } from "./i18n";
+import { aiAnswers, post } from "./api";
 import { createHandoff } from "./handoff";
 
 const defaultL = L;
 import type { Msg, StatusRow, CardText } from "./types";
 import { speakMsgs, stopSpeak, listenAgain } from "./voice";
 import { goSecure, idStepLabel, openFees } from "./flow";
+import { KB, type KbId } from "./kb";
 
 // The assistant only reads verified state and approved content. Replies are
 // fixed, cited copy chosen by intent; nothing here approves or changes the
@@ -57,8 +59,8 @@ export function contextTip(): string {
   else if (q.id === "rejected") t = L("Your last identity step didn't go through. Ask me why and I'll walk you through the fix.", "आपका पिछला पहचान चरण पूरा नहीं हुआ। मुझसे पूछें क्यों, मैं ठीक करने में मदद करूँगा।");
   else if (q.mob !== "done") t = L("You're verifying your mobile number. Use the number linked to your Aadhaar, then enter the OTP we send.", "आप मोबाइल नंबर सत्यापित कर रहे हैं। आधार से जुड़ा नंबर इस्तेमाल करें, फिर हमारा भेजा OTP डालें।");
   else if (q.det !== "done") t = L("You're on personal details. Your name and date of birth are filled in. Check they match your PAN, then add your email and PIN code.", "आप व्यक्तिगत विवरण पर हैं। नाम और जन्मतिथि भरी हुई है। जाँचें कि वे PAN से मिलते हैं, फिर ईमेल और पिन कोड जोड़ें।");
-  else if (q.id !== "done") t = L("You're on the PAN step. Take a clear photo on a flat, dark surface, or fetch it from DigiLocker.", "आप PAN चरण पर हैं। समतल, गहरी सतह पर साफ़ फ़ोटो लें, या DigiLocker से लाएँ।");
-  else if (q.addr !== "done") t = L("You're on address proof. Aadhaar, passport, voter ID or driving licence all work.", "आप पते के प्रमाण पर हैं। आधार, पासपोर्ट, वोटर ID या ड्राइविंग लाइसेंस चलेगा।");
+  else if (q.id !== "done") t = L("You're on identity proof. Any one document works: PAN, Aadhaar, passport, voter ID, driving licence, NREGA job card or NPR letter.", "आप पहचान प्रमाण पर हैं। कोई भी एक दस्तावेज़ चलेगा: PAN, आधार, पासपोर्ट, वोटर ID, ड्राइविंग लाइसेंस, NREGA जॉब कार्ड या NPR पत्र।");
+  else if (q.addr !== "done") t = L("You're on address proof. Any ID that shows your current address works, or a recent utility bill for now.", "आप पते के प्रमाण पर हैं। मौजूदा पता दिखाने वाली कोई भी ID चलेगी, या अभी के लिए हाल का बिजली-पानी का बिल।");
   else if (q.selfie !== "done") t = L("Next is Video KYC, a short live call. Keep your PAN card in hand and sit in good light.", "अगला चरण वीडियो KYC है, एक छोटी लाइव कॉल। PAN कार्ड हाथ में रखें और अच्छी रोशनी में बैठें।");
   else t = L("You're at the last step. Check your details and confirm to submit.", "आप आखिरी चरण पर हैं। विवरण जाँचें और सबमिट की पुष्टि करें।");
   return t + " " + L("Ask me anything, or say: what's left?", "कुछ भी पूछें, या कहें: क्या बाकी है?");
@@ -128,6 +130,13 @@ export function statusRows(): StatusRow[] {
 
 const src = (en: string, hi: string, ref: string, ver: string): Msg[] =>
   [mk({ kind: "source", text: L(en, hi), src: L("Source: ", "स्रोत: ") + ref, ver, t: T() })];
+/** An approved answer from the knowledge base, with its source and version. */
+const kbMsg = (id: KbId): Msg[] => { const k = KB[id]; return src(k.en, k.hi, k.ref, k.ver); };
+/** An answer written by the AI from one approved entry, cited to that entry. Already in the applicant's language. */
+export const aiMsg = (text: string, id: KbId): Msg[] => {
+  const k = KB[id];
+  return [mk({ kind: "source", text, src: L("Source: ", "स्रोत: ") + k.ref, ver: k.ver, t: T(), localized: true })];
+};
 
 const talkLabel = () => L("Talk to a person", "किसी व्यक्ति से बात करें");
 export const talkLk = () => lk(talkLabel(), () => ask(talkLabel(), intentHandoff()));
@@ -177,15 +186,15 @@ export function intentStatus(): Msg[] {
   ];
 }
 
-export const intentDocs = () => src("You need one identity proof. Any one of these works: PAN card, Aadhaar, passport, voter ID, driving licence, NREGA job card, or a letter from the National Population Register. Aadhaar is optional. PAN and Aadhaar can also come from DigiLocker.", "आपको एक पहचान प्रमाण चाहिए। इनमें से कोई भी एक चलेगा: PAN कार्ड, आधार, पासपोर्ट, वोटर ID, ड्राइविंग लाइसेंस, NREGA जॉब कार्ड, या राष्ट्रीय जनसंख्या रजिस्टर का पत्र। आधार वैकल्पिक है। PAN और आधार DigiLocker से भी आ सकते हैं।", "Identity requirements §2", "v3.2 · 12 Sep 2026");
-export const intentAddr = () => src("Any identity document that shows your current address works: Aadhaar, passport, voter ID, driving licence, NREGA job card or NPR letter. If yours shows an old address, you can use a utility bill up to 2 months old, a property or municipal tax receipt, a pension payment order or an employer accommodation letter for now, and give an updated document within 3 months.", "आपका मौजूदा पता दिखाने वाला कोई भी पहचान दस्तावेज़ चलेगा: आधार, पासपोर्ट, वोटर ID, ड्राइविंग लाइसेंस, NREGA जॉब कार्ड या NPR पत्र। अगर उस पर पुराना पता है, तो अभी के लिए 2 महीने तक पुराना बिजली-पानी का बिल, संपत्ति या नगरपालिका कर की रसीद, पेंशन भुगतान आदेश या नियोक्ता का आवास पत्र दे सकते हैं, और 3 महीने में नया दस्तावेज़ दें।", "Address proof requirements §1", "v2.4 · 3 Sep 2026");
-export const intentVideo = () => src("Video KYC is a short live check with an agent. Keep your original PAN card with you, sit in good light somewhere quiet, and make sure your camera and connection are working. The agent compares you with your documents. I can't see or decide any of it.", "वीडियो KYC एजेंट के साथ एक छोटी लाइव जाँच है। अपना असली PAN कार्ड साथ रखें, शांत जगह पर अच्छी रोशनी में बैठें, और कैमरा व इंटरनेट जाँच लें। एजेंट आपको आपके दस्तावेज़ों से मिलाता है। मैं इसे न देख सकता हूँ, न इसका फ़ैसला कर सकता हूँ।", "Video KYC guidance §1", "v1.3 · 20 Aug 2026");
-export const intentAadhaar = () => src("Your Aadhaar OTP goes only to the mobile number linked to your Aadhaar. If it isn't linked, you can update it at an Aadhaar Seva Kendra, or use another identity proof such as your PAN, passport, voter ID or driving licence. I can connect you to a person if you'd like.", "आधार का OTP सिर्फ़ आधार से जुड़े मोबाइल नंबर पर आता है। अगर नंबर लिंक नहीं है, तो आधार सेवा केंद्र पर अपडेट करा सकते हैं, या PAN फ़ोटो के साथ पासपोर्ट, वोटर ID या ड्राइविंग लाइसेंस दे सकते हैं। चाहें तो मैं आपको किसी व्यक्ति से जोड़ सकता हूँ।", "Identity requirements §4", "v3.2 · 12 Sep 2026");
-export const intentName = () => src("Small differences like initials, spelling or word order are often fine. If the names differ a lot, we may ask for a supporting document. A person confirms this, and I can't decide it.", "इनिशियल, स्पेलिंग या नाम के क्रम जैसे छोटे फ़र्क अक्सर चल जाते हैं। अगर नाम काफ़ी अलग हैं, तो हम कोई सहायक दस्तावेज़ माँग सकते हैं। यह एक व्यक्ति तय करता है, मैं नहीं।", "Identity requirements §5", "v3.2 · 12 Sep 2026");
-export const intentSafety = () => src("We never ask for your OTP, PIN, password or card details in this chat, and our staff never ask for them on a call. Your PAN, Aadhaar and photos go only through the secure forms, and I cannot see them. If a message or call asks for your OTP, do not share it.", "हम इस चैट में आपका OTP, PIN, पासवर्ड या कार्ड की जानकारी कभी नहीं माँगते, और हमारे कर्मचारी फ़ोन पर भी नहीं माँगते। आपका PAN, आधार और फ़ोटो सिर्फ़ सुरक्षित फ़ॉर्म से जाते हैं, और मैं उन्हें नहीं देख सकता। अगर कोई संदेश या कॉल आपका OTP माँगे, तो उसे न बताएँ।", "Security and privacy notice §1", "v1.1 · 5 Sep 2026");
-export const intentGlossary = () => src("KYC (Know Your Customer) is a check that you are who you say you are. Every bank account in India needs it. PAN is your permanent tax number. Aadhaar is your 12-digit ID linked to your mobile. We use them only for this check.", "KYC (अपने ग्राहक को जानें) यह जाँच है कि आप वही हैं जो आप बता रहे हैं। भारत में हर बैंक खाते के लिए यह ज़रूरी है। PAN आपका स्थायी कर नंबर है। आधार आपका 12 अंकों का पहचान नंबर है जो मोबाइल से जुड़ा होता है। हम इन्हें सिर्फ़ इसी जाँच के लिए इस्तेमाल करते हैं।", "Plain-language glossary §1", "v1.0 · 1 Sep 2026");
-export const intentBranch = () => src("No. Your application is fully online. If a case ever needs an in-person step, we tell you here before you continue, and you can choose an assisted centre near you. Your progress is always saved.", "नहीं। आपका आवेदन पूरी तरह ऑनलाइन है। अगर कभी किसी मामले में आमने-सामने का कदम ज़रूरी हो, तो हम आगे बढ़ने से पहले यहीं बताएँगे, और आप अपने पास का सहायता केंद्र चुन सकते हैं। आपकी प्रगति हमेशा सहेजी रहती है।", "Account opening FAQ §1", "v1.0 · 1 Sep 2026");
-export const intentDetails = () => src("We ask for your name and date of birth exactly as on your PAN, so they match your records and avoid a mismatch later. Your email is for updates, and your PIN code helps with the address check. We use them only for KYC.", "हम आपका नाम और जन्मतिथि बिल्कुल PAN के अनुसार माँगते हैं, ताकि वे आपके रिकॉर्ड से मिलें और आगे नाम में फ़र्क की दिक्कत न हो। ईमेल अपडेट के लिए है, और पिन कोड पते की जाँच में मदद करता है। इनका इस्तेमाल सिर्फ़ KYC के लिए होता है।", "Personal details guidance §1", "v1.0 · 1 Sep 2026");
+export const intentDocs = () => kbMsg("docs");
+export const intentAddr = () => kbMsg("addr");
+export const intentVideo = () => kbMsg("video");
+export const intentAadhaar = () => kbMsg("aadhaar");
+export const intentName = () => kbMsg("name");
+export const intentSafety = () => kbMsg("safety");
+export const intentGlossary = () => kbMsg("glossary");
+export const intentBranch = () => kbMsg("branch");
+export const intentDetails = () => kbMsg("details");
 
 export const intentFees = (): Msg[] => [
   say(L("I don't quote fees myself, so you always see the official numbers. Here is the approved fee sheet.", "मैं खुद शुल्क नहीं बताता, ताकि आप हमेशा आधिकारिक आँकड़े देखें। यह रहा मंज़ूर शुल्क पत्रक।")),
@@ -361,11 +370,53 @@ function matchChip(text: string): (() => Msg[]) | null {
   return best;
 }
 
-/** Route a question; non-local languages go to Claude for intent only. Sensitive text never leaves the device. */
+type Answer = { type: "answer"; text: string; source: KbId } | { type: "action"; action: "status" | "approval" | "fees" | "handoff" | "fix" } | { type: "abstain" };
+
+/** Ask the AI (Groq, through our server). It answers only from the approved knowledge base. Throws on failure. */
+async function askAI(text: string): Promise<Msg[]> {
+  const q = get();
+  const step = steps(q);
+  const r = await post<Answer>("/api/answer", { language: q.lang, question: text, step });
+  if (r.type === "answer") return [...aiMsg(r.text, r.source), talkLk()];
+  if (r.type === "action") {
+    const m: Record<string, () => Msg[]> = {
+      status: intentStatus, approval: intentApproval, handoff: intentHandoff,
+      fees: () => (get().mvp ? intentAbstain() : intentFees()),
+      fix: () => (q.id === "rejected" || q.selfie === "rejected" ? intentFix() : intentStatus()),
+    };
+    return (m[r.action] ?? intentAbstain)();
+  }
+  return [...intentAbstain(), talkLk()];
+}
+/** The applicant's current step, by name only (nothing personal), to give the AI context. */
+function steps(q: ReturnType<typeof get>): string {
+  return q.mob !== "done" ? "Mobile number" : q.det !== "done" ? "Personal details" : q.id !== "done" ? "Identity proof"
+    : q.addr !== "done" ? "Address proof" : q.selfie !== "done" ? "Video KYC" : "Review and submit";
+}
+/** Rule answers the AI may rewrite: approved-knowledge answers and "I won't guess". */
+const aiCanAnswer = (out: Msg[]) => out[0]?.kind === "source" || isAbstain(out);
+const isAbstain = (out: Msg[]) => out[0]?.kind === "text" && (out[0] as { text: string }).text === (intentAbstain()[0] as { text: string }).text;
+
+/**
+ * Route a question. Sensitive text never leaves the device.
+ * - Personal numbers, OTPs, approval, fees, status, fixes and handoff always use the app's own cards.
+ * - With the AI on (Groq), knowledge questions get a short, plain answer written from the approved
+ *   entries and cited to one of them; anything it can't ground becomes "I won't guess".
+ * - Without the AI, or if it fails, the approved text is shown as written.
+ */
 export async function routeAsync(text: string): Promise<Msg[]> {
   const q = get();
-  if (isLocal(q.lang) || isSensitive(text) || /^\D{0,12}\d{4,6}\D{0,3}$/.test(text.trim())) return route(text);
-  // Without a server, a question that matches a suggested question in this language still gets its answer.
+  if (isSensitive(text) || /^\D{0,12}\d{4,6}\D{0,3}$/.test(text.trim()) || /\b(pin(?!\s*code)|cvv|password)\b/i.test(text)) return route(text);
+  if (isLocal(q.lang)) {
+    const out = route(text);
+    if (!aiAnswers() || !aiCanAnswer(out)) return out;
+    try { return await askAI(text); } catch { return out; }
+  }
+  // Other languages: the AI understands and answers them directly.
+  if (aiAnswers()) {
+    try { return await askAI(text); } catch { /* fall back below */ }
+  }
+  // Without the AI, a question that matches a suggested question in this language still gets its answer.
   const byChip = matchChip(text);
   if (byChip) return byChip();
   try {

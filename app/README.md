@@ -82,6 +82,18 @@ A successful check returns a signed token. Codes are kept in memory, so running 
 
 **Backend modes.** When the app starts, it checks `/api/health`. If the backend answers, OTP and handoff go through it. If not, as on GitHub Pages, they are simulated in the browser: in the OTP demo any 6 digits work except `000000`. `VITE_BACKEND=server` or `VITE_BACKEND=local` forces a mode at build time.
 
+## AI answers (Groq)
+
+Set `GROQ_API_KEY` (from console.groq.com) on the server to let the help assistant answer free-text questions with an AI model. `GROQ_MODEL` picks the model (default `openai/gpt-oss-120b`; Groq retired its free Llama models in August 2026, so check the models page for what's current). Without a key, the assistant uses its rule-based answers as before.
+
+- **Grounded:** the model may only use the approved answers in `src/engine/kb.ts`. It rephrases the right one in plain words (at most about 45 words, no jargon, in the applicant's language) and cites it, so each AI answer still shows its source and version.
+- **Never sent to the AI:** anything that looks like a PAN, Aadhaar, phone number, OTP, PIN or password. These are blocked on the device and on the server.
+- **Kept on rules:** approval, fees and rates, the applicant's own status, why something failed, and talking to a person. These always use the app's own cards. If the model recognises one of these, it hands it back to the rules.
+- **Checked:** every AI answer is checked before it's shown. Amounts, percentages, approval promises, ID-like numbers, unknown sources or over-long answers turn into "I won't guess, I can connect you to a person".
+- **Fallback:** if Groq is down or rate-limited, the approved text is shown as written.
+- **Budget:** answers are cached per question, step and language, and count towards `DAILY_CALL_LIMIT`.
+- **System prompt:** `systemPrompt()` in `server/answer/groq.ts`.
+
 ## What's here
 
 - **Demo shell** (`src/DemoPanel.tsx`): the phone frame and the prototype controls from the design (failure simulator, stale/unavailable status, assistant down, weak connection, reset). The design's Tweaks "mvp" prop is now a **Scope** switch in this panel. `?scope=full` opens the full version.

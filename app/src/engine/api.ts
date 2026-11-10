@@ -28,6 +28,9 @@ export const backend = () => mode;
 let channel: "sms" | "email" = "sms";
 /** How the backend delivers mobile OTPs. "email" means the app also asks for an email address. */
 export const otpChannel = () => (mode === "server" ? channel : "sms");
+let ai = false;
+/** True when the server answers free-text questions with the AI (Groq). */
+export const aiAnswers = () => mode === "server" && ai;
 let onChange: () => void = () => {};
 /** Called when a late health answer or the server itself changes the mode or channel, so the UI can re-render. */
 export const onBackendChange = (fn: () => void) => { onChange = fn; };
@@ -36,7 +39,8 @@ export const useEmailChannel = () => { if (channel !== "email") { channel = "ema
 
 async function readHealth(timeoutMs: number) {
   const r = await fetch(API_BASE + "/api/health", { signal: AbortSignal.timeout(timeoutMs), cache: "no-store" });
-  const h = (await r.json()) as { otp?: string; otpChannel?: string; handoff?: string };
+  const h = (await r.json()) as { otp?: string; otpChannel?: string; handoff?: string; answers?: string };
+  ai = h.answers === "groq";
   return { ok: r.ok && !!h.otp && !!h.handoff, email: h.otpChannel === "email" };
 }
 
