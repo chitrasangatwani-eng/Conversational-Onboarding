@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { set, useAppState } from "../engine/store";
 import { backHome, changeNumber, sendOtp, validMobile, verifyOtp } from "../engine/flow";
-import { backend, otpChannel } from "../engine/api";
+import { backend, firebaseWeb, otpChannel } from "../engine/api";
 import { ask, intentAadhaar } from "../engine/assistant";
 import { L } from "../engine/i18n";
 import { MicButton, VOICE_NOTE } from "./fields";
@@ -49,7 +49,7 @@ export function MobileScreen() {
                 <div className="field-head"><span>Email address</span></div>
                 <input className="input" type="email" value={s.otpEmail} onChange={(e) => set({ otpEmail: e.target.value, mobErr: "" })} placeholder="name@example.com" autoComplete="email" aria-label="Email for your OTP" />
               </label>
-              <div style={{ fontSize: 12, color: "#5f6b80", lineHeight: 1.4 }}>Email sends a real code. SMS in India needs DLT business registration, so in this demo an SMS code is shown on screen instead.</div>
+              <div style={{ fontSize: 12, color: "#5f6b80", lineHeight: 1.4 }}>{firebaseWeb() ? "Both send a real 6-digit code: by SMS to your mobile, or to your email." : "Email sends a real code. SMS in India needs DLT business registration, so in this demo an SMS code is shown on screen instead."}</div>
             </>
           )}
           <div className="err" role="alert">{mobErr}</div>

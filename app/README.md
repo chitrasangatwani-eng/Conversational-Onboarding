@@ -54,6 +54,17 @@ A successful check returns a signed token. Codes are kept in memory, so running 
 
 **OTP by mobile or email.** With an email provider (`brevo`, `smtp` or `resend`), the first step accepts **either** a mobile number **or** an email address. Either one turns on Send OTP. With an email, the code is emailed and never shown in the app. With only a mobile number, it goes through `SMS_PROVIDER` (default `sandbox`, which shows the code in the app because real SMS in India needs DLT). The same code rules apply, and an email is pre-filled on the personal details step.
 
+**SMS through Firebase (+91 numbers).** Firebase Phone Authentication sends the SMS and checks the code in the browser, so no DLT registration or SMS gateway account of your own is needed. After a correct code, the app sends Firebase's ID token to `/api/otp/firebase`. The server checks Google's signature, the project, a fresh sign-in and a `+91` mobile number, then issues the same signed "mobile verified" token as the other routes and signs out of Firebase. The Firebase SDK loads only when someone sends an SMS code.
+
+Setup:
+1. In the Firebase console, create a project and add a **Web app**. Its config shows `apiKey`, `projectId` and `appId`.
+2. Go to **Authentication → Sign-in method** and enable **Phone**.
+3. Go to **Authentication → Settings → Authorized domains** and add your site, for example `conversational-onboarding.onrender.com`.
+4. Real SMS needs the **Blaze** (pay-as-you-go) plan with a billing account, billed per SMS. For demos without SMS, add **Phone numbers for testing** in the Phone provider settings, each with a fixed code.
+5. On the server, set `SMS_PROVIDER=firebase` (or `OTP_PROVIDER=firebase` when there's no email route), `FIREBASE_PROJECT_ID`, `FIREBASE_API_KEY` and `FIREBASE_APP_ID`. `FIREBASE_AUTH_DOMAIN` is optional. These values are public by design, so no secret is needed.
+
+To test locally with the Auth emulator, run `npx firebase-tools emulators:start --only auth --project demo-x`. Then start the server with `FIREBASE_PROJECT_ID=demo-x FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 SMS_PROVIDER=firebase`. The codes appear at `http://127.0.0.1:9099/emulator/v1/projects/demo-x/verificationCodes`. Never set the emulator variable in production.
+
 **Real SMS in India.** Real SMS needs DLT registration of the sender ID and the message template. For MSG91, the approved template's variable must be named `otp`.
 
 **Human handoff.** "Send summary and connect", "Connect without summary" and "Call me back" each create a ticket with a reference such as `HO-3F9A1C`.

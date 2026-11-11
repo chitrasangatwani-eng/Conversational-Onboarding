@@ -107,6 +107,9 @@ export class OtpService {
   }
 
   /** Signed proof that this number was verified: base64url(payload).signature, valid for 1 hour. */
+  /** Issue the signed token for a mobile number already proven by another verifier (Firebase). */
+  tokenFor(mobile10: string): string { return this.token(mobile10); }
+
   private token(mobile10: string): string {
     const payload = Buffer.from(JSON.stringify({ sub: mobile10.slice(-4), mk: this.hmac("mobile", mobile10).toString("hex").slice(0, 32), exp: Date.now() + 3_600_000 })).toString("base64url");
     return payload + "." + this.hmac("token", payload).toString("base64url");

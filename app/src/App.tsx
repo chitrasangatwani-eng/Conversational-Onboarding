@@ -54,6 +54,7 @@ export function App() {
           </main>
         </div>
       </div>
+      <div id="fb-recaptcha" aria-hidden="true" />
       <details className="demo-drawer">
         <summary>Demo</summary>
         <DemoPanel />
