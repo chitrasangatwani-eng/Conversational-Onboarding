@@ -1,3 +1,4 @@
+import { WhatsAppProvider } from "./whatsapp";
 import { FirebaseSmsProvider } from "./firebase";
 import nodemailer, { type Transporter } from "nodemailer";
 
@@ -187,6 +188,7 @@ export function providerFromEnv(nameArg?: string): OtpProvider {
     case "sandbox": return new SandboxProvider();
     case "firebase": return new FirebaseSmsProvider();
     case "msg91": return new Msg91Provider(need("MSG91_AUTH_KEY"), need("MSG91_TEMPLATE_ID"));
+    case "whatsapp": return new WhatsAppProvider(need("WHATSAPP_TOKEN").trim(), need("WHATSAPP_PHONE_NUMBER_ID").trim());
     case "twilio": return new TwilioProvider(need("TWILIO_ACCOUNT_SID"), need("TWILIO_AUTH_TOKEN"), need("TWILIO_FROM"));
     case "smtp": {
       const user = need("SMTP_USER");
@@ -201,6 +203,6 @@ export function providerFromEnv(nameArg?: string): OtpProvider {
       if (!from) throw new Error("OTP_PROVIDER=brevo needs OTP_EMAIL_FROM (a sender address verified in Brevo)");
       return new BrevoProvider(need("BREVO_API_KEY").trim(), from.replace(/^.*<([^>]+)>.*$/, "$1").trim());
     }
-    default: throw new Error(`Unknown OTP_PROVIDER "${name}". Use sandbox, firebase, msg91, twilio, smtp, resend or brevo.`);
+    default: throw new Error(`Unknown OTP_PROVIDER "${name}". Use sandbox, firebase, whatsapp, msg91, twilio, smtp, resend or brevo.`);
   }
 }

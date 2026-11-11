@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { set, useAppState } from "../engine/store";
 import { backHome, changeNumber, sendOtp, validMobile, verifyOtp } from "../engine/flow";
-import { backend, firebaseWeb, otpChannel } from "../engine/api";
+import { backend, firebaseWeb, mobileVia, otpChannel } from "../engine/api";
 import { ask, intentAadhaar } from "../engine/assistant";
 import { L } from "../engine/i18n";
 import { MicButton, VOICE_NOTE } from "./fields";
@@ -27,6 +27,8 @@ export function MobileScreen() {
   const demoCode = s.otpDemo || "123456";
   const mobErr = s.mobErr || (s.mobNum.length === 10 && !validMobile(s.mobNum) ? "Indian mobile numbers start with 6, 7, 8 or 9. Try 9876543210 for the demo." : "");
   const sendsTo = byEmail && emailOk ? "email" : validMobile(s.mobNum) ? "sms" : "";
+  const wa = mobileVia() === "whatsapp";
+  const mobileWord = wa ? "on WhatsApp" : "by SMS";
   return (
     <div className="screen">
       <button className="back" onClick={backHome}>← Back</button>
@@ -35,7 +37,7 @@ export function MobileScreen() {
       {s.navNote && s.mob === "done" && <div className="banner ok" role="status">{s.navNote}</div>}
       {s.mobStage === "enter" ? (
         <>
-          <div className="screen-lede">{byEmail ? "Enter your mobile number or your email. Either one is enough: we'll email the 6-digit OTP if you give an email, otherwise we'll send it by SMS." : "Use the mobile number linked to your Aadhaar. We'll send a 6-digit OTP by SMS."} {full ? VOICE_NOTE : ""} <button className="why" onClick={() => set({ why: "mobNum" })}>Why we ask</button></div>
+          <div className="screen-lede">{byEmail ? `Enter your mobile number or your email. Either one is enough: we'll email the 6-digit OTP if you give an email, otherwise we'll send it ${mobileWord}.` : `Use your mobile number. We'll send a 6-digit OTP ${mobileWord}.`} {full ? VOICE_NOTE : ""} <button className="why" onClick={() => set({ why: "mobNum" })}>Why we ask</button></div>
           <button className="demo-fill" onClick={() => set({ mobNum: "9876543210", mobErr: "" })}>Demo: fill 9876543210</button>
           <div className="field-row">
             <div className="input big" style={{ width: 72, flex: "none", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, letterSpacing: 0 }}>+91</div>
@@ -49,15 +51,15 @@ export function MobileScreen() {
                 <div className="field-head"><span>Email address</span></div>
                 <input className="input" type="email" value={s.otpEmail} onChange={(e) => set({ otpEmail: e.target.value, mobErr: "" })} placeholder="name@example.com" autoComplete="email" aria-label="Email for your OTP" />
               </label>
-              <div style={{ fontSize: 12, color: "#5f6b80", lineHeight: 1.4 }}>{firebaseWeb() ? "Both send a real 6-digit code: by SMS to your mobile, or to your email." : "Email sends a real code. SMS in India needs DLT business registration, so in this demo an SMS code is shown on screen instead."}</div>
+              <div style={{ fontSize: 12, color: "#5f6b80", lineHeight: 1.4 }}>{wa ? "Both send a real 6-digit code: on WhatsApp to your mobile, or to your email." : firebaseWeb() ? "Both send a real 6-digit code: by SMS to your mobile, or to your email." : "Email sends a real code. SMS in India needs DLT business registration, so in this demo an SMS code is shown on screen instead."}</div>
             </>
           )}
           <div className="err" role="alert">{mobErr}</div>
-          <button className={"btn-lg" + (ok ? "" : " is-off")} onClick={() => sendOtp()} aria-busy={s.otpBusy}>{s.otpBusy ? "Sending…" : sendsTo === "email" ? "Send OTP to email" : sendsTo === "sms" && byEmail ? "Send OTP by SMS" : "Send OTP"}</button>
+          <button className={"btn-lg" + (ok ? "" : " is-off")} onClick={() => sendOtp()} aria-busy={s.otpBusy}>{s.otpBusy ? "Sending…" : sendsTo === "email" ? "Send OTP to email" : sendsTo === "sms" && (byEmail || wa) ? `Send OTP ${mobileWord}` : "Send OTP"}</button>
         </>
       ) : (
         <>
-          <div className="screen-lede">{s.otpSentTo ? <>Enter the 6-digit OTP we emailed to {s.otpSentTo}. Check your spam folder if you don't see it.</> : <>Enter the 6-digit OTP sent to +91 ••••••{s.mobNum.slice(-4)}.</>} {s.otpNote}</div>
+          <div className="screen-lede">{s.otpSentTo ? <>Enter the 6-digit OTP we emailed to {s.otpSentTo}. Check your spam folder if you don't see it.</> : <>Enter the 6-digit OTP sent {wa && s.otpReq !== "firebase" ? "on WhatsApp " : ""}to +91 ••••••{s.mobNum.slice(-4)}.</>} {s.otpNote}</div>
           <div className="field-row">
             <input className="input big" style={{ textAlign: "center", letterSpacing: ".4em" }} value={s.otp} onChange={(e) => set({ otp: e.target.value.replace(/\D/g, "").slice(0, 6), otpErr: "" })} inputMode="numeric" maxLength={6} placeholder="••••••" aria-label="OTP" autoComplete="one-time-code" />
             {full && <MicButton field="otp" />}
