@@ -67,6 +67,8 @@ Setup:
    - optionally `WHATSAPP_API_VERSION` (default `v23.0`).
 4. Before real users, use a **System User** token (permanent), and add your own business number, one not used on the WhatsApp app. Meta's per-message charges for authentication templates apply.
 
+**Without a template (before business verification):** Meta only lets verified businesses create templates. Set `WHATSAPP_TEMPLATE=none` and `WHATSAPP_DISPLAY_NUMBER` (e.g. `+1 555 181 1262`) to send the code as a plain WhatsApp text instead. WhatsApp allows this only within 24 hours of the person messaging the business. The mobile screen shows "First send 'hi' on WhatsApp to …" with a link. If they haven't messaged first, Meta refuses with code 131047 and the app tells them what to do. This is fine for demos; real users need the template.
+
 Meta accepts a message before delivering it, so a number that isn't on WhatsApp can fail afterwards. The applicant can resend or use email instead.
 
 **SMS through Firebase (+91 numbers).** Firebase Phone Authentication sends the SMS and checks the code in the browser, so no DLT registration or SMS gateway account of your own is needed. After a correct code, the app sends Firebase's ID token to `/api/otp/firebase`. The server checks Google's signature, the project, a fresh sign-in and a `+91` mobile number, then issues the same signed "mobile verified" token as the other routes and signs out of Firebase. The Firebase SDK loads only when someone sends an SMS code.

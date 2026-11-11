@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { set, useAppState } from "../engine/store";
 import { backHome, changeNumber, sendOtp, validMobile, verifyOtp } from "../engine/flow";
-import { backend, firebaseWeb, mobileVia, otpChannel } from "../engine/api";
+import { backend, firebaseWeb, mobileVia, otpChannel, whatsappHello } from "../engine/api";
 import { ask, intentAadhaar } from "../engine/assistant";
 import { L } from "../engine/i18n";
 import { MicButton, VOICE_NOTE } from "./fields";
@@ -53,6 +53,11 @@ export function MobileScreen() {
               </label>
               <div style={{ fontSize: 12, color: "#5f6b80", lineHeight: 1.4 }}>{wa ? "Both send a real 6-digit code: on WhatsApp to your mobile, or to your email." : firebaseWeb() ? "Both send a real 6-digit code: by SMS to your mobile, or to your email." : "Email sends a real code. SMS in India needs DLT business registration, so in this demo an SMS code is shown on screen instead."}</div>
             </>
+          )}
+          {wa && whatsappHello() && (
+            <div className="banner ok" role="note">
+              <b>Using WhatsApp?</b> First send "hi" on WhatsApp to {whatsappHello()}. <a href={"https://wa.me/" + whatsappHello()!.replace(/\D/g, "") + "?text=hi"} target="_blank" rel="noreferrer">Open WhatsApp</a>
+            </div>
           )}
           <div className="err" role="alert">{mobErr}</div>
           <button className={"btn-lg" + (ok ? "" : " is-off")} onClick={() => sendOtp()} aria-busy={s.otpBusy}>{s.otpBusy ? "Sending…" : sendsTo === "email" ? "Send OTP to email" : sendsTo === "sms" && (byEmail || wa) ? `Send OTP ${mobileWord}` : "Send OTP"}</button>
