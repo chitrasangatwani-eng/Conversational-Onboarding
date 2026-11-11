@@ -41,6 +41,10 @@ const otp = new OtpService(providersFromEnv());
 const groq = new GroqAnswers();
 const firebase = new FirebasePhoneVerifier();
 const firebaseWeb = firebaseConfigFromEnv();
+// SMS_PROVIDER (or OTP_PROVIDER) decides the mobile route. Firebase settings alone don't switch it on,
+// so they can stay in place while WhatsApp (or another provider) is in use.
+const smsRoute = otp.smsProviderName === "firebase" ? (firebaseWeb && firebase.enabled ? "firebase" : "server") : otp.smsProviderName === "whatsapp" ? "whatsapp" : "server";
+if (otp.smsProviderName === "firebase" && !(firebaseWeb && firebase.enabled)) console.warn("[otp] SMS_PROVIDER=firebase but FIREBASE_PROJECT_ID is not set; mobile OTP won't work");
 const handoff = new HandoffService();
 const digilocker = new DigiLockerService();
 const aadhaar = new AadhaarService();
@@ -346,7 +350,7 @@ export function takeCall(): boolean {
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url || "/", "http://localhost");
-  if (url.pathname === "/api/health") { send(res, 200, { ok: true, model: MODEL, key: !!process.env.ANTHROPIC_API_KEY, otp: otp.providerName, otpChannel: otp.channel, sms: firebaseWeb && firebase.enabled ? "firebase" : otp.smsProviderName === "whatsapp" ? "whatsapp" : "server", firebase: firebaseWeb, whatsappHello: otp.smsProviderName === "whatsapp" ? whatsappHelloNumber() : null, answers: groq.enabled ? "groq" : "rules", answerModel: groq.enabled ? GROQ_MODEL : null, handoff: handoff.providerName, digilocker: digilocker.providerName, aadhaar: aadhaar.providerName }); return; }
+  if (url.pathname === "/api/health") { send(res, 200, { ok: true, model: MODEL, key: !!process.env.ANTHROPIC_API_KEY, otp: otp.providerName, otpChannel: otp.channel, sms: smsRoute, firebase: smsRoute === "firebase" ? firebaseWeb : null, whatsappHello: otp.smsProviderName === "whatsapp" ? whatsappHelloNumber() : null, answers: groq.enabled ? "groq" : "rules", answerModel: groq.enabled ? GROQ_MODEL : null, handoff: handoff.providerName, digilocker: digilocker.providerName, aadhaar: aadhaar.providerName }); return; }
   // Pages opened in the DigiLocker consent window (top-level navigations, so no CORS check).
   if (req.method === "GET" && url.pathname === "/api/digilocker/sandbox" && digilocker.providerName === "sandbox") {
     res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
