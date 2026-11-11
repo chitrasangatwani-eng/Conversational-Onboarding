@@ -46,6 +46,8 @@ export class OtpService {
 
   /** The main provider: the email one when email is set up, otherwise SMS. */
   get providerName() { return (this.providers.email ?? this.providers.sms).name; }
+  /** Which provider delivers mobile codes (sandbox, whatsapp, msg91, twilio, firebase). */
+  get smsProviderName() { return this.providers.sms.name; }
   /** "email" when codes can go by email, so the app offers an email field. */
   get channel() { return this.providers.email ? "email" as const : "sms" as const; }
 
@@ -78,6 +80,7 @@ export class OtpService {
     try {
       await provider.send(mobile10, code, byEmail ? email : undefined);
       if (byEmail) console.log(`[otp:${provider.name}] code emailed to ${maskEmail(email)}`);
+      else if (!provider.sandbox) console.log(`[otp:${provider.name}] code sent to ${mask(mobile10)}`);
     } catch (e) {
       console.error(`[otp:${provider.name}] send to ${byEmail ? maskEmail(email) : mask(mobile10)} failed:`, (e as Error).message);
       return { ok: false, reason: "send_failed", hint: sendHint(provider.name, (e as Error).message), provider: provider.name };
@@ -136,10 +139,18 @@ export class OtpService {
 }
 
 /** Why a provider refused a send, as a fixed category the app can explain. Never includes keys, addresses or provider text. */
-export type SendHint = "smtp_blocked" | "recipient_not_allowed" | "ip_blocked" | "sender_not_verified" | "bad_key" | "account_not_active" | "provider_rate_limit" | "other";
+export type SendHint = "not_on_whatsapp" | "template_missing" | "smtp_blocked" | "recipient_not_allowed" | "ip_blocked" | "sender_not_verified" | "bad_key" | "account_not_active" | "provider_rate_limit" | "other";
 
 export function sendHint(provider: string, message: string): SendHint {
   const m = message.toLowerCase();
+  if (provider === "whatsapp") {
+    if (/code (131026|131000\/?\d*: .*not .*whatsapp)|not a valid whatsapp|undeliverable/.test(m)) return "not_on_whatsapp";
+    if (/code 131030|recipient phone number not in allowed list/.test(m)) return "recipient_not_allowed";
+    if (/code 132001|template name does not exist|template.*(not found|does not exist)|code 132000|code 132012/.test(m)) return "template_missing";
+    if (/code (190|10|200)\b|access token|session has expired|oauth/.test(m)) return "bad_key";
+    if (/code (4|80007|130429|131048|131056)\b|rate limit|too many/.test(m)) return "provider_rate_limit";
+    if (/code (131031|368)\b|account.*(restricted|locked|disabled)/.test(m)) return "account_not_active";
+  }
   if (provider === "smtp" && /timeout|timed out|etimedout|econnrefused|econnreset|enetunreach|connection|greeting/.test(m)) return "smtp_blocked";
   if (/only send testing emails|own email address|verify a domain|recipient.*not allowed/.test(m)) return "recipient_not_allowed";
   if (/unrecogni[sz]ed ip|authori[sz]ed ip|ip address/.test(m)) return "ip_blocked";

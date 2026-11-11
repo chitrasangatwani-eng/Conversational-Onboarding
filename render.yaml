@@ -20,6 +20,8 @@ services:
         value: "2000"
       - key: PER_IP_LIMIT
         value: "120"
+      # OTP on WhatsApp (no DLT): SMS_PROVIDER=whatsapp, WHATSAPP_TOKEN (secret),
+      # WHATSAPP_PHONE_NUMBER_ID, WHATSAPP_TEMPLATE, WHATSAPP_TEMPLATE_LANG (see app/README.md).
       # SMS OTP for +91 numbers through Firebase Phone Auth: add SMS_PROVIDER=firebase,
       # FIREBASE_PROJECT_ID, FIREBASE_API_KEY and FIREBASE_APP_ID in Environment
       # (see app/README.md). Real SMS needs Firebase's Blaze plan.

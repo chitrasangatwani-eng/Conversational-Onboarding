@@ -54,6 +54,21 @@ A successful check returns a signed token. Codes are kept in memory, so running 
 
 **OTP by mobile or email.** With an email provider (`brevo`, `smtp` or `resend`), the first step accepts **either** a mobile number **or** an email address. Either one turns on Send OTP. With an email, the code is emailed and never shown in the app. With only a mobile number, it goes through `SMS_PROVIDER` (default `sandbox`, which shows the code in the app because real SMS in India needs DLT). The same code rules apply, and an email is pre-filled on the personal details step.
 
+**OTP on WhatsApp (+91 numbers, no DLT).** WhatsApp messages fall outside India's SMS DLT rules. With `SMS_PROVIDER=whatsapp`, mobile codes are sent with Meta's WhatsApp Business Cloud API, using an approved **Authentication** template that shows the code with a "Copy code" button. The server still creates and checks every code, with the same limits as the other routes.
+
+Setup:
+1. Go to developers.facebook.com, choose **Create app**, pick the **Business** type, and add the **WhatsApp** product. This creates a WhatsApp Business account. **API Setup** shows a **test number**, its **Phone number ID** and a **temporary access token**, which expires after 24 hours. The test number only sends to up to 5 recipient numbers you add there.
+2. In **WhatsApp Manager → Message templates**, create a template in the **Authentication** category with a copy-code button. Note its name and language (for example `otp_code` and `en_US`), and wait for approval.
+3. Set these on the server:
+   - `SMS_PROVIDER=whatsapp`;
+   - `WHATSAPP_TOKEN`, which is **secret**;
+   - `WHATSAPP_PHONE_NUMBER_ID`;
+   - `WHATSAPP_TEMPLATE` and `WHATSAPP_TEMPLATE_LANG`;
+   - optionally `WHATSAPP_API_VERSION` (default `v23.0`).
+4. Before real users, use a **System User** token (permanent), and add your own business number, one not used on the WhatsApp app. Meta's per-message charges for authentication templates apply.
+
+Meta accepts a message before delivering it, so a number that isn't on WhatsApp can fail afterwards. The applicant can resend or use email instead.
+
 **SMS through Firebase (+91 numbers).** Firebase Phone Authentication sends the SMS and checks the code in the browser, so no DLT registration or SMS gateway account of your own is needed. After a correct code, the app sends Firebase's ID token to `/api/otp/firebase`. The server checks Google's signature, the project, a fresh sign-in and a `+91` mobile number, then issues the same signed "mobile verified" token as the other routes and signs out of Firebase. The Firebase SDK loads only when someone sends an SMS code.
 
 Setup:

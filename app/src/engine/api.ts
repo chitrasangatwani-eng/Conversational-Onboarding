@@ -31,6 +31,9 @@ export const otpChannel = () => (mode === "server" ? channel : "sms");
 let ai = false;
 export interface FirebaseWebConfig { apiKey: string; authDomain: string; projectId: string; appId: string; emulator?: string }
 let fb: FirebaseWebConfig | null = null;
+let smsVia = "server";
+/** "whatsapp" when mobile codes go on WhatsApp, so the screen says so. */
+export const mobileVia = () => (mode === "server" ? smsVia : "server");
 /** Firebase web config when SMS OTPs go through Firebase Phone Auth, else null. */
 export const firebaseWeb = () => (mode === "server" ? fb : null);
 /** True when the server answers free-text questions with the AI (Groq). */
@@ -46,6 +49,7 @@ async function readHealth(timeoutMs: number) {
   const h = (await r.json()) as { otp?: string; otpChannel?: string; handoff?: string; answers?: string; sms?: string; firebase?: FirebaseWebConfig | null };
   ai = h.answers === "groq";
   fb = h.sms === "firebase" && h.firebase?.projectId ? h.firebase : null;
+  smsVia = h.sms || "server";
   return { ok: r.ok && !!h.otp && !!h.handoff, email: h.otpChannel === "email" };
 }
 

@@ -57,15 +57,17 @@ export async function checkOtp(requestId: string, code: string): Promise<OtpVeri
 
 /** Explain a failed send. The setup hints help whoever runs the demo fix the server settings. */
 function sendFailedMessage(email: string, hint: string, provider: string): string {
-  const base = email ? "We couldn't send the email." : "We couldn't send the SMS.";
+  const base = email ? "We couldn't send the email." : provider === "whatsapp" ? "We couldn't send the WhatsApp message." : "We couldn't send the SMS.";
   const setup: Record<string, string> = {
     smtp_blocked: "Setup: this server can't reach the mail server. Render's free plan blocks SMTP, so use OTP_PROVIDER=resend or brevo.",
-    recipient_not_allowed: `Setup: ${provider} is in test mode and only sends to the email address you signed up with. Use that address, or verify a domain with ${provider}.`,
+    recipient_not_allowed: provider === "whatsapp" ? "Setup: the WhatsApp test number only sends to numbers you added as recipients in Meta's API Setup. Add this number there, or use your own business number." : `Setup: ${provider} is in test mode and only sends to the email address you signed up with. Use that address, or verify a domain with ${provider}.`,
     ip_blocked: `Setup: ${provider} blocked this server's IP address. Turn off IP blocking under Security → Authorised IPs in ${provider}.`,
     sender_not_verified: `Setup: ${provider} rejected the sender address. Remove OTP_EMAIL_FROM to use the provider's test sender, or verify your own domain.`,
-    bad_key: `Setup: ${provider} rejected the API key or password. Paste it again in Render with no extra spaces.`,
+    bad_key: provider === "whatsapp" ? "Setup: Meta rejected the WhatsApp access token. Temporary tokens expire after 24 hours: create a new one (or a permanent System User token) and update WHATSAPP_TOKEN." : `Setup: ${provider} rejected the API key or password. Paste it again in Render with no extra spaces.`,
     account_not_active: `Setup: your ${provider} account isn't activated for sending yet. Finish activation in ${provider}.`,
     provider_rate_limit: `${provider} is limiting sends right now. Wait a minute and try again.`,
+    not_on_whatsapp: "This number doesn't seem to be on WhatsApp. Check the number, or use your email instead.",
+    template_missing: "Setup: the WhatsApp message template isn't found or approved yet. Check WHATSAPP_TEMPLATE and its language in Meta's WhatsApp Manager.",
   };
   return setup[hint] ? `${base} ${setup[hint]}` : email ? `${base} Check the address, or try again in a minute.` : `${base} Try again in a minute.`;
 }
