@@ -40,8 +40,23 @@ const MESSAGES: Record<string, string> = {
   "auth/invalid-verification-code": "That code didn't match. Check the SMS and try again.",
   "auth/code-expired": "This code has expired. Tap Resend OTP to get a new one.",
   "auth/missing-verification-code": "Enter all 6 digits.",
+  // Setup problems, most common when phone sign-in is first switched on:
+  "auth/invalid-app-credential": "Firebase's security check (reCAPTCHA) was rejected. Check that this website is in Firebase's Authorized domains and that the API key allows it.",
+  "auth/invalid-api-key": "The Firebase API key is wrong. Check FIREBASE_API_KEY in the server settings.",
+  "auth/api-key-not-valid.-please-pass-a-valid-api-key.": "The Firebase API key is wrong. Check FIREBASE_API_KEY in the server settings.",
+  "auth/requests-from-referer-<empty>-are-blocked.": "The Firebase API key doesn't allow this website. Check its website restrictions in Google Cloud.",
+  "auth/admin-restricted-operation": "Phone sign-in is restricted for this Firebase project. Check Authentication settings.",
+  "auth/missing-client-identifier": "Firebase's security check didn't load. Reload the page and try again.",
+  "auth/error-code:-39": "Firebase blocked SMS for this project, usually because billing (Blaze plan) is off or India isn't allowed in the SMS region policy.",
+  "auth/internal-error": "Firebase had a problem sending the SMS. If this keeps happening, check that Phone sign-in is enabled and billing is on.",
 };
-const message = (e: unknown, fallback: string) => MESSAGES[(e as { code?: string })?.code ?? ""] ?? fallback;
+/** A plain message, plus Firebase's error code for anything not listed, so setup problems can be diagnosed. */
+const message = (e: unknown, fallback: string) => {
+  const code = (e as { code?: string })?.code ?? "";
+  const known = MESSAGES[code] ?? Object.entries(MESSAGES).find(([k]) => code.startsWith(k))?.[1];
+  if (known) return known + (code.startsWith("auth/") && !code.startsWith("auth/invalid-verification") && !code.startsWith("auth/code-expired") ? ` (${code})` : "");
+  return fallback + (code ? ` (Firebase: ${code})` : "");
+};
 
 /** Send the SMS code to +91 <mobile10>. */
 export async function sendFirebaseSms(mobile10: string): Promise<{ ok: true } | { ok: false; message: string }> {
