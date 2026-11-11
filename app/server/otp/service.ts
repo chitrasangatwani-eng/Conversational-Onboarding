@@ -139,11 +139,12 @@ export class OtpService {
 }
 
 /** Why a provider refused a send, as a fixed category the app can explain. Never includes keys, addresses or provider text. */
-export type SendHint = "not_on_whatsapp" | "template_missing" | "smtp_blocked" | "recipient_not_allowed" | "ip_blocked" | "sender_not_verified" | "bad_key" | "account_not_active" | "provider_rate_limit" | "other";
+export type SendHint = "whatsapp_window" | "not_on_whatsapp" | "template_missing" | "smtp_blocked" | "recipient_not_allowed" | "ip_blocked" | "sender_not_verified" | "bad_key" | "account_not_active" | "provider_rate_limit" | "other";
 
 export function sendHint(provider: string, message: string): SendHint {
   const m = message.toLowerCase();
   if (provider === "whatsapp") {
+    if (/code 131047|re-engagement|more than 24 hours|24 hours have passed/.test(m)) return "whatsapp_window";
     if (/code (131026|131000\/?\d*: .*not .*whatsapp)|not a valid whatsapp|undeliverable/.test(m)) return "not_on_whatsapp";
     if (/code 131030|recipient phone number not in allowed list/.test(m)) return "recipient_not_allowed";
     if (/code 132001|template name does not exist|template.*(not found|does not exist)|code 132000|code 132012/.test(m)) return "template_missing";

@@ -1,4 +1,4 @@
-import { ApiError, backend, post, useEmailChannel } from "./api";
+import { ApiError, backend, post, useEmailChannel, whatsappHello } from "./api";
 
 // Mobile OTP for the secure form. In "server" mode the backend creates, sends
 // and checks the code (see server/otp). In "local" mode, used for the static
@@ -66,6 +66,7 @@ function sendFailedMessage(email: string, hint: string, provider: string): strin
     bad_key: provider === "whatsapp" ? "Setup: Meta rejected the WhatsApp access token. Temporary tokens expire after 24 hours: create a new one (or a permanent System User token) and update WHATSAPP_TOKEN." : `Setup: ${provider} rejected the API key or password. Paste it again in Render with no extra spaces.`,
     account_not_active: `Setup: your ${provider} account isn't activated for sending yet. Finish activation in ${provider}.`,
     provider_rate_limit: `${provider} is limiting sends right now. Wait a minute and try again.`,
+    whatsapp_window: `First send "hi" on WhatsApp from this number to ${whatsappHello() ?? "our WhatsApp business number"}, then tap Send OTP again. WhatsApp only lets us message you after you've messaged us.`,
     not_on_whatsapp: "This number doesn't seem to be on WhatsApp. Check the number, or use your email instead.",
     template_missing: "Setup: the WhatsApp message template isn't found or approved yet. Check WHATSAPP_TEMPLATE and its language in Meta's WhatsApp Manager.",
   };

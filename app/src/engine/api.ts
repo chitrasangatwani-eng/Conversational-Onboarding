@@ -32,6 +32,9 @@ let ai = false;
 export interface FirebaseWebConfig { apiKey: string; authDomain: string; projectId: string; appId: string; emulator?: string }
 let fb: FirebaseWebConfig | null = null;
 let smsVia = "server";
+let waHello: string | null = null;
+/** In WhatsApp text mode: the business number applicants message first ("hi"), else null. */
+export const whatsappHello = () => (mode === "server" && smsVia === "whatsapp" ? waHello : null);
 /** "whatsapp" when mobile codes go on WhatsApp, so the screen says so. */
 export const mobileVia = () => (mode === "server" ? smsVia : "server");
 /** Firebase web config when SMS OTPs go through Firebase Phone Auth, else null. */
@@ -50,6 +53,7 @@ async function readHealth(timeoutMs: number) {
   ai = h.answers === "groq";
   fb = h.sms === "firebase" && h.firebase?.projectId ? h.firebase : null;
   smsVia = h.sms || "server";
+  waHello = (h as { whatsappHello?: string | null }).whatsappHello ?? null;
   return { ok: r.ok && !!h.otp && !!h.handoff, email: h.otpChannel === "email" };
 }
 
