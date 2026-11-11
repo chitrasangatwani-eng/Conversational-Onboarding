@@ -11,6 +11,7 @@
 //
 // Secure-form integrations (identity data, never shown to the assistant):
 //   POST /api/otp/send    { mobile?, email? } (email if given, else SMS)           -> { requestId, maskedMobile, expiresIn, resendIn, sandboxCode? }
+//   POST /api/otp/firebase { idToken }  (SMS sent by Firebase in the app) -> { verified, token, maskedMobile }
 //   POST /api/otp/verify  { requestId, code }   -> { verified, token? , reason?, attemptsLeft? }
 //   POST /api/aadhaar/otp     { aadhaar, consent: true }      -> { ref, last4, sandboxCode? }
 //   POST /api/aadhaar/verify  { ref, otp, expectedName }      -> { verified, last4, nameMatch, pincode, state }
@@ -29,6 +30,7 @@ import { fileURLToPath } from "node:url";
 import Anthropic from "@anthropic-ai/sdk";
 import { OtpService } from "./otp/service";
 import { GroqAnswers, GROQ_MODEL } from "./answer/groq";
+import { FirebasePhoneVerifier, firebaseConfigFromEnv } from "./otp/firebase";
 import { providersFromEnv } from "./otp/providers";
 import { HandoffService } from "./handoff/service";
 import { DigiLockerService, callbackPage, sandboxConsentPage } from "./digilocker/service";
@@ -36,6 +38,8 @@ import { AadhaarService } from "./aadhaar/service";
 
 const otp = new OtpService(providersFromEnv());
 const groq = new GroqAnswers();
+const firebase = new FirebasePhoneVerifier();
+const firebaseWeb = firebaseConfigFromEnv();
 const handoff = new HandoffService();
 const digilocker = new DigiLockerService();
 const aadhaar = new AadhaarService();
@@ -257,6 +261,14 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse, ur
     return send(res, 200, digilocker.result(body?.state));
   }
 
+  // Firebase Phone Auth: the app signed in with Firebase by SMS; exchange its ID token for ours.
+  if (url.pathname === "/api/otp/firebase") {
+    const r = await firebase.check(body?.idToken);
+    if (!r.ok) return send(res, r.reason === "not_configured" ? 503 : 400, { verified: false, reason: r.reason });
+    console.log(`[otp:firebase] mobile ••••••${r.mobile10.slice(-4)} verified by Firebase`);
+    return send(res, 200, { verified: true, token: otp.tokenFor(r.mobile10), maskedMobile: "••••••" + r.mobile10.slice(-4) });
+  }
+
   if (url.pathname === "/api/otp/verify") {
     const r = otp.verify(body?.requestId, typeof body?.code === "string" ? body.code.trim() : "");
     return send(res, 200, r.ok ? { verified: true, token: r.token } : { verified: false, reason: r.reason, attemptsLeft: r.attemptsLeft });
@@ -333,7 +345,7 @@ export function takeCall(): boolean {
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url || "/", "http://localhost");
-  if (url.pathname === "/api/health") { send(res, 200, { ok: true, model: MODEL, key: !!process.env.ANTHROPIC_API_KEY, otp: otp.providerName, otpChannel: otp.channel, answers: groq.enabled ? "groq" : "rules", answerModel: groq.enabled ? GROQ_MODEL : null, handoff: handoff.providerName, digilocker: digilocker.providerName, aadhaar: aadhaar.providerName }); return; }
+  if (url.pathname === "/api/health") { send(res, 200, { ok: true, model: MODEL, key: !!process.env.ANTHROPIC_API_KEY, otp: otp.providerName, otpChannel: otp.channel, sms: firebaseWeb && firebase.enabled ? "firebase" : "server", firebase: firebaseWeb, answers: groq.enabled ? "groq" : "rules", answerModel: groq.enabled ? GROQ_MODEL : null, handoff: handoff.providerName, digilocker: digilocker.providerName, aadhaar: aadhaar.providerName }); return; }
   // Pages opened in the DigiLocker consent window (top-level navigations, so no CORS check).
   if (req.method === "GET" && url.pathname === "/api/digilocker/sandbox" && digilocker.providerName === "sandbox") {
     res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });

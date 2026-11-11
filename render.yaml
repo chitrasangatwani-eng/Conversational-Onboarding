@@ -20,6 +20,9 @@ services:
         value: "2000"
       - key: PER_IP_LIMIT
         value: "120"
+      # SMS OTP for +91 numbers through Firebase Phone Auth: add SMS_PROVIDER=firebase,
+      # FIREBASE_PROJECT_ID, FIREBASE_API_KEY and FIREBASE_APP_ID in Environment
+      # (see app/README.md). Real SMS needs Firebase's Blaze plan.
       # AI answers in the help assistant: add GROQ_API_KEY in the service's
       # Environment settings (it is not stored here). Optional GROQ_MODEL.
       - key: NODE_VERSION

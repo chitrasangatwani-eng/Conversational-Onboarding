@@ -1,7 +1,8 @@
 import { get, set, resetFlow, type Ovd, type Screen, type State } from "./store";
 import { L, clearFailures, loadLang } from "./i18n";
 import { checkOtp, requestOtp } from "./otp";
-import { backend, otpChannel } from "./api";
+import { backend, firebaseWeb, otpChannel } from "./api";
+import { confirmFirebaseCode, sendFirebaseSms } from "./firebasePhone";
 import { fetchFromDigiLocker } from "./digilocker";
 import { checkAadhaarOtp, requestAadhaarOtp } from "./aadhaar";
 import { ask, greet, intentFix, intentHandoff } from "./assistant";
@@ -81,6 +82,13 @@ export async function sendOtp(resend = false) {
     return;
   }
   set({ otpBusy: true, mobErr: "", otpErr: "" });
+  // SMS through Firebase Phone Auth: Firebase sends and checks the code in the browser.
+  if (!email && firebaseWeb()) {
+    const f = await sendFirebaseSms(mobile);
+    if (!f.ok) { set(resend ? { otpBusy: false, otpErr: f.message } : { otpBusy: false, mobErr: f.message }); return; }
+    set({ otpBusy: false, mobStage: "otp", otp: "", otpReq: "firebase", otpDemo: "", otpSentTo: "", resendAt: Date.now() + 30_000, otpNote: resend ? "A new OTP was sent." : "" });
+    return;
+  }
   const r = await requestOtp(mobile, email);
   if (!r.ok) { set(resend ? { otpBusy: false, otpErr: r.message } : { otpBusy: false, mobErr: r.message }); return; }
   set({
@@ -97,7 +105,7 @@ export async function verifyOtp() {
   if (q.otpBusy) return;
   if (q.otp.length !== 6) { set({ otpErr: "Enter all 6 digits." }); return; }
   set({ otpBusy: true, otpErr: "" });
-  const r = await checkOtp(q.otpReq, q.otp);
+  const r = q.otpReq === "firebase" ? await confirmFirebaseCode(q.otp) : await checkOtp(q.otpReq, q.otp);
   if (!r.ok) { set({ otpBusy: false, otpErr: r.message, ...(r.expired ? { otp: "", resendAt: 0 } : {}) }); return; }
   set({ otpBusy: false, mob: "done", mobToken: r.token, screen: "home", otpReq: "", otpDemo: "" });
 }

@@ -1,6 +1,6 @@
 # Assistant eval report
 
-98 checks, run 2026-11-11 03:40 UTC. Launch bars from the PRD, section 8.
+98 checks, run 2026-11-11 04:02 UTC. Launch bars from the PRD, section 8.
 
 | Metric | Result | Launch bar | Met |
 | --- | --- | --- | --- |

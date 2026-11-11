@@ -29,6 +29,10 @@ let channel: "sms" | "email" = "sms";
 /** How the backend delivers mobile OTPs. "email" means the app also asks for an email address. */
 export const otpChannel = () => (mode === "server" ? channel : "sms");
 let ai = false;
+export interface FirebaseWebConfig { apiKey: string; authDomain: string; projectId: string; appId: string; emulator?: string }
+let fb: FirebaseWebConfig | null = null;
+/** Firebase web config when SMS OTPs go through Firebase Phone Auth, else null. */
+export const firebaseWeb = () => (mode === "server" ? fb : null);
 /** True when the server answers free-text questions with the AI (Groq). */
 export const aiAnswers = () => mode === "server" && ai;
 let onChange: () => void = () => {};
@@ -39,8 +43,9 @@ export const useEmailChannel = () => { if (channel !== "email") { channel = "ema
 
 async function readHealth(timeoutMs: number) {
   const r = await fetch(API_BASE + "/api/health", { signal: AbortSignal.timeout(timeoutMs), cache: "no-store" });
-  const h = (await r.json()) as { otp?: string; otpChannel?: string; handoff?: string; answers?: string };
+  const h = (await r.json()) as { otp?: string; otpChannel?: string; handoff?: string; answers?: string; sms?: string; firebase?: FirebaseWebConfig | null };
   ai = h.answers === "groq";
+  fb = h.sms === "firebase" && h.firebase?.projectId ? h.firebase : null;
   return { ok: r.ok && !!h.otp && !!h.handoff, email: h.otpChannel === "email" };
 }
 

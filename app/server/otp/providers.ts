@@ -1,3 +1,4 @@
+import { FirebaseSmsProvider } from "./firebase";
 import nodemailer, { type Transporter } from "nodemailer";
 
 // SMS (or email) delivery for one-time codes. The OTP service creates and checks codes;
@@ -184,6 +185,7 @@ export function providerFromEnv(nameArg?: string): OtpProvider {
   const name = (nameArg ?? process.env.OTP_PROVIDER ?? "sandbox").toLowerCase();
   switch (name) {
     case "sandbox": return new SandboxProvider();
+    case "firebase": return new FirebaseSmsProvider();
     case "msg91": return new Msg91Provider(need("MSG91_AUTH_KEY"), need("MSG91_TEMPLATE_ID"));
     case "twilio": return new TwilioProvider(need("TWILIO_ACCOUNT_SID"), need("TWILIO_AUTH_TOKEN"), need("TWILIO_FROM"));
     case "smtp": {
@@ -199,6 +201,6 @@ export function providerFromEnv(nameArg?: string): OtpProvider {
       if (!from) throw new Error("OTP_PROVIDER=brevo needs OTP_EMAIL_FROM (a sender address verified in Brevo)");
       return new BrevoProvider(need("BREVO_API_KEY").trim(), from.replace(/^.*<([^>]+)>.*$/, "$1").trim());
     }
-    default: throw new Error(`Unknown OTP_PROVIDER "${name}". Use sandbox, msg91, twilio, smtp, resend or brevo.`);
+    default: throw new Error(`Unknown OTP_PROVIDER "${name}". Use sandbox, firebase, msg91, twilio, smtp, resend or brevo.`);
   }
 }
