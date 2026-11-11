@@ -86,13 +86,15 @@ A successful check returns a signed token. Codes are kept in memory, so running 
 
 Set `GROQ_API_KEY` (from console.groq.com) on the server to let the help assistant answer free-text questions with an AI model. `GROQ_MODEL` picks the model (default `openai/gpt-oss-120b`; Groq retired its free Llama models in August 2026, so check the models page for what's current). Without a key, the assistant uses its rule-based answers as before.
 
+- **Reads every question first:** with a key set, every question except personal numbers goes to the model, which answers or hands it back to the app (status, approval, fees, why something failed, a person). The keyword rules are the fallback.
 - **Grounded:** the model may only use the approved answers in `src/engine/kb.ts`. It rephrases the right one in plain words (at most about 45 words, no jargon, in the applicant's language) and cites it, so each AI answer still shows its source and version.
 - **Never sent to the AI:** anything that looks like a PAN, Aadhaar, phone number, OTP, PIN or password. These are blocked on the device and on the server.
 - **Kept on rules:** approval, fees and rates, the applicant's own status, why something failed, and talking to a person. These always use the app's own cards. If the model recognises one of these, it hands it back to the rules.
 - **Checked:** every AI answer is checked before it's shown. Amounts, percentages, approval promises, ID-like numbers, unknown sources or over-long answers turn into "I won't guess, I can connect you to a person".
 - **Fallback:** if Groq is down or rate-limited, the approved text is shown as written.
 - **Budget:** answers are cached per question, step and language, and count towards `DAILY_CALL_LIMIT`.
-- **System prompt:** `systemPrompt()` in `server/answer/groq.ts`.
+- **System prompt:** `systemPrompt()` in `server/answer/groq.ts`: decision steps, writing rules, hard limits, worked examples, then the approved facts. The applicant's step and step statuses (no personal data) are included as context.
+- **Logs:** each answer logs only its outcome (`[answer:groq] answer otp`, `abstain`, or `(model said answer; failed checks)`), never the question.
 
 ## What's here
 
