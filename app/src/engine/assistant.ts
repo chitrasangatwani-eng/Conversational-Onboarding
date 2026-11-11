@@ -376,7 +376,7 @@ type Answer = { type: "answer"; text: string; source: KbId } | { type: "action";
 async function askAI(text: string): Promise<Msg[]> {
   const q = get();
   const step = steps(q);
-  const r = await post<Answer>("/api/answer", { language: q.lang, question: text, step });
+  const r = await post<Answer>("/api/answer", { language: q.lang, question: text, step, progress: progressText(q) });
   if (r.type === "answer") return [...aiMsg(r.text, r.source), talkLk()];
   if (r.type === "action") {
     const m: Record<string, () => Msg[]> = {
@@ -393,29 +393,33 @@ function steps(q: ReturnType<typeof get>): string {
   return q.mob !== "done" ? "Mobile number" : q.det !== "done" ? "Personal details" : q.id !== "done" ? "Identity proof"
     : q.addr !== "done" ? "Address proof" : q.selfie !== "done" ? "Video KYC" : "Review and submit";
 }
-/** Rule answers the AI may rewrite: approved-knowledge answers and "I won't guess". */
-const aiCanAnswer = (out: Msg[]) => out[0]?.kind === "source" || isAbstain(out);
-const isAbstain = (out: Msg[]) => out[0]?.kind === "text" && (out[0] as { text: string }).text === (intentAbstain()[0] as { text: string }).text;
+/** Where the applicant is, by step names and statuses only (nothing personal), so "what next" style answers fit. */
+function progressText(q: ReturnType<typeof get>): string {
+  const st = (v: string) => (v === "done" ? "done" : v === "pending" ? "being checked" : v === "rejected" ? "not accepted, needs a retry" : "not started");
+  const id = q.ovd ? idStepLabel(q) : "Identity proof";
+  return `Mobile or email: ${st(q.mob)}. Personal details: ${st(q.det)}. ${id}: ${st(q.id)}. Address proof: ${st(q.addr)}. Video KYC: ${st(q.selfie)}.${q.submitted ? " Application submitted." : ""}`;
+}
 
 /**
  * Route a question. Sensitive text never leaves the device.
- * - Personal numbers, OTPs, approval, fees, status, fixes and handoff always use the app's own cards.
- * - With the AI on (Groq), knowledge questions get a short, plain answer written from the approved
- *   entries and cited to one of them; anything it can't ground becomes "I won't guess".
- * - Without the AI, or if it fails, the approved text is shown as written.
+ * - Personal numbers, OTPs, PINs and passwords are handled on the device and never sent anywhere.
+ * - Approval, fees, status, fixes and handoff always end in the app's own cards (the AI hands them back).
+ * - With the AI on (Groq), every other question goes to it first: knowledge questions get a short,
+ *   plain answer written from the approved entries and cited; anything it can't ground becomes
+ *   "I won't guess".
+ * - Without the AI, or if it fails, the keyword rules answer with the approved text as written.
  */
 export async function routeAsync(text: string): Promise<Msg[]> {
   const q = get();
   if (isSensitive(text) || /^\D{0,12}\d{4,6}\D{0,3}$/.test(text.trim()) || /\b(pin(?!\s*code)|cvv|password)\b/i.test(text)) return route(text);
-  if (isLocal(q.lang)) {
-    const out = route(text);
-    if (!aiAnswers() || !aiCanAnswer(out)) return out;
-    try { return await askAI(text); } catch { return out; }
-  }
-  // Other languages: the AI understands and answers them directly.
+  // With the AI on, it reads every question first (in any language) and hands
+  // personal-application questions back to the app's cards. The keyword rules
+  // are only the fallback, because they misread questions like "Will I get the
+  // OTP on email?" (approval) or "Why do I need Video KYC?" (status).
   if (aiAnswers()) {
-    try { return await askAI(text); } catch { /* fall back below */ }
+    try { return await askAI(text); } catch { /* fall back to the rules */ }
   }
+  if (isLocal(q.lang)) return route(text);
   // Without the AI, a question that matches a suggested question in this language still gets its answer.
   const byChip = matchChip(text);
   if (byChip) return byChip();

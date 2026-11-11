@@ -206,13 +206,14 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse, ur
 
   if (url.pathname === "/api/answer") {
     if (!groq.enabled) return send(res, 503, { error: "answers not configured" });
-    const { language, question, step } = body ?? {};
+    const { language, question, step, progress } = body ?? {};
     if (language !== "en" && !LANGS[language]) return send(res, 400, { error: "unsupported language" });
     if (typeof question !== "string" || !question.trim() || question.length > 300) return send(res, 400, { error: "invalid question" });
     if (SENSITIVE.some((r) => r.test(question))) return send(res, 422, { error: "sensitive data refused" });
     if (!takeCall()) return send(res, 429, { error: "daily limit reached" });
     const stepName = typeof step === "string" ? step.replace(/[^\p{L}\p{N} .,+()-]/gu, "").slice(0, 60) : "";
-    try { return send(res, 200, await groq.answer(question.trim(), language === "en" ? "English" : LANGS[language], stepName || "unknown")); }
+    const progressText = typeof progress === "string" ? progress.replace(/[^\p{L}\p{N} .,:;+()-]/gu, "").slice(0, 240) : "";
+    try { return send(res, 200, await groq.answer(question.trim(), language === "en" ? "English" : LANGS[language], stepName || "unknown", progressText)); }
     catch (e) { console.error("[answer:groq] failed:", (e as Error).message); return send(res, 502, { error: "answer failed" }); }
   }
 
