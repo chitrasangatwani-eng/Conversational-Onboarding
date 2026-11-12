@@ -82,3 +82,34 @@ export function whatsappHelloNumber(): string | null {
   const n = clean(process.env.WHATSAPP_DISPLAY_NUMBER).replace(/[^\d+ ]/g, "").trim();
   return plain && n ? n : null;
 }
+
+/**
+ * Safe setup check for /api/whatsapp/check: asks Meta about the configured
+ * phone number with the configured token and reports what went wrong, without
+ * ever returning the token (only its length and first 3 characters).
+ */
+export async function whatsappCheck(): Promise<Record<string, unknown>> {
+  const raw = process.env.WHATSAPP_TOKEN ?? "";
+  const token = clean(raw);
+  const id = clean(process.env.WHATSAPP_PHONE_NUMBER_ID);
+  const version = clean(process.env.WHATSAPP_API_VERSION) || "v23.0";
+  const base = (process.env.WHATSAPP_API_BASE || "https://graph.facebook.com").replace(/\/+$/, "");
+  const token_info = {
+    set: !!token, length: token.length, starts_with: token.slice(0, 3),
+    looks_like_meta_token: /^EA[A-Za-z0-9]{20,}$/.test(token),
+    had_quotes_or_spaces: raw !== token,
+    has_inner_spaces_or_line_breaks: /\s/.test(token),
+  };
+  if (!token || !id) return { ok: false, problem: !token ? "WHATSAPP_TOKEN is not set" : "WHATSAPP_PHONE_NUMBER_ID is not set", token: token_info };
+  try {
+    const r = await fetch(`${base}/${version}/${encodeURIComponent(id)}?fields=display_phone_number,verified_name,quality_rating`, {
+      headers: { authorization: "Bearer " + token }, signal: AbortSignal.timeout(10_000),
+    });
+    const j = (await r.json().catch(() => ({}))) as Record<string, any>;
+    if (r.ok) return { ok: true, token: token_info, phone_number: j.display_phone_number, name: j.verified_name, quality: j.quality_rating, template: clean(process.env.WHATSAPP_TEMPLATE) || "otp_code" };
+    const e = j.error ?? {};
+    return { ok: false, http: r.status, meta_code: e.code, meta_subcode: e.error_subcode, meta_message: e.message, token: token_info, phone_number_id: id, api_version: version };
+  } catch (err) {
+    return { ok: false, problem: "couldn't reach Meta: " + (err as Error).message, token: token_info };
+  }
+}
