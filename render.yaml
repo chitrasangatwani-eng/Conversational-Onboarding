@@ -20,6 +20,9 @@ services:
         value: "2000"
       - key: PER_IP_LIMIT
         value: "120"
+      # Business details shown on the site (footer and /about) for Meta business
+      # verification: BUSINESS_NAME, BUSINESS_EMAIL, BUSINESS_LOCATION,
+      # BUSINESS_REGISTRATION, META_DOMAIN_VERIFICATION (see app/server/business.ts).
       # OTP on WhatsApp (no DLT): SMS_PROVIDER=whatsapp, WHATSAPP_TOKEN (secret),
       # WHATSAPP_PHONE_NUMBER_ID, WHATSAPP_TEMPLATE, WHATSAPP_TEMPLATE_LANG (see app/README.md).
       # SMS OTP for +91 numbers through Firebase Phone Auth: add SMS_PROVIDER=firebase,
