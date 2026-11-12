@@ -45,7 +45,7 @@ export class WhatsAppProvider implements OtpProvider {
     const payload = plain
       ? {
         messaging_product: "whatsapp", recipient_type: "individual", to: "91" + mobile10, type: "text",
-        text: { preview_url: false, body: `${code} is your verification code to open your Artha account. It expires in 5 minutes. Never share it with anyone.` },
+        text: { preview_url: false, body: `${code} is your verification code to open your Artha Inclusive account. It expires in 5 minutes. Never share it with anyone.` },
       }
       : null;
     const res = await fetch(`${this.base}/${encodeURIComponent(this.phoneNumberId)}/messages`, {
