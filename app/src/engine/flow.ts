@@ -241,7 +241,19 @@ export const ovdName = (o: Ovd | "", tr: (en: string, hi: string) => string = (e
   return d ? tr(d.en, d.hi) : tr("ID proof", "पहचान प्रमाण");
 };
 
-/** Name of the identity step, shared by Home, the assistant's status card and the handoff summary. */
+/** Step 3 combines the identity proof and the address proof. */
+export const KYC_STEP = "ID and address proof";
+export const KYC_STEP_HI = "पहचान और पते का प्रमाण";
+
+/** Step 3's state as one step: done only when both documents are verified. */
+export function kycLook(q: State): "done" | "cur" | "bad" | "wait" | "x" {
+  if (q.id === "done" && q.addr === "done") return "done";
+  if (q.id === "rejected") return "bad";
+  if (q.id === "pending" || q.addr === "pending") return "wait";
+  return q.det !== "done" ? "x" : "cur";
+}
+
+/** Name of the chosen identity document (used on Review and in the AI's context). */
 export function idStepLabel(q: State, tr: (en: string, hi: string) => string = (en) => en): string {
   return q.ovd ? ovdName(q.ovd, tr) : tr("Identity proof", "पहचान प्रमाण");
 }
@@ -385,7 +397,7 @@ export function ctaLabel(): string | null {
   if (!can) return null;
   return q.mob !== "done" ? "Verify mobile number" : q.det !== "done" ? "Fill personal details"
     : sf === "rejected" ? "Retry Video KYC" : sf === "done" ? "Review and submit"
-    : ad === "done" ? "Start Video KYC" : id === "done" ? "Upload address proof"
+    : ad === "done" ? "Start Video KYC" : id === "done" ? "Add proof of address"
     : id === "rejected" ? "Try identity again" : "Verify your identity";
 }
 
@@ -393,10 +405,10 @@ export type { Screen };
 
 // ---- Step navigation (sidebar and step list) ----
 
-const STEP_NAMES = ["Mobile number", "Personal details", "", "Address proof", "Video KYC", "Review and submit"];
+const STEP_NAMES = ["Mobile number", "Personal details", KYC_STEP, "Video KYC", "Review and submit"];
 
 /**
- * Open step n (1-6) from the progress list. Finished mobile and details steps
+ * Open step n (1-5) from the progress list. Finished mobile and details steps
  * reopen for editing; the current step continues; verified and locked steps
  * explain themselves instead of opening.
  */
@@ -411,7 +423,8 @@ export function openStep(n: number, look: "done" | "cur" | "bad" | "wait" | "x",
     return;
   }
   if (look === "wait") { set({ screen: "home", navNote: `${label} is being checked. We'll update this when it's done.` }); return; }
-  const prev = n === 4 ? idStepLabel(q) : STEP_NAMES[n - 2] || idStepLabel(q);
+  const prev = STEP_NAMES[n - 2] ?? KYC_STEP;
+  void q;
   set({ navNote: `${label} opens after ${prev}.` });
 }
 
@@ -421,8 +434,8 @@ export function jumpToStep(n: number) {
   timers.clear();
   set({
     mob: n > 1 ? "done" : "todo", mobStage: "enter", det: n > 2 ? "done" : "todo",
-    id: n > 3 ? "done" : "todo", ovd: n > 3 ? "aadhaar" : "", addrDoc: n > 4 ? "Aadhaar (same as ID proof)" : "", f60: false, reason: "",
-    addr: n > 4 ? "done" : "todo", selfie: n > 5 ? "done" : "todo",
+    id: n > 3 ? "done" : "todo", ovd: n > 3 ? "aadhaar" : "", addrDoc: n > 3 ? "Aadhaar (same as ID proof)" : "", f60: false, reason: "",
+    addr: n > 3 ? "done" : "todo", selfie: n > 4 ? "done" : "todo",
     submitted: false, held: false, consent: false, navNote: "", dlNote: "", saved: false,
   });
   goSecure();

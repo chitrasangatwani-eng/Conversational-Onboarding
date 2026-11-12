@@ -19,10 +19,9 @@ export function DemoPanel() {
           <option value="">Choose a step…</option>
           <option value="1">1 · Mobile number</option>
           <option value="2">2 · Personal details</option>
-          <option value="3">3 · PAN or Aadhaar</option>
-          <option value="4">4 · Address proof</option>
-          <option value="5">5 · Video KYC</option>
-          <option value="6">6 · Review and submit</option>
+          <option value="3">3 · ID and address proof</option>
+          <option value="4">4 · Video KYC</option>
+          <option value="5">5 · Review and submit</option>
         </select>
       </label>
       {s.mvp && (

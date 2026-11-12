@@ -1,5 +1,5 @@
 import { set, useAppState, type State } from "../engine/store";
-import { ctaLabel, goSecure, idStepLabel, openStep, openBlockerHelp, openFees, openHelp, stageKey, talkFromHome } from "../engine/flow";
+import { KYC_STEP, ctaLabel, goSecure, kycLook, ovdName, openStep, openBlockerHelp, openFees, openHelp, stageKey, talkFromHome } from "../engine/flow";
 import { ask, intentAadhaar, intentAddr, intentDetails, intentDocs, intentVideo } from "../engine/assistant";
 
 type StepLook = "done" | "cur" | "bad" | "wait" | "x";
@@ -9,14 +9,18 @@ const CODE: Record<string, string> = { blur: "ID-204", name: "ID-310", otp: "ID-
 
 export function steps(s: State): Step[] {
   const { mob, det, id, addr: ad, selfie: sf } = s;
-  const idSub = id === "done" ? "Verified" : id === "rejected" ? "Not accepted · " + (CODE[s.reason] || "ID-204") : id === "pending" ? "Submitted · in verification" : det !== "done" ? "Locked until details are saved" : "Any one: PAN, Aadhaar, passport, voter ID… · about 2 minutes";
+  const kycSub = id === "done" && ad === "done" ? "Verified · " + ovdName(s.ovd) + (s.addrDoc && !/same as ID/.test(s.addrDoc) ? " + " + s.addrDoc : "")
+    : id === "rejected" ? "Not accepted · " + (CODE[s.reason] || "ID-204")
+    : id === "pending" || ad === "pending" ? "Submitted · in verification"
+    : det !== "done" ? "Locked until details are saved"
+    : id === "done" ? ovdName(s.ovd) + " verified · now proof of address"
+    : "One ID; it can prove your address too · about 3 minutes";
   return [
     { n: 1, label: "Mobile number", sub: mob === "done" ? "Verified by OTP" : "About 1 minute", look: mob === "done" ? "done" : "cur" },
     { n: 2, label: "Personal details", sub: det === "done" ? "Saved" : mob === "done" ? "Pre-filled · about 1 minute" : "Locked until mobile verified", look: det === "done" ? "done" : mob === "done" ? "cur" : "x" },
-    { n: 3, label: idStepLabel(s), sub: idSub, look: id === "done" ? "done" : id === "rejected" ? "bad" : id === "pending" ? "wait" : det !== "done" ? "x" : "cur" },
-    { n: 4, label: "Address proof", sub: ad === "done" ? "Verified" + (s.addrDoc ? " · " + s.addrDoc : "") : ad === "pending" ? "Submitted · in verification" : id === "done" ? "About 2 minutes" : "Locked until ID verified", look: ad === "done" ? "done" : ad === "pending" ? "wait" : id === "done" ? "cur" : "x" },
-    { n: 5, label: "Video KYC", sub: sf === "done" ? "Verified" : sf === "pending" ? "Submitted · in verification" : sf === "rejected" ? "Not completed · VK-301" : ad === "done" ? "About 5 minutes · live agent" : "Locked", look: sf === "done" ? "done" : sf === "pending" ? "wait" : sf === "rejected" ? "bad" : ad === "done" ? "cur" : "x" },
-    { n: 6, label: "Review and submit", sub: s.held ? "Extra check in progress" : s.submitted ? "Submitted · in review" : sf === "done" ? "Ready when you are" : "Locked", look: s.submitted ? "wait" : sf === "done" ? "cur" : "x" },
+    { n: 3, label: KYC_STEP, sub: kycSub, look: kycLook(s) },
+    { n: 4, label: "Video KYC", sub: sf === "done" ? "Verified" : sf === "pending" ? "Submitted · in verification" : sf === "rejected" ? "Not completed · VK-301" : ad === "done" ? "About 5 minutes · live agent" : "Locked", look: sf === "done" ? "done" : sf === "pending" ? "wait" : sf === "rejected" ? "bad" : ad === "done" ? "cur" : "x" },
+    { n: 5, label: "Review and submit", sub: s.held ? "Extra check in progress" : s.submitted ? "Submitted · in review" : sf === "done" ? "Ready when you are" : "Locked", look: s.submitted ? "wait" : sf === "done" ? "cur" : "x" },
   ];
 }
 
@@ -32,7 +36,7 @@ export function Home() {
   const s = useAppState();
   const full = !s.mvp;
   const list = steps(s);
-  const done = list.slice(0, 5).filter((x) => x.look === "done").length;
+  const done = list.slice(0, 4).filter((x) => x.look === "done").length;
   const cta = ctaLabel();
   // The step the applicant acts on next, or the one being checked.
   const hero = list.find((x) => x.look === "bad") ?? list.find((x) => x.look === "cur") ?? list.find((x) => x.look === "wait");
@@ -53,8 +57,8 @@ export function Home() {
           <div style={{ flex: 1 }}><div style={{ fontSize: 17, fontWeight: 600 }}>Chitra Sangatwani</div><div style={{ fontSize: 13, color: "#5f6b80" }}>Signed in · Applicant</div></div>
         </div>
         <div style={{ fontSize: 14, color: "#5f6b80" }}>Welcome back, Chitra. Open your account</div>
-        <div style={{ fontSize: 34, fontWeight: 600, lineHeight: 1.15, margin: "6px 0 18px" }}>{done} of 6 steps done</div>
-        <div className="progress"><div style={{ width: (done / 6) * 100 + "%" }} /></div>
+        <div style={{ fontSize: 34, fontWeight: 600, lineHeight: 1.15, margin: "6px 0 18px" }}>{done} of 5 steps done</div>
+        <div className="progress"><div style={{ width: (done / 5) * 100 + "%" }} /></div>
 
         {s.navNote && <div className="banner ok" role="status">{s.navNote}</div>}
         {s.dlNote && <div className="banner ok"><b>From DigiLocker.</b> {s.dlNote}.</div>}

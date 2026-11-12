@@ -6,7 +6,7 @@ import { createHandoff } from "./handoff";
 const defaultL = L;
 import type { Msg, StatusRow, CardText } from "./types";
 import { speakMsgs, stopSpeak, listenAgain } from "./voice";
-import { goSecure, idStepLabel, openFees } from "./flow";
+import { KYC_STEP, KYC_STEP_HI, goSecure, idStepLabel, kycLook, openFees } from "./flow";
 import { KB, type KbId } from "./kb";
 
 // The assistant only reads verified state and approved content. Replies are
@@ -101,20 +101,15 @@ function T(): CardText {
 }
 
 export function statusRows(): StatusRow[] {
-  const q = get(), id = q.id;
+  const q = get();
   const r = (glyph: string, label: string, state: string, color: string): StatusRow => ({ glyph, label, state, color });
-  const idl = idStepLabel(q);
-  const pan =
-    id === "done" ? r("✓", idl, "Done", OK)
-    : id === "rejected" ? r("!", idl, "Needs action", WARN)
-    : id === "pending" ? r("…", idl, "Pending", MUTED)
-    : q.det !== "done" ? r("·", idl, "Next", MUTED)
-    : r("→", idl, "Action needed", OK);
-  const a = q.addr;
-  const addr =
-    a === "done" ? r("✓", "Address proof", "Done", OK)
-    : a === "pending" ? r("…", "Address proof", "Pending", MUTED)
-    : id === "done" ? r("→", "Address proof", "Action needed", OK) : r("·", "Address proof", "Next", MUTED);
+  const kl = kycLook(q);
+  const kyc =
+    kl === "done" ? r("✓", KYC_STEP, "Done", OK)
+    : kl === "bad" ? r("!", KYC_STEP, "Needs action", WARN)
+    : kl === "wait" ? r("…", KYC_STEP, "Pending", MUTED)
+    : kl === "x" ? r("·", KYC_STEP, "Next", MUTED)
+    : r("→", KYC_STEP, "Action needed", OK);
   const sf = q.selfie;
   const vk =
     sf === "rejected" ? r("!", "Video KYC", "Needs action", WARN)
@@ -124,7 +119,7 @@ export function statusRows(): StatusRow[] {
   return [
     q.mob === "done" ? r("✓", "Mobile number", "Done", OK) : r("→", "Mobile number", "Action needed", OK),
     q.det === "done" ? r("✓", "Personal details", "Done", OK) : q.mob === "done" ? r("→", "Personal details", "Action needed", OK) : r("·", "Personal details", "Next", MUTED),
-    pan, addr, vk,
+    kyc, vk,
   ];
 }
 
@@ -177,7 +172,7 @@ export function intentStatus(): Msg[] {
     q.mob !== "done" ? L("Verify mobile number", "मोबाइल नंबर सत्यापित करें")
     : q.det !== "done" ? L("Fill personal details", "व्यक्तिगत विवरण भरें")
     : q.addr === "done" ? L("Start Video KYC", "वीडियो KYC शुरू करें")
-    : id === "done" ? L("Upload address proof", "पते का प्रमाण अपलोड करें")
+    : id === "done" ? L("Add proof of address", "पते का प्रमाण जोड़ें")
     : id === "rejected" ? L("Try identity again", "पहचान फिर से सत्यापित करें")
     : L("Verify your identity", "अपनी पहचान सत्यापित करें");
   return [
@@ -270,8 +265,7 @@ function summaryFields(L: Tr = defaultL): string[] {
   const stage =
     q.mob !== "done" ? L("Mobile number", "मोबाइल नंबर")
     : q.det !== "done" ? L("Personal details", "व्यक्तिगत विवरण")
-    : q.id !== "done" ? idStepLabel(q, L)
-    : q.addr !== "done" ? L("Address proof", "पते का प्रमाण")
+    : q.id !== "done" || q.addr !== "done" ? L(KYC_STEP, KYC_STEP_HI)
     : q.selfie !== "done" ? L("Video KYC", "वीडियो KYC")
     : L("Review and submit", "समीक्षा और सबमिट");
   const blk = q.selfie === "rejected" ? "VK-301" : q.id === "rejected" ? ({ blur: "ID-204", name: "ID-310", otp: "ID-120" } as Record<string, string>)[q.reason] || "ID-204" : none;
@@ -390,14 +384,14 @@ async function askAI(text: string): Promise<Msg[]> {
 }
 /** The applicant's current step, by name only (nothing personal), to give the AI context. */
 function steps(q: ReturnType<typeof get>): string {
-  return q.mob !== "done" ? "Mobile number" : q.det !== "done" ? "Personal details" : q.id !== "done" ? "Identity proof"
-    : q.addr !== "done" ? "Address proof" : q.selfie !== "done" ? "Video KYC" : "Review and submit";
+  return q.mob !== "done" ? "Mobile number" : q.det !== "done" ? "Personal details" : q.id !== "done" || q.addr !== "done" ? KYC_STEP
+    : q.selfie !== "done" ? "Video KYC" : "Review and submit";
 }
 /** Where the applicant is, by step names and statuses only (nothing personal), so "what next" style answers fit. */
 function progressText(q: ReturnType<typeof get>): string {
   const st = (v: string) => (v === "done" ? "done" : v === "pending" ? "being checked" : v === "rejected" ? "not accepted, needs a retry" : "not started");
   const id = q.ovd ? idStepLabel(q) : "Identity proof";
-  return `Mobile or email: ${st(q.mob)}. Personal details: ${st(q.det)}. ${id}: ${st(q.id)}. Address proof: ${st(q.addr)}. Video KYC: ${st(q.selfie)}.${q.submitted ? " Application submitted." : ""}`;
+  return `Mobile or email: ${st(q.mob)}. Personal details: ${st(q.det)}. ID and address proof: identity (${id}) ${st(q.id)}, address ${st(q.addr)}. Video KYC: ${st(q.selfie)}.${q.submitted ? " Application submitted." : ""}`;
 }
 
 /**
