@@ -31,7 +31,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { OtpService } from "./otp/service";
 import { GroqAnswers, GROQ_MODEL } from "./answer/groq";
 import { FirebasePhoneVerifier, firebaseConfigFromEnv } from "./otp/firebase";
-import { whatsappCheck, whatsappHelloNumber } from "./otp/whatsapp";
+import { webhookReceive, webhookVerify, whatsappCheck, whatsappHelloNumber } from "./otp/whatsapp";
 import { providersFromEnv } from "./otp/providers";
 import { HandoffService } from "./handoff/service";
 import { DigiLockerService, callbackPage, sandboxConsentPage } from "./digilocker/service";
@@ -352,6 +352,23 @@ const server = http.createServer((req, res) => {
   const url = new URL(req.url || "/", "http://localhost");
   // Setup check for WhatsApp OTP (never returns the token).
   if (url.pathname === "/api/whatsapp/check") { void whatsappCheck().then((r) => send(res, 200, r)); return; }
+  // Meta's webhook: GET is the verification handshake, POST carries statuses and incoming messages.
+  if (url.pathname === "/api/whatsapp/webhook") {
+    if (req.method === "GET") {
+      const challenge = webhookVerify(url.searchParams);
+      res.writeHead(challenge ? 200 : 403, { "content-type": "text/plain" }); res.end(challenge ?? "forbidden"); return;
+    }
+    if (req.method === "POST") {
+      const chunks: Buffer[] = []; let size = 0;
+      req.on("data", (c: Buffer) => { size += c.length; if (size <= 1_000_000) chunks.push(c); });
+      req.on("end", () => {
+        const ok = webhookReceive(Buffer.concat(chunks), req.headers["x-hub-signature-256"] as string | undefined);
+        res.writeHead(ok ? 200 : 401); res.end();
+      });
+      return;
+    }
+    res.writeHead(405); res.end(); return;
+  }
 
   if (url.pathname === "/api/health") { send(res, 200, { ok: true, model: MODEL, key: !!process.env.ANTHROPIC_API_KEY, otp: otp.providerName, otpChannel: otp.channel, sms: smsRoute, firebase: smsRoute === "firebase" ? firebaseWeb : null, whatsappHello: otp.smsProviderName === "whatsapp" ? whatsappHelloNumber() : null, answers: groq.enabled ? "groq" : "rules", answerModel: groq.enabled ? GROQ_MODEL : null, handoff: handoff.providerName, digilocker: digilocker.providerName, aadhaar: aadhaar.providerName }); return; }
   // Pages opened in the DigiLocker consent window (top-level navigations, so no CORS check).
