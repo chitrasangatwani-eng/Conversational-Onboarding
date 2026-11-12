@@ -164,8 +164,11 @@ class BrevoProvider implements OtpProvider {
   }
 }
 
+/** Settings pasted with surrounding quotes or spaces (common when copying from a .env file) are cleaned up. */
+export const clean = (v: string | undefined) => (v ?? "").trim().replace(/^(["'])(.*)\1$/s, "$2").trim();
+
 function need(name: string): string {
-  const v = process.env[name];
+  const v = clean(process.env[name]);
   if (!v) throw new Error(`OTP_PROVIDER needs ${name} to be set`);
   return v;
 }
