@@ -27,7 +27,7 @@
 // isn't on WhatsApp can still fail afterwards (reported to webhooks, which this
 // demo doesn't receive). The applicant can then resend or use email.
 
-import type { OtpProvider } from "./providers";
+import { clean, type OtpProvider } from "./providers";
 
 export class WhatsAppProvider implements OtpProvider {
   readonly name = "whatsapp";
@@ -35,9 +35,9 @@ export class WhatsAppProvider implements OtpProvider {
   readonly channel = "sms" as const; // keyed by mobile number, like SMS
   constructor(
     private token: string, private phoneNumberId: string,
-    private template = process.env.WHATSAPP_TEMPLATE || "otp_code",
-    private lang = process.env.WHATSAPP_TEMPLATE_LANG || "en_US",
-    private base = (process.env.WHATSAPP_API_BASE || "https://graph.facebook.com").replace(/\/+$/, "") + "/" + (process.env.WHATSAPP_API_VERSION || "v23.0"),
+    private template = clean(process.env.WHATSAPP_TEMPLATE) || "otp_code",
+    private lang = clean(process.env.WHATSAPP_TEMPLATE_LANG) || "en_US",
+    private base = (process.env.WHATSAPP_API_BASE || "https://graph.facebook.com").replace(/\/+$/, "") + "/" + (clean(process.env.WHATSAPP_API_VERSION) || "v23.0"),
   ) {}
 
   async send(mobile10: string, code: string): Promise<void> {
@@ -78,7 +78,7 @@ export class WhatsAppProvider implements OtpProvider {
 
 /** In text mode, the number applicants must message first (for the app to show), else null. */
 export function whatsappHelloNumber(): string | null {
-  const plain = /^(none|text|off)$/i.test(process.env.WHATSAPP_TEMPLATE || "");
-  const n = (process.env.WHATSAPP_DISPLAY_NUMBER || "").replace(/[^\d+ ]/g, "").trim();
+  const plain = /^(none|text|off)$/i.test(clean(process.env.WHATSAPP_TEMPLATE));
+  const n = clean(process.env.WHATSAPP_DISPLAY_NUMBER).replace(/[^\d+ ]/g, "").trim();
   return plain && n ? n : null;
 }
