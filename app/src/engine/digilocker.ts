@@ -18,13 +18,15 @@ export interface LockerSummary {
 
 export type LockerResult =
   | { ok: true; summary: LockerSummary }
-  | { ok: false; reason: "blocked" | "denied" | "error" | "timeout" };
+  | { ok: false; reason: "blocked" | "denied" | "error" | "timeout" | "closed" };
 
 const WAIT_MS = 5 * 60_000;
 
 /** Must be called straight from a click, so the browser allows the new window. */
 export async function fetchFromDigiLocker(purpose: "pan" | "address", expectedName: string): Promise<LockerResult> {
-  const win = window.open("", "digilocker", "width=480,height=720");
+  // A new window name each time, so an old DigiLocker tab (whose one-time link
+  // is already used) is never reused or reloaded.
+  const win = window.open("", "digilocker-" + Date.now(), "width=480,height=720");
   if (!win) return { ok: false, reason: "blocked" };
   try {
     win.document.title = "DigiLocker";
@@ -64,7 +66,13 @@ export async function fetchFromDigiLocker(purpose: "pan" | "address", expectedNa
       if (e.origin === window.location.origin && e.data?.type === "digilocker" && e.data.state === state) check();
     };
     window.addEventListener("message", onMessage);
-    const poll = setInterval(check, 2000);
+    let closedSeen = 0;
+    const poll = setInterval(() => {
+      void check();
+      // Closed without finishing: stop waiting so a new try gets a fresh link.
+      // (Allow a few seconds: our callback page closes itself once it has reported.)
+      if (win.closed && ++closedSeen >= 3) void check().then(() => finish({ ok: false, reason: "closed" }));
+    }, 2000);
     const timer = setTimeout(() => finish({ ok: false, reason: "timeout" }), WAIT_MS);
   });
 }
