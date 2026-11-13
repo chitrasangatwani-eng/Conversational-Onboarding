@@ -11,6 +11,14 @@
 // Pick the provider with DIGILOCKER_PROVIDER:
 //   sandbox (default)  a DigiLocker-style consent page on this server with
 //                      sample data. No account needed.
+//   setu               DigiLocker through Setu (a licensed KYC provider). Env:
+//                      SETU_CLIENT_ID, SETU_CLIENT_SECRET, SETU_PRODUCT_INSTANCE_ID,
+//                      optional SETU_DIGILOCKER_BASE_URL (default the sandbox,
+//                      https://dg-sandbox.setu.co; production https://dg.setu.co).
+//                      Setu returns the e-Aadhaar (name, masked number, address).
+//                      Whether a PAN was shared comes from the scope Setu adds
+//                      to the redirect (ADHAR, PANCR, DRVLC); its number isn't
+//                      returned. Access is revoked right after the data is read.
 //   digilocker         the official DigiLocker Requester API. Needs approval as
 //                      a DigiLocker partner (via partners.digilocker.gov.in or
 //                      API Setu). Env: DIGILOCKER_CLIENT_ID,
@@ -23,12 +31,14 @@
 // with your partner credentials before going live; each path is listed below.
 
 import crypto from "node:crypto";
+import { clean } from "../otp/providers";
 
 export type Purpose = "pan" | "address";
 
 /** What the connector learns from DigiLocker. Stays on the server. */
 interface LockerData {
   name: string;
+  aadhaarLast4?: string;
   panIssued: boolean;
   panLast4?: string;
   pincode?: string;
@@ -38,6 +48,7 @@ interface LockerData {
 /** What the app receives. */
 export interface LockerSummary {
   purpose: Purpose;
+  aadhaarLast4: string | null;
   panIssued: boolean;
   panLast4: string | null;
   nameMatch: boolean;
@@ -47,9 +58,15 @@ export interface LockerSummary {
 
 interface Provider {
   readonly name: string;
-  authorizeUrl(p: { state: string; challenge: string; redirectUri: string }): string;
-  fetch(p: { code: string; verifier: string; redirectUri: string }): Promise<LockerData>;
+  /** OAuth-style providers build the consent URL directly. */
+  authorizeUrl?(p: { state: string; challenge: string; redirectUri: string }): string;
+  /** Request-style providers (Setu) create a request first and get its consent URL and id. */
+  begin?(p: { redirectUri: string }): Promise<{ url: string; ref: string }>;
+  fetch(p: { code: string | null; verifier: string; redirectUri: string; ref?: string; purpose: Purpose; params: URLSearchParams }): Promise<LockerData>;
 }
+
+/** The user didn't finish or allow sharing (as opposed to a technical failure). */
+class NotShared extends Error {}
 
 // ---- Sandbox ----
 
@@ -64,8 +81,8 @@ class SandboxProvider implements Provider {
   authorizeUrl({ state }: { state: string }) {
     return "/api/digilocker/sandbox?state=" + encodeURIComponent(state);
   }
-  async fetch({ code }: { code: string }) {
-    const d = SANDBOX[code.replace(/^sandbox-/, "")];
+  async fetch({ code }: { code: string | null }) {
+    const d = SANDBOX[(code ?? "").replace(/^sandbox-/, "")];
     if (!d) throw new Error("sandbox: unknown code");
     return d;
   }
@@ -86,7 +103,8 @@ class DigiLockerProvider implements Provider {
     return `${this.base}/public/oauth2/1/authorize?${q}`;
   }
 
-  async fetch({ code, verifier, redirectUri }: { code: string; verifier: string; redirectUri: string }): Promise<LockerData> {
+  async fetch({ code, verifier, redirectUri }: { code: string | null; verifier: string; redirectUri: string }): Promise<LockerData> {
+    if (!code) throw new NotShared("no code");
     // POST {base}/public/oauth2/1/token -> access_token plus the account holder's name and dob
     const tokenRes = await fetch(`${this.base}/public/oauth2/1/token`, {
       method: "POST",
@@ -121,15 +139,72 @@ class DigiLockerProvider implements Provider {
   }
 }
 
+// ---- DigiLocker through Setu ----
+//   POST {base}/api/digilocker                 { redirectUrl }  -> { id, status: unauthenticated|authenticated|revoked, url, validUpto }
+//   GET  {base}/api/digilocker/{id}/aadhaar                     -> { aadhaar: { name, maskedNumber, address: { pin, state, ... }, verified }, status }
+//   GET  {base}/api/digilocker/{id}/revoke                      -> { success: true }
+// Headers on every call: x-client-id, x-client-secret, x-product-instance-id.
+// Setu redirects to redirectUrl (plus our own ?state=) with:
+//   success=True&id=<id>&scope=ADHAR+PANCR+DRVLC    or    success=False&id=<id>&errCode=..&errMessage=..
+// Errors look like { error: { code, detail, traceId } }.
+
+class SetuProvider implements Provider {
+  readonly name = "setu";
+  constructor(private base: string, private clientId: string, private secret: string, private instanceId: string) {}
+  private headers() {
+    return { "x-client-id": this.clientId, "x-client-secret": this.secret, "x-product-instance-id": this.instanceId, "content-type": "application/json" };
+  }
+  private static err(j: unknown) {
+    const e = (j as { error?: { code?: string; detail?: string } })?.error;
+    return e ? `${e.code ?? ""} ${e.detail ?? ""}`.trim() : JSON.stringify(j).slice(0, 200);
+  }
+  async begin({ redirectUri }: { redirectUri: string }) {
+    const r = await fetch(`${this.base}/api/digilocker`, { method: "POST", headers: this.headers(), body: JSON.stringify({ redirectUrl: redirectUri }), signal: AbortSignal.timeout(15_000) });
+    const j = (await r.json().catch(() => ({}))) as { id?: string; url?: string };
+    if (!r.ok || !j.id || !j.url) throw new Error(`setu create ${r.status}: ${SetuProvider.err(j)}`);
+    return { url: j.url, ref: j.id };
+  }
+  async fetch({ ref, purpose, params }: { ref?: string; purpose: Purpose; params: URLSearchParams }): Promise<LockerData> {
+    if (!ref) throw new Error("setu: no request id");
+    // Setu's id on the redirect must be the request we created for this flow.
+    if (params.get("id") && params.get("id") !== ref) throw new Error("setu: redirect id doesn't match the request");
+    if (!/^true$/i.test(params.get("success") ?? "")) throw new NotShared(`setu consent failed: ${params.get("errCode") ?? ""} ${params.get("errMessage") ?? ""}`.trim());
+    const scope = (params.get("scope") ?? "").toUpperCase().split(/[+\s,]+/).filter(Boolean);
+    if (!scope.includes("ADHAR")) throw new NotShared("setu: Aadhaar not shared (scope: " + (scope.join("+") || "none") + ")");
+    try {
+      const r = await fetch(`${this.base}/api/digilocker/${encodeURIComponent(ref)}/aadhaar`, { headers: this.headers(), signal: AbortSignal.timeout(20_000) });
+      const j = (await r.json().catch(() => ({}))) as { aadhaar?: { name?: string; maskedNumber?: string; address?: { pin?: string; state?: string } } };
+      // 400 aadhaar_not_linked, 401 not authenticated or revoked: the person didn't complete sharing.
+      if (r.status === 400 || r.status === 401) throw new NotShared(`setu aadhaar ${r.status}: ${SetuProvider.err(j)}`);
+      if (!r.ok || !j.aadhaar) throw new Error(`setu aadhaar ${r.status}: ${SetuProvider.err(j)}`);
+      const a = j.aadhaar;
+      return {
+        name: a.name ?? "",
+        panIssued: purpose === "pan" && scope.includes("PANCR"),
+        aadhaarLast4: a.maskedNumber?.match(/(\d{4})\s*$/)?.[1],
+        pincode: a.address?.pin && /^\d{6}$/.test(a.address.pin) ? a.address.pin : undefined,
+        state: a.address?.state || undefined,
+      };
+    } finally {
+      // We only need this once: end our access to the person's DigiLocker.
+      void fetch(`${this.base}/api/digilocker/${encodeURIComponent(ref)}/revoke`, { headers: this.headers(), signal: AbortSignal.timeout(10_000) }).catch(() => {});
+    }
+  }
+}
+
 function providerFromEnv(): Provider {
   const name = (process.env.DIGILOCKER_PROVIDER || "sandbox").toLowerCase();
   const need = (k: string) => { const v = process.env[k]; if (!v) throw new Error(`DIGILOCKER_PROVIDER=digilocker needs ${k} to be set`); return v; };
   if (name === "sandbox") return new SandboxProvider();
+  if (name === "setu") {
+    const req = (k: string) => { const v = clean(process.env[k]); if (!v) throw new Error(`DIGILOCKER_PROVIDER=setu needs ${k} to be set`); return v; };
+    return new SetuProvider((clean(process.env.SETU_DIGILOCKER_BASE_URL) || "https://dg-sandbox.setu.co").replace(/\/+$/, ""), req("SETU_CLIENT_ID"), req("SETU_CLIENT_SECRET"), req("SETU_PRODUCT_INSTANCE_ID"));
+  }
   if (name === "digilocker") {
     need("DIGILOCKER_REDIRECT_URI");
     return new DigiLockerProvider((process.env.DIGILOCKER_BASE_URL || "https://api.digitallocker.gov.in").replace(/\/+$/, ""), need("DIGILOCKER_CLIENT_ID"), need("DIGILOCKER_CLIENT_SECRET"));
   }
-  throw new Error(`Unknown DIGILOCKER_PROVIDER "${name}". Use sandbox or digilocker.`);
+  throw new Error(`Unknown DIGILOCKER_PROVIDER "${name}". Use sandbox, setu or digilocker.`);
 }
 
 // ---- Flow state ----
@@ -138,7 +213,7 @@ const norm = (s: string) => s.toUpperCase().replace(/[^A-Z]/g, "");
 const FLOW_TTL_MS = 10 * 60_000;
 
 type Flow = {
-  purpose: Purpose; expectedName: string; verifier: string; redirectUri: string; expires: number;
+  purpose: Purpose; expectedName: string; verifier: string; redirectUri: string; expires: number; ref?: string;
   result?: { status: "done"; summary: LockerSummary } | { status: "denied" | "error" };
 };
 
@@ -150,33 +225,43 @@ export class DigiLockerService {
   constructor() { setInterval(() => { const now = Date.now(); for (const [k, f] of this.flows) if (now > f.expires) this.flows.delete(k); }, 60_000).unref(); }
 
   /** Begin a consent flow. `origin` is this server's public origin, used for the callback unless one is configured. */
-  start(purpose: unknown, expectedName: unknown, origin: string): { state: string; url: string } | null {
+  async start(purpose: unknown, expectedName: unknown, origin: string): Promise<{ state: string; url: string } | null> {
     if (purpose !== "pan" && purpose !== "address") return null;
     const name = typeof expectedName === "string" ? expectedName.slice(0, 100) : "";
     const state = crypto.randomBytes(16).toString("base64url");
     const verifier = crypto.randomBytes(32).toString("base64url");
     const challenge = crypto.createHash("sha256").update(verifier).digest("base64url");
-    const redirectUri = process.env.DIGILOCKER_REDIRECT_URI || origin + "/api/digilocker/callback";
+    const callback = origin + "/api/digilocker/callback";
+    if (this.provider.begin) {
+      // Setu: our state rides on the redirect URL, so the callback finds this flow.
+      const redirectUri = callback + "?state=" + encodeURIComponent(state);
+      const { url, ref } = await this.provider.begin({ redirectUri });
+      this.flows.set(state, { purpose, expectedName: name, verifier, redirectUri, ref, expires: Date.now() + FLOW_TTL_MS });
+      return { state, url };
+    }
+    const redirectUri = process.env.DIGILOCKER_REDIRECT_URI || callback;
     this.flows.set(state, { purpose, expectedName: name, verifier, redirectUri, expires: Date.now() + FLOW_TTL_MS });
-    return { state, url: this.provider.authorizeUrl({ state, challenge, redirectUri }) };
+    return { state, url: this.provider.authorizeUrl!({ state, challenge, redirectUri }) };
   }
 
   /** Handle DigiLocker's redirect. Returns false for an unknown or expired state. */
-  async callback(state: string, code: string | null, error: string | null): Promise<boolean> {
+  async callback(state: string, params: URLSearchParams): Promise<boolean> {
     const f = this.flows.get(state);
     if (!f || Date.now() > f.expires || f.result) return false;
-    if (error || !code) { f.result = { status: "denied" }; return true; }
+    const code = params.get("code");
+    if (params.get("error") || (!code && !f.ref)) { f.result = { status: "denied" }; return true; }
     try {
-      const d = await this.provider.fetch({ code, verifier: f.verifier, redirectUri: f.redirectUri });
+      const d = await this.provider.fetch({ code, verifier: f.verifier, redirectUri: f.redirectUri, ref: f.ref, purpose: f.purpose, params });
       f.result = {
         status: "done",
         summary: {
-          purpose: f.purpose, panIssued: d.panIssued, panLast4: d.panLast4 ?? null,
+          purpose: f.purpose, aadhaarLast4: d.aadhaarLast4 ?? null, panIssued: d.panIssued, panLast4: d.panLast4 ?? null,
           nameMatch: !!f.expectedName && norm(d.name) === norm(f.expectedName),
           pincode: d.pincode ?? null, state: d.state ?? null,
         },
       };
     } catch (e) {
+      if (e instanceof NotShared) { console.log(`[digilocker:${this.provider.name}] not shared: ${(e as Error).message}`); f.result = { status: "denied" }; return true; }
       console.error(`[digilocker:${this.provider.name}] fetch failed:`, (e as Error).message);
       f.result = { status: "error" };
     }

@@ -99,6 +99,13 @@ To test locally with the Auth emulator, run `npx firebase-tools emulators:start 
 - **Webhook signature:** webhook deliveries are signed with `X-Signature: sha256=<HMAC of the body>`.
 - **Queue numbers:** the queue position and wait are estimates from this server until a real helpdesk supplies them.
 
+**DigiLocker through Setu.** Set `DIGILOCKER_PROVIDER=setu` to use Setu, a licensed KYC provider. You also need `SETU_CLIENT_ID`, `SETU_CLIENT_SECRET` (secret) and `SETU_PRODUCT_INSTANCE_ID` from Setu's Bridge console. `SETU_DIGILOCKER_BASE_URL` is optional and defaults to the sandbox `https://dg-sandbox.setu.co`; production is `https://dg.setu.co`.
+- **Request:** the server creates a Setu request whose `redirectUrl` is `/api/digilocker/callback?state=…`. The applicant signs in and consents on DigiLocker, and Setu redirects back with `success`, `id` and `scope` (`ADHAR`, `PANCR`, `DRVLC`).
+- **Fetch:** the server reads the e-Aadhaar (name, masked number, PIN and state), checks that the name matches, then **revokes** the request.
+- **One step:** Aadhaar from DigiLocker completes ID **and** address proof in one go.
+- **PAN:** a shared PAN is recognised from `scope`; Setu doesn't return the PAN number.
+- **Status:** tested against a stand-in that follows Setu's documented API, not yet against Setu's own sandbox.
+
 **DigiLocker.** "Fetch from DigiLocker instead" on the PAN and address steps opens DigiLocker in a new window. The applicant signs in and approves sharing there.
 - **Exchange:** the server swaps the returned code for a token (OAuth 2.0 with PKCE), reads the issued-documents list and the e-Aadhaar address, then forgets the token.
 - **What the app receives:** whether a PAN is in the locker, its last 4 characters, whether the name matches the PAN name in the form, and the address PIN code and state.

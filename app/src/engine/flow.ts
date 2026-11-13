@@ -217,8 +217,10 @@ export async function verifyAadhaarOtp() {
   if (!r.ok) { set({ aadBusy: false, aadErr: r.message, ...(r.restart ? { aadStage: "enter", aadOtp: "", aadRef: "", aadDemo: "" } : {}) }); return; }
   set({ aadBusy: false, aadRef: "", aadDemo: "", aadOtp: "" });
   if (!r.nameMatch) { set({ screen: "home", id: "rejected", reason: "name" }); return; }
-  set({ screen: "home", id: "pending", dlNote: `Aadhaar ending ${r.last4} verified by OTP` + (r.pincode ? ` (PIN ${r.pincode}${r.state ? ", " + r.state : ""})` : "") });
-  later(() => set({ id: "done" }), 1500);
+  // Aadhaar comes with the address, so it can complete the address part too.
+  const withAddr = !!r.pincode;
+  set({ screen: "home", id: "pending", ...(withAddr ? { addr: "pending", addrDoc: "Aadhaar (same as ID proof)" } : {}), dlNote: `Aadhaar ending ${r.last4} verified by OTP` + (r.pincode ? ` (PIN ${r.pincode}${r.state ? ", " + r.state : ""}). It covers your address too` : "") });
+  later(() => set({ id: "done", ...(withAddr ? { addr: "done" } : {}) }), 1500);
 }
 
 /** From the Aadhaar screen: use DigiLocker instead (it carries the verified Aadhaar). */
@@ -303,14 +305,15 @@ export function useDigiLocker(kind: "doc" | "aadhaar" = "doc") {
     if (forAadhaar) {
       if (!d.pincode) { set({ dlErr: "We couldn't find your e-Aadhaar in DigiLocker. Use the Aadhaar OTP or another ID proof instead." }); return; }
       if (!d.nameMatch) { set({ screen: "home", id: "rejected", reason: "name" }); return; }
-      set({ screen: "home", id: "pending", dlNote: "Aadhaar fetched from DigiLocker (PIN " + d.pincode + (d.state ? ", " + d.state : "") + ")" });
-      later(() => set({ id: "done" }), 1500);
+      // The e-Aadhaar carries the address too, so one document completes ID and address proof.
+      set({ screen: "home", id: "pending", addr: "pending", addrDoc: "Aadhaar (same as ID proof)", dlNote: (d.aadhaarLast4 ? "Aadhaar ending " + d.aadhaarLast4 : "Aadhaar") + " fetched from DigiLocker (PIN " + d.pincode + (d.state ? ", " + d.state : "") + "). It covers your address too." });
+      later(() => set({ id: "done", addr: "done" }), 1500);
       return;
     }
     if (purpose === "pan") {
       if (!d.panIssued) { set({ dlErr: "No PAN card was found in your DigiLocker. Upload a photo of your PAN instead." }); return; }
       if (!d.nameMatch) { set({ screen: "home", id: "rejected", reason: "name" }); return; }
-      set({ screen: "home", id: "pending", ovd: "pan", dlNote: "PAN ending " + (d.panLast4 ?? "") + " fetched from DigiLocker" });
+      set({ screen: "home", id: "pending", ovd: "pan", dlNote: d.panLast4 ? "PAN ending " + d.panLast4 + " fetched from DigiLocker" : "PAN shared from DigiLocker" });
       later(() => set({ id: "done" }), 1500);
       return;
     }
@@ -326,8 +329,10 @@ function simulateDigiLocker(kind: "doc" | "aadhaar") {
   if (q.id !== "done") {
     // DigiLocker removes the photo-quality failure, not a name or OTP mismatch.
     if (q.fail === "name" || q.fail === "otp") { set({ screen: "home", id: "rejected", reason: q.fail, fail: "none" }); return; }
-    set({ screen: "home", id: "pending", ovd: kind === "aadhaar" ? "aadhaar" : "pan", fail: q.fail === "blur" ? "none" : q.fail });
-    later(() => set({ id: "done" }), 2500);
+    const aad = kind === "aadhaar";
+    // e-Aadhaar carries the address, so it completes the address part too.
+    set({ screen: "home", id: "pending", ovd: aad ? "aadhaar" : "pan", fail: q.fail === "blur" ? "none" : q.fail, ...(aad ? { addr: "pending", addrDoc: "Aadhaar (same as ID proof)" } : {}) });
+    later(() => set({ id: "done", ...(aad ? { addr: "done" } : {}) }), 2500);
     return;
   }
   set({ screen: "home", addr: "pending" });
