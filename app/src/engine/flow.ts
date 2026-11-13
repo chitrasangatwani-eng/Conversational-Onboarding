@@ -298,6 +298,7 @@ export function useDigiLocker(kind: "doc" | "aadhaar" = "doc") {
         denied: "You didn't allow sharing in DigiLocker. You can try again or upload a photo instead.",
         error: "We couldn't get your documents from DigiLocker. Try again, or upload a photo instead.",
         timeout: "DigiLocker took too long. Try again, or upload a photo instead.",
+        closed: "The DigiLocker window was closed before sharing finished. Tap DigiLocker again: each try opens a fresh link.",
       }[r.reason] });
       return;
     }
