@@ -61,7 +61,7 @@ export function contextTip(): string {
   else if (q.det !== "done") t = L("You're on personal details. Your name and date of birth are filled in. Check they match your PAN, then add your email and PIN code.", "आप व्यक्तिगत विवरण पर हैं। नाम और जन्मतिथि भरी हुई है। जाँचें कि वे PAN से मिलते हैं, फिर ईमेल और पिन कोड जोड़ें।");
   else if (q.id !== "done") t = L("You're on identity proof. Any one document works: PAN, Aadhaar, passport, voter ID, driving licence, NREGA job card or NPR letter.", "आप पहचान प्रमाण पर हैं। कोई भी एक दस्तावेज़ चलेगा: PAN, आधार, पासपोर्ट, वोटर ID, ड्राइविंग लाइसेंस, NREGA जॉब कार्ड या NPR पत्र।");
   else if (q.addr !== "done") t = L("You're on address proof. Any ID that shows your current address works, or a recent utility bill for now.", "आप पते के प्रमाण पर हैं। मौजूदा पता दिखाने वाली कोई भी ID चलेगी, या अभी के लिए हाल का बिजली-पानी का बिल।");
-  else if (q.selfie !== "done") t = L("Next is Video KYC, a short live call. Keep your PAN card in hand and sit in good light.", "अगला चरण वीडियो KYC है, एक छोटी लाइव कॉल। PAN कार्ड हाथ में रखें और अच्छी रोशनी में बैठें।");
+  else if (q.selfie !== "done") t = L("Next is Video KYC, a short live call. Keep your original ID in hand and sit in good light.", "अगला चरण वीडियो KYC है, एक छोटी लाइव कॉल। अपनी असली ID हाथ में रखें और अच्छी रोशनी में बैठें।");
   else t = L("You're at the last step. Check your details and confirm to submit.", "आप आखिरी चरण पर हैं। विवरण जाँचें और सबमिट की पुष्टि करें।");
   return t + " " + L("Ask me anything, or say: what's left?", "कुछ भी पूछें, या कहें: क्या बाकी है?");
 }

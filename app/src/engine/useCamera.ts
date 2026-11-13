@@ -8,6 +8,8 @@ export function useCamera(facing: "user" | "environment", autoStart = true) {
   const stream = useRef<MediaStream | null>(null);
   const [cam, setCam] = useState(false);
   const [camErr, setCamErr] = useState(false);
+  /** Why the camera failed: "blocked" (permission), "none" (no camera), "busy" (used by another app), "unsupported", or "". */
+  const [camWhy, setCamWhy] = useState("");
 
   const stop = useCallback(() => {
     stream.current?.getTracks().forEach((t) => t.stop());
@@ -16,7 +18,7 @@ export function useCamera(facing: "user" | "environment", autoStart = true) {
   }, []);
 
   const start = useCallback(() => {
-    if (!navigator.mediaDevices?.getUserMedia) { setCamErr(true); return; }
+    if (!navigator.mediaDevices?.getUserMedia) { setCamErr(true); setCamWhy("unsupported"); return; }
     navigator.mediaDevices.getUserMedia({ video: { facingMode: facing }, audio: false }).then((st) => {
       stream.current?.getTracks().forEach((t) => t.stop());
       stream.current = st;
@@ -24,7 +26,11 @@ export function useCamera(facing: "user" | "environment", autoStart = true) {
       if (v) { v.srcObject = st; v.play?.().catch(() => {}); }
       setCam(true);
       setCamErr(false);
-    }).catch(() => { setCam(false); setCamErr(true); });
+      setCamWhy("");
+    }).catch((e: { name?: string }) => {
+      setCam(false); setCamErr(true);
+      setCamWhy(e?.name === "NotAllowedError" || e?.name === "SecurityError" ? "blocked" : e?.name === "NotFoundError" || e?.name === "OverconstrainedError" ? "none" : e?.name === "NotReadableError" ? "busy" : "other");
+    });
   }, [facing]);
 
   /** Grab a still as a data URL and stop the camera. Mirrors selfies to match the preview. */
@@ -47,5 +53,5 @@ export function useCamera(facing: "user" | "environment", autoStart = true) {
     return () => { clearTimeout(t); stream.current?.getTracks().forEach((tr) => tr.stop()); stream.current = null; };
   }, [autoStart, start]);
 
-  return { videoRef, cam, camErr, start, stop, snap };
+  return { videoRef, cam, camErr, camWhy, start, stop, snap };
 }
