@@ -8,8 +8,9 @@ export function IdChoiceScreen() {
   return (
     <div className="screen">
       <button className="back" onClick={backHome}>← Back</button>
-      <div className="screen-title">Identity proof</div>
-      <div className="screen-lede">Choose <b>any one</b> of these. Aadhaar is optional. <button className="why" onClick={() => set({ why: "pan" })}>Why we ask</button></div>
+      <div className="part-label">Part 1 of 2 · Identity</div>
+      <div className="screen-title">ID and address proof</div>
+      <div className="screen-lede">Choose <b>any one</b> ID. If it shows your current address, it covers your address too, so you're done in one go. Aadhaar is optional. <button className="why" onClick={() => set({ why: "pan" })}>Why we ask</button></div>
       {s.id === "rejected" && <div className="err" role="alert">The last document didn't go through. Try again, or choose a different one.</div>}
       <div className="opts id-opts">
         {ID_PROOFS.map((d) => (

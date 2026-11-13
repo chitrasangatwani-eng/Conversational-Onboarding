@@ -97,7 +97,7 @@ for (const k of Object.keys(STATES) as StateKey[]) {
   const why: string[] = [];
   if (!card) why.push("no status card");
   else {
-    steps.slice(0, 5).forEach((st: Msg, i: number) => {
+    steps.slice(0, 4).forEach((st: Msg, i: number) => {
       const row = card.rows[i];
       if (!row) { why.push(`row ${i + 1} missing`); return; }
       if (row.label !== st.label) why.push(`row ${i + 1} says "${row.label}", app says "${st.label}"`);
@@ -119,7 +119,7 @@ for (const k of Object.keys(STATES) as StateKey[]) {
   setState(k);
   const summary: string[] = A.intentHandoff()[0].fields;
   const steps = home.steps(store.get());
-  const current = (steps.find((s: Msg) => s.look !== "done") ?? steps[5]).label;
+  const current = (steps.find((s: Msg) => s.look !== "done") ?? steps[steps.length - 1]).label;
   const why: string[] = [];
   for (const r of REQUIRED) if (!summary.some((f) => f.startsWith(r))) why.push(`missing "${r.trim()}"`);
   const step = summary.find((f) => f.startsWith("Current step: "))?.slice(14);

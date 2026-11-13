@@ -1,7 +1,7 @@
 import { set, useAppState } from "../engine/store";
 import { backHome, idStepLabel, openFees, ovdName, submitApplication } from "../engine/flow";
 
-const ROWS = ["Mobile number", "Personal details", "PAN card", "Address proof", "Video KYC"];
+const ROWS = ["Mobile number", "Personal details", "KYC", "Video KYC"];
 
 export function ReviewScreen() {
   const s = useAppState();
@@ -11,7 +11,7 @@ export function ReviewScreen() {
       <div className="screen-title">Review and submit</div>
       <div className="screen-lede">Check each step below. Sensitive details aren't shown here.</div>
       <div className="list">
-        {ROWS.map((r) => (r === "PAN card" ? idStepLabel(s) : r)).map((r) => (
+        {ROWS.map((r) => (r === "KYC" ? "ID and address: " + idStepLabel(s) + (s.addrDoc && !/same as ID/.test(s.addrDoc) ? " + " + s.addrDoc : "") : r)).map((r) => (
           <div key={r} className="list-row"><span style={{ color: "oklch(0.45 0.17 262)", fontWeight: 700, width: 18 }}>✓</span><span style={{ flex: 1, fontSize: 14.5 }}>{r}</span><span style={{ fontSize: 12.5, color: "#5f6b80" }}>Verified</span></div>
         ))}
       </div>
