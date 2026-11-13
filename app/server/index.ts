@@ -364,6 +364,7 @@ export function takeCall(): boolean {
 const server = http.createServer((req, res) => {
   const url = new URL(req.url || "/", "http://localhost");
   // Setup check for WhatsApp OTP (never returns the token).
+  if (url.pathname === "/api/digilocker/check") { void digilocker.check(originOf(req)).then((r) => send(res, 200, r)); return; }
   if (url.pathname === "/api/whatsapp/check") { void whatsappCheck().then((r) => send(res, 200, r)); return; }
   // Meta's webhook: GET is the verification handshake, POST carries statuses and incoming messages.
   if (url.pathname === "/api/whatsapp/webhook") {

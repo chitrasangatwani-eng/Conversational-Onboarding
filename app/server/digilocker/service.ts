@@ -154,15 +154,39 @@ class SetuProvider implements Provider {
   private headers() {
     return { "x-client-id": this.clientId, "x-client-secret": this.secret, "x-product-instance-id": this.instanceId, "content-type": "application/json" };
   }
-  private static err(j: unknown) {
-    const e = (j as { error?: { code?: string; detail?: string } })?.error;
-    return e ? `${e.code ?? ""} ${e.detail ?? ""}`.trim() : JSON.stringify(j).slice(0, 200);
+  /** Setu's reply as text, for error messages: JSON errors, or a gateway's HTML/plain-text refusal. */
+  private static async reply(r: Response): Promise<{ json: Record<string, unknown>; detail: string }> {
+    const text = await r.text().catch(() => "");
+    let json: Record<string, unknown> = {};
+    try { json = JSON.parse(text); } catch { /* not JSON */ }
+    const e = (json as { error?: { code?: string; detail?: string } }).error;
+    const msg = e ? `${e.code ?? ""} ${e.detail ?? ""}`.trim()
+      : text.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 200) || "(empty reply)";
+    const via = [r.headers.get("server"), r.headers.get("x-amzn-errortype"), r.headers.get("x-cache")].filter(Boolean).join(", ");
+    return { json, detail: msg + (via ? ` [${via}]` : "") };
   }
   async begin({ redirectUri }: { redirectUri: string }) {
     const r = await fetch(`${this.base}/api/digilocker`, { method: "POST", headers: this.headers(), body: JSON.stringify({ redirectUrl: redirectUri }), signal: AbortSignal.timeout(15_000) });
-    const j = (await r.json().catch(() => ({}))) as { id?: string; url?: string };
-    if (!r.ok || !j.id || !j.url) throw new Error(`setu create ${r.status}: ${SetuProvider.err(j)}`);
+    const { json: j, detail } = await SetuProvider.reply(r);
+    if (!r.ok || typeof j.id !== "string" || typeof j.url !== "string") throw new Error(`setu create ${r.status}: ${detail}`);
     return { url: j.url, ref: j.id };
+  }
+  /** Diagnostics for /api/digilocker/check: the shape of each setting (never the values) and Setu's answer to a test request. */
+  async check(origin: string) {
+    const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const settings = {
+      baseUrl: this.base,
+      clientId: uuid.test(this.clientId) ? "ok (looks like an ID)" : `unexpected format (${this.clientId.length} characters)`,
+      clientSecret: /not available|\s/i.test(this.secret) ? "looks wrong: contains spaces or the text 'not available'" : `set (${this.secret.length} characters)`,
+      productInstanceId: uuid.test(this.instanceId) ? (this.instanceId === this.clientId ? "same as client ID: should be the product ID" : "ok (looks like an ID)") : `unexpected format (${this.instanceId.length} characters)`,
+    };
+    try {
+      const r = await fetch(`${this.base}/api/digilocker`, { method: "POST", headers: this.headers(), body: JSON.stringify({ redirectUrl: origin + "/api/digilocker/callback?state=check" }), signal: AbortSignal.timeout(15_000) });
+      const { json, detail } = await SetuProvider.reply(r);
+      return { settings, setu: r.ok && json.url ? { ok: true, status: r.status } : { ok: false, status: r.status, reply: detail } };
+    } catch (e) {
+      return { settings, setu: { ok: false, error: (e as Error).message } };
+    }
   }
   async fetch({ ref, purpose, params }: { ref?: string; purpose: Purpose; params: URLSearchParams }): Promise<LockerData> {
     if (!ref) throw new Error("setu: no request id");
@@ -173,10 +197,11 @@ class SetuProvider implements Provider {
     if (!scope.includes("ADHAR")) throw new NotShared("setu: Aadhaar not shared (scope: " + (scope.join("+") || "none") + ")");
     try {
       const r = await fetch(`${this.base}/api/digilocker/${encodeURIComponent(ref)}/aadhaar`, { headers: this.headers(), signal: AbortSignal.timeout(20_000) });
-      const j = (await r.json().catch(() => ({}))) as { aadhaar?: { name?: string; maskedNumber?: string; address?: { pin?: string; state?: string } } };
+      const { json, detail } = await SetuProvider.reply(r);
+      const j = json as { aadhaar?: { name?: string; maskedNumber?: string; address?: { pin?: string; state?: string } } };
       // 400 aadhaar_not_linked, 401 not authenticated or revoked: the person didn't complete sharing.
-      if (r.status === 400 || r.status === 401) throw new NotShared(`setu aadhaar ${r.status}: ${SetuProvider.err(j)}`);
-      if (!r.ok || !j.aadhaar) throw new Error(`setu aadhaar ${r.status}: ${SetuProvider.err(j)}`);
+      if (r.status === 400 || r.status === 401) throw new NotShared(`setu aadhaar ${r.status}: ${detail}`);
+      if (!r.ok || !j.aadhaar) throw new Error(`setu aadhaar ${r.status}: ${detail}`);
       const a = j.aadhaar;
       return {
         name: a.name ?? "",
@@ -221,6 +246,11 @@ export class DigiLockerService {
   private provider = providerFromEnv();
   private flows = new Map<string, Flow>();
   get providerName() { return this.provider.name; }
+  /** Setu only: settings shapes and a test request (see SetuProvider.check). */
+  async check(origin: string) {
+    const p = this.provider as Provider & { check?: (o: string) => Promise<unknown> };
+    return p.check ? p.check(origin) : { provider: this.provider.name, note: "Set DIGILOCKER_PROVIDER=setu to check Setu." };
+  }
 
   constructor() { setInterval(() => { const now = Date.now(); for (const [k, f] of this.flows) if (now > f.expires) this.flows.delete(k); }, 60_000).unref(); }
 
