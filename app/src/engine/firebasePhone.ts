@@ -45,6 +45,7 @@ const MESSAGES: Record<string, string> = {
   "auth/invalid-api-key": "The Firebase API key is wrong. Check FIREBASE_API_KEY in the server settings.",
   "auth/api-key-not-valid.-please-pass-a-valid-api-key.": "The Firebase API key is wrong. Check FIREBASE_API_KEY in the server settings.",
   "auth/requests-from-referer-<empty>-are-blocked.": "The Firebase API key doesn't allow this website. Check its website restrictions in Google Cloud.",
+  "auth/configuration-not-found": "Firebase Authentication isn't set up for this project yet. In the Firebase console, open Authentication, click Get started, then enable Phone under Sign-in method.",
   "auth/admin-restricted-operation": "Phone sign-in is restricted for this Firebase project. Check Authentication settings.",
   "auth/missing-client-identifier": "Firebase's security check didn't load. Reload the page and try again.",
   "auth/error-code:-39": "Firebase blocked SMS for this project, usually because billing (Blaze plan) is off or India isn't allowed in the SMS region policy.",
