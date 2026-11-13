@@ -69,6 +69,14 @@ Setup:
 
 **Without a template (before business verification):** Meta only lets verified businesses create templates. Set `WHATSAPP_TEMPLATE=none` and `WHATSAPP_DISPLAY_NUMBER` (e.g. `+1 555 181 1262`) to send the code as a plain WhatsApp text instead. WhatsApp allows this only within 24 hours of the person messaging the business. The mobile screen shows "First send 'hi' on WhatsApp to …" with a link. If they haven't messaged first, Meta refuses with code 131047 and the app tells them what to do. This is fine for demos; real users need the template.
 
+**Delivery reports (webhook).** Meta reports delivery only to a webhook. To connect it:
+1. In the Meta app, go to **WhatsApp → Configuration → Webhook → Edit**.
+2. Set the callback URL to `https://<your-site>/api/whatsapp/webhook`, and the verify token to the same phrase as `WHATSAPP_WEBHOOK_VERIFY_TOKEN`.
+3. Subscribe to the **messages** field.
+4. Set `WHATSAPP_APP_SECRET` (from **App settings → Basic**) so the server can check that posts come from Meta.
+
+`/api/whatsapp/check` then shows the last 15 events: incoming messages (which open the 24-hour window) and sent, delivered, read or failed statuses with Meta's error. Numbers are masked, and no message text is kept.
+
 Meta accepts a message before delivering it, so a number that isn't on WhatsApp can fail afterwards. The applicant can resend or use email instead.
 
 **SMS through Firebase (+91 numbers).** Firebase Phone Authentication sends the SMS and checks the code in the browser, so no DLT registration or SMS gateway account of your own is needed. After a correct code, the app sends Firebase's ID token to `/api/otp/firebase`. The server checks Google's signature, the project, a fresh sign-in and a `+91` mobile number, then issues the same signed "mobile verified" token as the other routes and signs out of Firebase. The Firebase SDK loads only when someone sends an SMS code.

@@ -25,7 +25,7 @@ export function App() {
       <div className="shell">
         <header className="topbar">
           <img className="logo" src={BRAND + "logo.png"} alt="" />
-          <div className="brand">Artha</div>
+          <div className="brand">Artha Inclusive</div>
           <div className="topbar-title">Open an account</div>
           <div className="topbar-user">Chitra Sangatwani · Applicant</div>
         </header>

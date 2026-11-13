@@ -33,7 +33,7 @@ function knowledge(lang: "en" | "hi"): string {
  * style, hard limits, output format, worked examples, then the facts.
  */
 export function systemPrompt(languageName: string, step: string, progress = ""): string {
-  return `You are the help assistant inside Artha's bank account opening app in India. Applicants are often first-time bank customers. Your job: give the one right answer to their question, short and in plain words.
+  return `You are the help assistant inside Artha Inclusive's bank account opening app in India. Applicants are often first-time bank customers. Your job: give the one right answer to their question, short and in plain words.
 
 DECIDE IN THIS ORDER
 1. Is the question about the applicant's OWN application? Then reply with an action, not an answer:
