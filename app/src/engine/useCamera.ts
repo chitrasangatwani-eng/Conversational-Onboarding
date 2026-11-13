@@ -33,6 +33,15 @@ export function useCamera(facing: "user" | "environment", autoStart = true) {
     });
   }, [facing]);
 
+  // When access was blocked, browsers don't ask again: the person must allow it in site settings.
+  // Watch the permission so the camera starts by itself as soon as they do.
+  useEffect(() => {
+    let status: PermissionStatus | null = null;
+    const onChange = () => { if (status?.state === "granted") start(); };
+    navigator.permissions?.query({ name: "camera" as PermissionName }).then((st) => { status = st; st.addEventListener("change", onChange); }).catch(() => {});
+    return () => status?.removeEventListener("change", onChange);
+  }, [start]);
+
   /** Grab a still as a data URL and stop the camera. Mirrors selfies to match the preview. */
   const snap = useCallback((mirror: boolean): string | null => {
     const v = videoRef.current;
