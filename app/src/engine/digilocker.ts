@@ -5,10 +5,14 @@ import { API_BASE, post } from "./api";
 // message back when it's done; polling covers phones where the link between
 // the two windows is lost.
 
+export type LockerPurpose = "pan" | "address" | "dl" | "voter" | "passport";
+
 export interface LockerSummary {
-  purpose: "pan" | "address";
+  purpose: LockerPurpose;
   panIssued: boolean;
   panLast4: string | null;
+  /** For dl, voter or passport: whether that document is in the locker. */
+  docIssued?: boolean;
   /** Last 4 digits of the Aadhaar, when the provider returns them (Setu). */
   aadhaarLast4?: string | null;
   nameMatch: boolean;
@@ -23,7 +27,7 @@ export type LockerResult =
 const WAIT_MS = 5 * 60_000;
 
 /** Must be called straight from a click, so the browser allows the new window. */
-export async function fetchFromDigiLocker(purpose: "pan" | "address", expectedName: string): Promise<LockerResult> {
+export async function fetchFromDigiLocker(purpose: LockerPurpose, expectedName: string): Promise<LockerResult> {
   // A new window name each time, so an old DigiLocker tab (whose one-time link
   // is already used) is never reused or reloaded.
   const win = window.open("", "digilocker-" + Date.now(), "width=480,height=720");

@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { set, useAppState } from "../engine/store";
-import { backHome, captureKind, chooseIdDoc, ovdName, submitCapture, useDigiLocker } from "../engine/flow";
+import { DIGILOCKER_DOCS, backHome, captureKind, chooseIdDoc, ovdName, submitCapture, useDigiLocker } from "../engine/flow";
 import { useCamera } from "../engine/useCamera";
 
 // Secure capture for the PAN card and address proof. The image stays on the
@@ -47,7 +47,7 @@ export function CaptureScreen() {
       </div>
       <button className="btn-outline-lg" onClick={capture}>{shot ? "Retake" : cam ? "Capture photo" : camErr ? "Choose a photo" : "Capture photo"}</button>
       <div style={{ fontSize: 12, color: "#3c4659" }}>{s.weak && !s.mvp ? "Low-data mode: your photo is compressed before it uploads." : ""}</div>
-      {(kind === "pan" || (kind === "addr" && s.addrDoc === "Aadhaar")) && (
+      {(kind === "pan" || (kind === "ovd" && s.ovd !== "" && DIGILOCKER_DOCS.includes(s.ovd)) || (kind === "addr" && s.addrDoc === "Aadhaar")) && (
         <button className="btn-digi" onClick={() => useDigiLocker()} aria-busy={s.dlBusy}>
           {s.dlBusy ? "Waiting for DigiLocker… finish in its window" : "Use DigiLocker instead (no photo)"}
         </button>

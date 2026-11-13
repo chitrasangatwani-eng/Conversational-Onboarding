@@ -230,12 +230,14 @@ export async function verifyAadhaarOtp() {
 export const ID_PROOFS: { id: Ovd; en: string; hi: string; how: string }[] = [
   { id: "pan", en: "PAN card", hi: "PAN कार्ड", how: "Photo, or fetch from DigiLocker" },
   { id: "aadhaar", en: "Aadhaar", hi: "आधार", how: "OTP to the linked mobile, or DigiLocker" },
-  { id: "passport", en: "Passport", hi: "पासपोर्ट", how: "Photo of the photo and address pages" },
-  { id: "voter", en: "Voter ID", hi: "वोटर ID", how: "Photo of both sides" },
-  { id: "dl", en: "Driving licence", hi: "ड्राइविंग लाइसेंस", how: "Photo of both sides" },
+  { id: "passport", en: "Passport", hi: "पासपोर्ट", how: "Photo of the photo and address pages, or DigiLocker" },
+  { id: "voter", en: "Voter ID", hi: "वोटर ID", how: "Photo of both sides, or DigiLocker" },
+  { id: "dl", en: "Driving licence", hi: "ड्राइविंग लाइसेंस", how: "Photo of both sides, or DigiLocker" },
   { id: "nrega", en: "NREGA job card", hi: "NREGA जॉब कार्ड", how: "Signed by a state government officer" },
   { id: "npr", en: "NPR letter", hi: "NPR पत्र", how: "National Population Register letter with your name and address" },
 ];
+/** Identity documents (besides PAN and Aadhaar) that can be fetched from DigiLocker. */
+export const DIGILOCKER_DOCS: Ovd[] = ["dl", "voter", "passport"];
 /** Officially valid documents that also prove address (PAN doesn't show one). */
 export const OVDS = ID_PROOFS.filter((d) => d.id !== "pan");
 export const ovdName = (o: Ovd | "", tr: (en: string, hi: string) => string = (en) => en) => {
@@ -288,7 +290,8 @@ export function useDigiLocker(kind: "doc" | "aadhaar" = "doc") {
   const q = get();
   if (q.dlBusy) return;
   const forAadhaar = kind === "aadhaar" && q.id !== "done";
-  const purpose = q.id === "done" || forAadhaar ? "address" : "pan";
+  const idDoc = !forAadhaar && q.id !== "done" && DIGILOCKER_DOCS.includes(q.ovd as Ovd) ? (q.ovd as "dl" | "voter" | "passport") : null;
+  const purpose = idDoc ?? (q.id === "done" || forAadhaar ? "address" : "pan");
   set({ dlBusy: true, dlErr: "" });
   fetchFromDigiLocker(purpose, q.dName).then((r) => {
     set({ dlBusy: false });
@@ -309,6 +312,15 @@ export function useDigiLocker(kind: "doc" | "aadhaar" = "doc") {
       // The e-Aadhaar carries the address too, so one document completes ID and address proof.
       set({ screen: "home", id: "pending", addr: "pending", addrDoc: "Aadhaar (same as ID proof)", dlNote: (d.aadhaarLast4 ? "Aadhaar ending " + d.aadhaarLast4 : "Aadhaar") + " fetched from DigiLocker (PIN " + d.pincode + (d.state ? ", " + d.state : "") + "). It covers your address too." });
       later(() => set({ id: "done", addr: "done" }), 1500);
+      return;
+    }
+    if (idDoc) {
+      const doc = ovdName(idDoc);
+      const inText = idDoc === "voter" ? "Voter ID" : doc.toLowerCase();
+      if (!d.docIssued) { set({ dlErr: `We couldn't find your ${inText} in DigiLocker. Upload a photo of it instead.` }); return; }
+      if (!d.nameMatch) { set({ screen: "home", id: "rejected", reason: "name" }); return; }
+      set({ screen: "home", id: "pending", dlNote: `${doc} shared from DigiLocker` });
+      later(() => set({ id: "done" }), 1500);
       return;
     }
     if (purpose === "pan") {
@@ -332,7 +344,8 @@ function simulateDigiLocker(kind: "doc" | "aadhaar") {
     if (q.fail === "name" || q.fail === "otp") { set({ screen: "home", id: "rejected", reason: q.fail, fail: "none" }); return; }
     const aad = kind === "aadhaar";
     // e-Aadhaar carries the address, so it completes the address part too.
-    set({ screen: "home", id: "pending", ovd: aad ? "aadhaar" : "pan", fail: q.fail === "blur" ? "none" : q.fail, ...(aad ? { addr: "pending", addrDoc: "Aadhaar (same as ID proof)" } : {}) });
+    const ovd: Ovd = aad ? "aadhaar" : DIGILOCKER_DOCS.includes(q.ovd as Ovd) ? (q.ovd as Ovd) : "pan";
+    set({ screen: "home", id: "pending", ovd, fail: q.fail === "blur" ? "none" : q.fail, ...(aad ? { addr: "pending", addrDoc: "Aadhaar (same as ID proof)" } : {}) });
     later(() => set({ id: "done", ...(aad ? { addr: "done" } : {}) }), 2500);
     return;
   }

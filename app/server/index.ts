@@ -388,7 +388,7 @@ const server = http.createServer((req, res) => {
   // Pages opened in the DigiLocker consent window (top-level navigations, so no CORS check).
   if (req.method === "GET" && url.pathname === "/api/digilocker/sandbox" && digilocker.providerName === "sandbox") {
     res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
-    res.end(sandboxConsentPage(url.searchParams.get("state") || ""));
+    { const st = url.searchParams.get("state") || ""; res.end(sandboxConsentPage(st, digilocker.purposeOf(st))); }
     return;
   }
   if (req.method === "GET" && url.pathname === "/api/digilocker/callback") {
