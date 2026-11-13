@@ -36,8 +36,9 @@ export function AadhaarScreen() {
           </button>
           <div className="err" role="alert">{s.aadErr}</div>
           <button className={"btn-lg" + (ready ? "" : " is-off")} onClick={sendAadhaarOtp} aria-busy={s.aadBusy}>{s.aadBusy ? "Sending…" : "Send OTP"}</button>
-          <div style={{ display: "flex", gap: 18 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 18px" }}>
             <button className="link" onClick={aadhaarViaDigiLocker} aria-busy={s.dlBusy}>{s.dlBusy ? "Waiting for DigiLocker…" : "Use DigiLocker instead"}</button>
+            <button className="link" onClick={() => set({ screen: "secure", dlErr: "", aadErr: "" })}>Upload a photo instead</button>
             <button className="link" onClick={chooseIdDoc}>Use another document</button>
           </div>
           {s.dlErr && <div className="err" role="alert">{s.dlErr}</div>}

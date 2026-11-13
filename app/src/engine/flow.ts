@@ -228,13 +228,13 @@ export async function verifyAadhaarOtp() {
 
 /** Identity proofs offered. Any one is enough; Aadhaar is optional. The address list reuses all but PAN. */
 export const ID_PROOFS: { id: Ovd; en: string; hi: string; how: string }[] = [
-  { id: "pan", en: "PAN card", hi: "PAN कार्ड", how: "Photo, or fetch from DigiLocker" },
-  { id: "aadhaar", en: "Aadhaar", hi: "आधार", how: "OTP to the linked mobile, or DigiLocker" },
-  { id: "passport", en: "Passport", hi: "पासपोर्ट", how: "Photo of the photo and address pages, or DigiLocker" },
-  { id: "voter", en: "Voter ID", hi: "वोटर ID", how: "Photo of both sides, or DigiLocker" },
-  { id: "dl", en: "Driving licence", hi: "ड्राइविंग लाइसेंस", how: "Photo of both sides, or DigiLocker" },
-  { id: "nrega", en: "NREGA job card", hi: "NREGA जॉब कार्ड", how: "Signed by a state government officer" },
-  { id: "npr", en: "NPR letter", hi: "NPR पत्र", how: "National Population Register letter with your name and address" },
+  { id: "pan", en: "PAN card", hi: "PAN कार्ड", how: "Photo or upload, or DigiLocker" },
+  { id: "aadhaar", en: "Aadhaar", hi: "आधार", how: "OTP to the linked mobile, DigiLocker, or upload a masked copy" },
+  { id: "passport", en: "Passport", hi: "पासपोर्ट", how: "Photo or upload of the photo and address pages, or DigiLocker" },
+  { id: "voter", en: "Voter ID", hi: "वोटर ID", how: "Photo or upload of both sides, or DigiLocker" },
+  { id: "dl", en: "Driving licence", hi: "ड्राइविंग लाइसेंस", how: "Photo or upload of both sides, or DigiLocker" },
+  { id: "nrega", en: "NREGA job card", hi: "NREGA जॉब कार्ड", how: "Photo or upload; signed by a state government officer" },
+  { id: "npr", en: "NPR letter", hi: "NPR पत्र", how: "Photo or upload of the letter with your name and address" },
 ];
 /** Identity documents (besides PAN and Aadhaar) that can be fetched from DigiLocker. */
 export const DIGILOCKER_DOCS: Ovd[] = ["dl", "voter", "passport"];
