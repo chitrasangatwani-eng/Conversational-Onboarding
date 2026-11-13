@@ -325,9 +325,10 @@ export function sandboxConsentPage(state: string): string {
 <div class="card">• PAN card (PANCR)<br>• Aadhaar address (e-Aadhaar)<br><small>Used only for KYC. You can revoke access in DigiLocker at any time.</small></div>
 <p><small>This is a test page with sample data. The real DigiLocker asks you to sign in with your Aadhaar or mobile number and an OTP.</small></p>
 <a class="btn go" href="${go("allow")}">Allow</a>
-<a class="btn alt" href="${go("name-differs")}">Allow (test: name differs)</a>
-<a class="btn alt" href="${go("no-pan")}">Allow (test: no PAN in locker)</a>
-<a class="btn no" href="/api/digilocker/callback?state=${s}&error=access_denied">Deny</a></main>`);
+<a class="btn no" href="/api/digilocker/callback?state=${s}&error=access_denied">Deny</a>
+<details style="margin-top:20px"><summary><small>Demo: try a problem case</small></summary>
+<a class="btn alt" href="${go("name-differs")}">Name doesn't match</a>
+<a class="btn alt" href="${go("no-pan")}">No PAN in DigiLocker</a></details></main>`);
 }
 
 export function callbackPage(ok: boolean, rawState: string): string {
