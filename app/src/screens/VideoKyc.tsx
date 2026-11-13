@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { set, useAppState } from "../engine/store";
 import { endCall, joinVk, ovdName } from "../engine/flow";
 import { useCamera } from "../engine/useCamera";
@@ -13,7 +14,7 @@ const prompts = (doc: string) => [
 ];
 
 const CAM_HELP: Record<string, string> = {
-  blocked: "Camera access is blocked. Tap the camera or lock icon in your browser's address bar, choose Allow, then tap Try again.",
+  blocked: "Camera access is blocked for this site, so your browser won't ask again. Tap the icon left of the web address (a lock, sliders or camera), set Camera to Allow, then reload the page. On iPhone: tap aA, then Website Settings, then Camera.",
   none: "We can't find a camera on this device. Use a phone or a computer with a camera.",
   busy: "Another app is using your camera. Close it (for example a video call), then tap Try again.",
   unsupported: "This browser can't use the camera. Open this page in Chrome or Safari (not inside WhatsApp or Instagram).",
@@ -24,6 +25,9 @@ export function VideoKycScreen() {
   const s = useAppState();
   const { videoRef, stop, start, cam, camErr, camWhy } = useCamera("user");
   const doc = s.ovd ? ovdName(s.ovd) : "ID";
+  // Retrying a blocked camera fails instantly; count tries so the person sees something happen.
+  const [tries, setTries] = useState(0);
+  const retry = () => { setTries((n) => n + 1); start(); };
   const live = s.vk === "live";
   const leave = () => { stop(); endCall("hang"); };
 
@@ -54,8 +58,14 @@ export function VideoKycScreen() {
         {!live && !cam && (
           <div style={{ position: "absolute", inset: 0, color: "#fff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, textAlign: "center", padding: 24 }} role={camErr ? "alert" : "status"}>
             <div style={{ fontSize: 17, fontWeight: 600 }}>{camErr ? "Your camera isn't on" : "Starting your camera…"}</div>
-            {camErr && <div style={{ fontSize: 14, opacity: 0.9, maxWidth: 420, lineHeight: 1.45 }}>{CAM_HELP[camWhy] ?? CAM_HELP.other}</div>}
-            {camErr && <button className="btn" style={{ background: "#fff", color: "#13203f", border: 0, borderRadius: 10, padding: "10px 18px", font: "inherit", fontWeight: 600, cursor: "pointer" }} onClick={start}>Try again</button>}
+            {camErr && <div style={{ fontSize: 14, opacity: 0.9, maxWidth: 440, lineHeight: 1.45 }}>{CAM_HELP[camWhy] ?? CAM_HELP.other}</div>}
+            {camErr && tries > 0 && <div style={{ fontSize: 13, color: "#ffd8a8" }}>Still not working (tried {tries} {tries === 1 ? "time" : "times"}). {camWhy === "blocked" ? "Allow the camera in site settings, then reload." : "Try reloading the page."}</div>}
+            {camErr && (
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
+                <button style={{ background: "#fff", color: "#13203f", border: 0, borderRadius: 10, padding: "10px 18px", font: "inherit", fontWeight: 600, cursor: "pointer" }} onClick={retry}>Try again</button>
+                <button style={{ background: "transparent", color: "#fff", border: "1px solid rgba(255,255,255,.6)", borderRadius: 10, padding: "10px 18px", font: "inherit", fontWeight: 600, cursor: "pointer" }} onClick={() => window.location.reload()}>Reload page</button>
+              </div>
+            )}
           </div>
         )}
         {s.vk === "connecting" && (

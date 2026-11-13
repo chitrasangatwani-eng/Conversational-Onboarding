@@ -150,7 +150,33 @@ function initialScope(): boolean {
   return true;
 }
 
-let state = initial;
+// Step progress survives a page reload in this browser tab (sessionStorage),
+// so "Reload page" or a refresh doesn't send the applicant back to step 1.
+// Only step statuses and document names are kept: no personal details, codes or tokens.
+const SAVE_KEY = "artha-progress";
+const SAVED_KEYS = ["mob", "det", "id", "addr", "selfie", "ovd", "addrDoc", "f60"] as const;
+function restore(s: State): State {
+  try {
+    const raw = sessionStorage.getItem(SAVE_KEY);
+    if (!raw) return s;
+    const saved = JSON.parse(raw) as Partial<State> & { onVk?: boolean };
+    const out = { ...s };
+    for (const k of SAVED_KEYS) if (k in saved) (out as Record<string, unknown>)[k] = saved[k];
+    // A check that was in progress when the page reloaded can't resume, so treat it as finished (demo).
+    (["id", "addr", "selfie"] as const).forEach((k) => { if (out[k] === "pending") (out as Record<string, unknown>)[k] = "done"; });
+    if (saved.onVk && out.addr === "done" && out.selfie !== "done") Object.assign(out, { screen: "vkyc", vk: "ready", vkT: 0 });
+    return out;
+  } catch { return s; }
+}
+function save(s: State) {
+  try {
+    const keep: Record<string, unknown> = { onVk: s.screen === "vkyc" };
+    for (const k of SAVED_KEYS) keep[k] = s[k];
+    sessionStorage.setItem(SAVE_KEY, JSON.stringify(keep));
+  } catch { /* storage unavailable: progress just isn't kept */ }
+}
+
+let state = typeof window === "undefined" ? initial : restore(initial);
 const listeners = new Set<() => void>();
 
 export function get(): State {
@@ -160,6 +186,7 @@ export function get(): State {
 export function set(patch: Partial<State> | ((s: State) => Partial<State>)) {
   const p = typeof patch === "function" ? patch(state) : patch;
   state = { ...state, ...p };
+  if (typeof window !== "undefined") save(state);
   listeners.forEach((l) => l());
 }
 
