@@ -259,8 +259,13 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse, ur
   }
 
   if (url.pathname === "/api/digilocker/start") {
-    const r = digilocker.start(body?.purpose, body?.expectedName, originOf(req));
-    return r ? send(res, 200, r) : send(res, 400, { error: "invalid" });
+    try {
+      const r = await digilocker.start(body?.purpose, body?.expectedName, originOf(req));
+      return r ? send(res, 200, r) : send(res, 400, { error: "invalid" });
+    } catch (e) {
+      console.error(`[digilocker:${digilocker.providerName}] start failed:`, (e as Error).message);
+      return send(res, 502, { error: "start failed" });
+    }
   }
 
   if (url.pathname === "/api/digilocker/result") {
@@ -387,7 +392,7 @@ const server = http.createServer((req, res) => {
   }
   if (req.method === "GET" && url.pathname === "/api/digilocker/callback") {
     const state = url.searchParams.get("state") || "";
-    digilocker.callback(state, url.searchParams.get("code"), url.searchParams.get("error")).then((ok) => {
+    digilocker.callback(state, url.searchParams).then((ok) => {
       res.writeHead(ok ? 200 : 410, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
       res.end(callbackPage(ok, state));
     });

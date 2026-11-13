@@ -9,6 +9,8 @@ export interface LockerSummary {
   purpose: "pan" | "address";
   panIssued: boolean;
   panLast4: string | null;
+  /** Last 4 digits of the Aadhaar, when the provider returns them (Setu). */
+  aadhaarLast4?: string | null;
   nameMatch: boolean;
   pincode: string | null;
   state: string | null;
