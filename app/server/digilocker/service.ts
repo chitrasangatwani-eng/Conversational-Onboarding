@@ -1,4 +1,6 @@
-// DigiLocker fetch for the PAN and address steps.
+// DigiLocker fetch for the ID and address proof step: PAN, Aadhaar (with
+// address), driving licence, Voter ID or passport, when the applicant has it in
+// DigiLocker.
 //
 // The applicant is sent to DigiLocker, signs in there and approves sharing.
 // DigiLocker redirects back to /api/digilocker/callback with a one-time code,
@@ -33,7 +35,11 @@
 import crypto from "node:crypto";
 import { clean } from "../otp/providers";
 
-export type Purpose = "pan" | "address";
+export type Purpose = "pan" | "address" | IdDoc;
+/** Identity documents other than PAN and Aadhaar that DigiLocker can hold. */
+export type IdDoc = "dl" | "voter" | "passport";
+const ID_DOCS: IdDoc[] = ["dl", "voter", "passport"];
+const DOC_NAME: Record<"pan" | IdDoc, string> = { pan: "PAN card", dl: "Driving licence", voter: "Voter ID", passport: "Passport" };
 
 /** What the connector learns from DigiLocker. Stays on the server. */
 interface LockerData {
@@ -41,6 +47,8 @@ interface LockerData {
   aadhaarLast4?: string;
   panIssued: boolean;
   panLast4?: string;
+  /** Identity documents found in the locker (besides PAN and Aadhaar). */
+  docs?: IdDoc[];
   pincode?: string;
   state?: string;
 }
@@ -51,6 +59,8 @@ export interface LockerSummary {
   aadhaarLast4: string | null;
   panIssued: boolean;
   panLast4: string | null;
+  /** For dl, voter or passport: whether that document is in the locker. */
+  docIssued: boolean;
   nameMatch: boolean;
   pincode: string | null;
   state: string | null;
@@ -71,9 +81,10 @@ class NotShared extends Error {}
 // ---- Sandbox ----
 
 const SANDBOX: Record<string, LockerData> = {
-  allow: { name: "Chitra Sangatwani", panIssued: true, panLast4: "234F", pincode: "400001", state: "Maharashtra" },
-  "name-differs": { name: "C. Sangatwani", panIssued: true, panLast4: "234F", pincode: "400001", state: "Maharashtra" },
-  "no-pan": { name: "Chitra Sangatwani", panIssued: false, pincode: "400001", state: "Maharashtra" },
+  allow: { name: "Chitra Sangatwani", panIssued: true, panLast4: "234F", docs: ["dl", "voter", "passport"], pincode: "400001", state: "Maharashtra" },
+  "name-differs": { name: "C. Sangatwani", panIssued: true, panLast4: "234F", docs: ["dl", "voter", "passport"], pincode: "400001", state: "Maharashtra" },
+  // The requested document isn't in the locker (Aadhaar still is).
+  "no-pan": { name: "Chitra Sangatwani", panIssued: false, docs: [], pincode: "400001", state: "Maharashtra" },
 };
 
 class SandboxProvider implements Provider {
@@ -121,7 +132,7 @@ class DigiLockerProvider implements Provider {
 
     // GET {base}/public/oauth2/2/files/issued -> { items: [{ doctype, uri, ... }] }; PAN is doctype PANCR
     const issuedRes = await fetch(`${this.base}/public/oauth2/2/files/issued`, { headers: auth, signal: AbortSignal.timeout(15_000) });
-    const issued = (await issuedRes.json().catch(() => ({}))) as { items?: { doctype?: string; uri?: string }[] };
+    const issued = (await issuedRes.json().catch(() => ({}))) as { items?: { doctype?: string; uri?: string; name?: string; description?: string }[] };
     if (!issuedRes.ok) throw new Error(`issued files ${issuedRes.status}`);
     const pan = (issued.items ?? []).find((i) => i.doctype === "PANCR");
     // The PAN document URI ends with the PAN number; keep only the last 4 characters.
@@ -135,7 +146,16 @@ class DigiLockerProvider implements Provider {
       pincode = poa.match(/\bpc="(\d{6})"/)?.[1];
       state = poa.match(/\bstate="([^"]+)"/)?.[1];
     }
-    return { name: tok.name ?? "", panIssued: !!pan, panLast4, pincode, state };
+    // Other identity documents: driving licence is doctype DRVLC; passport and
+    // Voter ID are matched by the issued file's name or description.
+    const docs = new Set<IdDoc>();
+    for (const i of issued.items ?? []) {
+      const label = `${i.name ?? ""} ${i.description ?? ""}`;
+      if (i.doctype === "DRVLC" || /driving\s*licen[cs]e/i.test(label)) docs.add("dl");
+      if (/passport/i.test(label)) docs.add("passport");
+      if (/voter|elector|\bepic\b/i.test(label)) docs.add("voter");
+    }
+    return { name: tok.name ?? "", panIssued: !!pan, panLast4, docs: [...docs], pincode, state };
   }
 }
 
@@ -206,6 +226,8 @@ class SetuProvider implements Provider {
       return {
         name: a.name ?? "",
         panIssued: purpose === "pan" && scope.includes("PANCR"),
+        // Setu's scope lists ADHAR, PANCR and DRVLC; other documents aren't offered through it.
+        docs: scope.includes("DRVLC") ? ["dl"] : [],
         aadhaarLast4: a.maskedNumber?.match(/(\d{4})\s*$/)?.[1],
         pincode: a.address?.pin && /^\d{6}$/.test(a.address.pin) ? a.address.pin : undefined,
         state: a.address?.state || undefined,
@@ -256,7 +278,11 @@ export class DigiLockerService {
 
   /** Begin a consent flow. `origin` is this server's public origin, used for the callback unless one is configured. */
   async start(purpose: unknown, expectedName: unknown, origin: string): Promise<{ state: string; url: string } | null> {
-    if (purpose !== "pan" && purpose !== "address") return null;
+    if (purpose !== "pan" && purpose !== "address" && !ID_DOCS.includes(purpose as IdDoc)) return null;
+    return this.begin(purpose as Purpose, expectedName, origin);
+  }
+
+  private async begin(purpose: Purpose, expectedName: unknown, origin: string): Promise<{ state: string; url: string }> {
     const name = typeof expectedName === "string" ? expectedName.slice(0, 100) : "";
     const state = crypto.randomBytes(16).toString("base64url");
     const verifier = crypto.randomBytes(32).toString("base64url");
@@ -274,6 +300,9 @@ export class DigiLockerService {
     return { state, url: this.provider.authorizeUrl!({ state, challenge, redirectUri }) };
   }
 
+  /** The document a pending flow asks for, for the sandbox consent page. */
+  purposeOf(state: string): Purpose | null { return this.flows.get(state)?.purpose ?? null; }
+
   /** Handle DigiLocker's redirect. Returns false for an unknown or expired state. */
   async callback(state: string, params: URLSearchParams): Promise<boolean> {
     const f = this.flows.get(state);
@@ -286,6 +315,7 @@ export class DigiLockerService {
         status: "done",
         summary: {
           purpose: f.purpose, aadhaarLast4: d.aadhaarLast4 ?? null, panIssued: d.panIssued, panLast4: d.panLast4 ?? null,
+          docIssued: ID_DOCS.includes(f.purpose as IdDoc) && !!d.docs?.includes(f.purpose as IdDoc),
           nameMatch: !!f.expectedName && norm(d.name) === norm(f.expectedName),
           pincode: d.pincode ?? null, state: d.state ?? null,
         },
@@ -316,19 +346,20 @@ const page = (title: string, body: string) => `<!doctype html><html lang="en"><h
 .card{background:#fff;border:1px solid #d9deea;border-radius:14px;padding:16px;margin:16px 0}button,a.btn{display:block;width:100%;box-sizing:border-box;border:0;border-radius:12px;padding:14px;font:600 16px system-ui;margin-top:10px;cursor:pointer;text-align:center;text-decoration:none}
 .go{background:#2b3a8c;color:#fff}.alt{background:#fff;color:#2b3a8c;border:1px solid #2b3a8c}.no{background:none;color:#5b6170;text-decoration:underline}small{color:#5b6170}</style></head><body>${body}</body></html>`;
 
-export function sandboxConsentPage(state: string): string {
+export function sandboxConsentPage(state: string, purpose: Purpose | null = null): string {
+  const doc = purpose && purpose !== "address" ? DOC_NAME[purpose] : "";
   const s = encodeURIComponent(state);
   const go = (code: string) => `/api/digilocker/callback?state=${s}&code=sandbox-${code}`;
   return page("DigiLocker (sandbox)", `<div class="bar">DigiLocker<span class="tag">SANDBOX</span></div><main>
 <h2 style="margin:8px 0 4px">Share documents?</h2>
 <p><b>Artha Inclusive</b> is asking to read from your DigiLocker:</p>
-<div class="card">• PAN card (PANCR)<br>• Aadhaar address (e-Aadhaar)<br><small>Used only for KYC. You can revoke access in DigiLocker at any time.</small></div>
+<div class="card">${doc ? `• ${doc}<br>` : ""}• Aadhaar: name and address (e-Aadhaar)<br><small>Used only for KYC. You can revoke access in DigiLocker at any time.</small></div>
 <p><small>This is a test page with sample data. The real DigiLocker asks you to sign in with your Aadhaar or mobile number and an OTP.</small></p>
 <a class="btn go" href="${go("allow")}">Allow</a>
 <a class="btn no" href="/api/digilocker/callback?state=${s}&error=access_denied">Deny</a>
 <details style="margin-top:20px"><summary><small>Demo: try a problem case</small></summary>
 <a class="btn alt" href="${go("name-differs")}">Name doesn't match</a>
-<a class="btn alt" href="${go("no-pan")}">No PAN in DigiLocker</a></details></main>`);
+<a class="btn alt" href="${go("no-pan")}">${doc || "Document"} not in DigiLocker</a></details></main>`);
 }
 
 export function callbackPage(ok: boolean, rawState: string): string {
