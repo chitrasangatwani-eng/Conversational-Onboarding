@@ -321,7 +321,7 @@ export function sandboxConsentPage(state: string): string {
   const go = (code: string) => `/api/digilocker/callback?state=${s}&code=sandbox-${code}`;
   return page("DigiLocker (sandbox)", `<div class="bar">DigiLocker<span class="tag">SANDBOX</span></div><main>
 <h2 style="margin:8px 0 4px">Share documents?</h2>
-<p><b>Onboarding Assistant</b> is asking to read from your DigiLocker:</p>
+<p><b>Artha Inclusive</b> is asking to read from your DigiLocker:</p>
 <div class="card">• PAN card (PANCR)<br>• Aadhaar address (e-Aadhaar)<br><small>Used only for KYC. You can revoke access in DigiLocker at any time.</small></div>
 <p><small>This is a test page with sample data. The real DigiLocker asks you to sign in with your Aadhaar or mobile number and an OTP.</small></p>
 <a class="btn go" href="${go("allow")}">Allow</a>
