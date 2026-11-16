@@ -1,3 +1,4 @@
+import { openHelp } from "./engine/flow";
 import { useAppState } from "./engine/store";
 import { DemoPanel } from "./DemoPanel";
 import { Home } from "./screens/Home";
@@ -18,8 +19,12 @@ import { Sidebar } from "./Sidebar";
 
 const BRAND = import.meta.env.BASE_URL + "brand/";
 
+/** Form screens that also offer AI help (home has its own button; the video call doesn't). */
+const HELP_SCREENS = ["mobile", "details", "idchoice", "addrchoice", "aadhaar", "secure", "form60", "review"];
+
 export function App() {
   const s = useAppState();
+  const formHelp = HELP_SCREENS.includes(s.screen) && !s.sheet && !s.why;
   return (
     <div className="stage">
       <div className="shell">
@@ -36,7 +41,7 @@ export function App() {
         </div>
         <div className="shell-body">
           <Sidebar />
-          <main className="phone">
+          <main className={"phone" + (formHelp ? " with-fab" : "")}>
         {s.screen === "home" && <Home />}
         {s.screen === "secure" && <CaptureScreen />}
         {s.screen === "idchoice" && <IdChoiceScreen />}
@@ -51,6 +56,7 @@ export function App() {
         {s.sheet && !s.vmode && <ChatSheet />}
         {s.sheet && s.vmode && <VoiceSheet />}
         {s.why && <WhySheet />}
+        {formHelp && <button className="fab" onClick={openHelp}><span className="ai-chip">AI</span>{s.down ? "Help (offline)" : "Help with this step"}</button>}
           </main>
         </div>
       </div>
