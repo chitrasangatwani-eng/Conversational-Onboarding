@@ -121,7 +121,7 @@ const flowDefaults = {
   mob: "todo", mobStage: "enter", mobNum: "", otp: "", otpErr: "", mobErr: "", otpNote: "", otpReq: "", otpDemo: "", otpBusy: false, resendAt: 0, mobToken: "", otpEmail: "", otpSentTo: "", dlBusy: false, dlErr: "", dlNote: "", navNote: "", taxOk: false, ovd: "", addrDoc: "", f60: false, f60Reason: "", f60Ack: "", f60AckDate: "", f60Income: "", f60Agri: "", f60Consent: false, f60Err: "", aadStage: "enter", aadNum: "", aadConsent: false, aadOtp: "", aadRef: "", aadLast4: "", aadDemo: "", aadBusy: false, aadErr: "", aadResendAt: 0,
   det: "todo", dName: "Chitra Sangatwani", dDob: "14/08/1994", dEmail: "", dPin: "", dErr: "",
   addr: "todo", selfie: "todo", consent: false, submitted: false, reason: "", held: false, saved: false,
-  fail: "blur", vk: "ready", vkT: 0, muted: false, feedback: {},
+  fail: "none", vk: "ready", vkT: 0, muted: false, feedback: {},
 } satisfies Partial<State>;
 
 const initial: State = {

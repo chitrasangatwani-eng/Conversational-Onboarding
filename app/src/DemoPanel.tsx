@@ -22,7 +22,7 @@ export function DemoPanel() {
     <div className="demo">
       <div className="demo-eyebrow">PROTOTYPE · PRD v2</div>
       <div className="demo-title">Onboarding assistant<span className="tag">{s.mvp ? "MVP" : "FULL"}</span></div>
-      <button className="ctl" onClick={() => set({ mvp: !s.mvp, ...(!s.mvp && ["otp", "video", "security"].includes(s.fail) ? { fail: "blur" as Fail } : {}) })} aria-pressed={s.mvp}>
+      <button className="ctl" onClick={() => set({ mvp: !s.mvp, ...(!s.mvp && ["otp", "video", "security"].includes(s.fail) ? { fail: "none" as Fail } : {}) })} aria-pressed={s.mvp}>
         Scope: <b>{s.mvp ? "MVP" : "Full"}</b> <span style={{ color: "#5f6b80" }}>· switch to {s.mvp ? "full" : "MVP"}</span>
       </button>
       {fill && <button className="ctl" onClick={() => set(fill.patch)}>Fill test details: <b>{fill.label}</b></button>}
