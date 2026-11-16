@@ -289,7 +289,10 @@ export function useDigiLocker(kind: "doc" | "aadhaar" = "doc") {
   if (q.dlBusy) return;
   const forAadhaar = kind === "aadhaar" && q.id !== "done";
   const idDoc = !forAadhaar && q.id !== "done" && DIGILOCKER_DOCS.includes(q.ovd as Ovd) ? (q.ovd as "dl" | "voter" | "passport") : null;
-  const purpose = idDoc ?? (q.id === "done" || forAadhaar ? "address" : "pan");
+  // Address part: the chosen address document, if it's one DigiLocker can share besides Aadhaar.
+  const addrDoc = q.id === "done" ? (OVDS.find((d) => d.en === q.addrDoc)?.id ?? null) : null;
+  const addrIdDoc = addrDoc && DIGILOCKER_DOCS.includes(addrDoc) ? (addrDoc as "dl" | "voter" | "passport") : null;
+  const purpose = idDoc ?? addrIdDoc ?? (q.id === "done" || forAadhaar ? "address" : "pan");
   set({ dlBusy: true, dlErr: "" });
   fetchFromDigiLocker(purpose, q.dName).then((r) => {
     set({ dlBusy: false });
@@ -326,6 +329,15 @@ export function useDigiLocker(kind: "doc" | "aadhaar" = "doc") {
       if (!d.nameMatch) { set({ screen: "home", id: "rejected", reason: "name" }); return; }
       set({ screen: "home", id: "pending", ovd: "pan", dlNote: d.panLast4 ? "PAN ending " + d.panLast4 + " fetched from DigiLocker" : "PAN shared from DigiLocker" });
       later(() => set({ id: "done" }), 1500);
+      return;
+    }
+    if (addrIdDoc) {
+      const doc = ovdName(addrIdDoc);
+      const inText = addrIdDoc === "voter" ? "Voter ID" : doc.toLowerCase();
+      if (!d.docIssued) { set({ dlErr: `We couldn't find your ${inText} in DigiLocker. Upload a photo of its address page instead.` }); return; }
+      if (!d.nameMatch) { set({ screen: "home", id: "rejected", reason: "name" }); return; }
+      set({ screen: "home", addr: "pending", addrDoc: doc, dlNote: `${doc} shared from DigiLocker for your address` });
+      later(() => set({ addr: "done" }), 1500);
       return;
     }
     if (!d.pincode) { set({ dlErr: "Your DigiLocker has no Aadhaar address we can use. Upload an address document instead." }); return; }
