@@ -14,7 +14,7 @@ const BASE = (process.env.EVAL_URL || "http://localhost:8787").replace(/\/+$/, "
 const only = process.argv.find((a) => a.startsWith("--only="))?.slice(7);
 
 type Expect = { sources?: string[]; action?: string; abstain?: true; lang?: "hi" | "en"; mustSay?: string[] };
-interface AiCase { id: string; q: string; step?: string; progress?: string; expect: Expect }
+interface AiCase { id: string; q: string; step?: string; progress?: string; previous?: string; expect: Expect }
 
 const PROGRESS0 = "Mobile or email: not started. Personal details: not started. Identity proof: not started. Address proof: not started. Video KYC: not started.";
 
@@ -44,6 +44,18 @@ const CASES: AiCase[] = [
   { id: "kyc", q: "What does KYC mean?", expect: { sources: ["glossary"] } },
   { id: "safe", q: "Is it safe to share my documents here?", expect: { sources: ["safety", "digilocker"] } },
   { id: "video-ready", q: "What do I keep ready for the video call?", expect: { sources: ["video"] } },
+  // Facts added in November: uploads, masked Aadhaar, DigiLocker documents, accepted IDs
+  { id: "ration", q: "Can I use my ration card as ID?", expect: { sources: ["docs"], mustSay: ["passport"] } },
+  { id: "nrega", q: "Is NREGA job card accepted?", expect: { sources: ["docs"] } },
+  { id: "upload-pdf", q: "Can I upload a PDF instead of taking a photo?", expect: { sources: ["upload"] } },
+  { id: "no-camera", q: "My laptop has no camera, how do I give my PAN?", expect: { sources: ["upload", "digilocker"] } },
+  { id: "aadhaar-upload", q: "Can I upload my Aadhaar card?", expect: { sources: ["aadhaar", "upload"], mustSay: ["8"] } },
+  { id: "dl-voter", q: "Can DigiLocker share my voter ID?", expect: { sources: ["digilocker"] } },
+  { id: "dl-addr", q: "If I use Aadhaar from DigiLocker do I need address proof?", expect: { sources: ["digilocker", "addr"] } },
+  { id: "video-india", q: "Can I do the video KYC from abroad?", expect: { sources: ["video"], mustSay: ["India"] } },
+  { id: "submit-photo", q: "I took the photo, what now?", expect: { sources: ["upload"] } },
+  { id: "follow-addr", q: "and for address?", previous: "Which documents can I use?", expect: { sources: ["addr"] } },
+  { id: "follow-pass", q: "what about passport?", previous: "Can I use my driving licence from DigiLocker?", expect: { sources: ["digilocker"] } },
   // Hindi and Hinglish
   { id: "hi-time", q: "इसमें कितना समय लगेगा?", expect: { sources: ["process"], lang: "hi" } },
   { id: "hi-aadhaar", q: "क्या आधार ज़रूरी है?", expect: { sources: ["docs"], lang: "hi" } },
@@ -79,7 +91,7 @@ async function main() {
     try {
       const r = await fetch(BASE + "/api/answer", {
         method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ language: lang, question: c.q, step: c.step ?? "Mobile number", progress: c.progress ?? PROGRESS0 }),
+        body: JSON.stringify({ language: lang, question: c.q, step: c.step ?? "Mobile number", progress: c.progress ?? PROGRESS0, previous: c.previous ?? "" }),
       });
       got = await r.json();
       if (!r.ok) err = `HTTP ${r.status} ${got?.error ?? ""}`;
