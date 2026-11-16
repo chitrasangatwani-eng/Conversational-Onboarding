@@ -32,7 +32,6 @@ export function DetailsScreen() {
         </label>
       ))}
       <div className="err" role="alert">{s.dErr}</div>
-      <button className="demo-fill" onClick={() => set({ dEmail: "chitra.sangatwani@example.com", dPin: "400001", dErr: "" })}>Demo: fill email and PIN</button>
       <button className="btn-lg" onClick={saveDetails}>Save and continue</button>
     </div>
   );

@@ -2,11 +2,22 @@ import { set, useAppState, type Fail, type State } from "./engine/store";
 import { jumpToStep, resetPrototype } from "./engine/flow";
 import { backend } from "./engine/api";
 
+/** Test values for the form on screen, kept out of the applicant's view. Null when the screen has nothing to fill. */
+function testFill(s: State): { label: string; patch: Partial<State> } | null {
+  if (s.screen === "mobile" && s.mobStage === "enter") return { label: "mobile 9876543210", patch: { mobNum: "9876543210", mobErr: "" } };
+  if (s.screen === "mobile" && (backend() === "local" || s.otpDemo)) { const c = s.otpDemo || "123456"; return { label: "OTP " + c, patch: { otp: c, otpErr: "" } }; }
+  if (s.screen === "details") return { label: "email and PIN", patch: { dEmail: "chitra.sangatwani@example.com", dPin: "400001", dErr: "" } };
+  if (s.screen === "aadhaar" && s.aadStage === "enter") return { label: "Aadhaar 2345 6789 0124", patch: { aadNum: "234567890124", aadConsent: true, aadErr: "" } };
+  if (s.screen === "aadhaar" && s.aadDemo) return { label: "Aadhaar OTP " + s.aadDemo, patch: { aadOtp: s.aadDemo, aadErr: "" } };
+  return null;
+}
+
 // Left-hand prototype controls. Not part of the customer app.
 
 export function DemoPanel() {
   const s = useAppState();
   const full = !s.mvp;
+  const fill = testFill(s);
   return (
     <div className="demo">
       <div className="demo-eyebrow">PROTOTYPE · PRD v2</div>
@@ -14,6 +25,7 @@ export function DemoPanel() {
       <button className="ctl" onClick={() => set({ mvp: !s.mvp, ...(!s.mvp && ["otp", "video", "security"].includes(s.fail) ? { fail: "blur" as Fail } : {}) })} aria-pressed={s.mvp}>
         Scope: <b>{s.mvp ? "MVP" : "Full"}</b> <span style={{ color: "#5f6b80" }}>· switch to {s.mvp ? "full" : "MVP"}</span>
       </button>
+      {fill && <button className="ctl" onClick={() => set(fill.patch)}>Fill test details: <b>{fill.label}</b></button>}
       <label className="ctl-label">Jump to any step
         <select className="ctl-select" value="" onChange={(e) => { if (e.target.value) jumpToStep(Number(e.target.value)); }}>
           <option value="">Choose a step…</option>
