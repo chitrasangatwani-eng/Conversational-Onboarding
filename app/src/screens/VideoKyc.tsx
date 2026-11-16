@@ -36,11 +36,12 @@ export function VideoKycScreen() {
     : { top: 0, left: 0, right: "auto", bottom: "auto", width: "100%", height: "100%", borderRadius: 0, border: 0 };
 
   return (
-    <div className="screen" style={{ gap: 10, overflow: "hidden" }}>
+    <div className="screen" style={{ gap: 10 }}>
       <button className="back" onClick={leave}>← Back</button>
       <div className="screen-title">Video KYC</div>
       <div style={{ fontSize: 13.5, color: "#3c4659", lineHeight: 1.4 }}>A short live call with a verification agent. <button className="why" onClick={() => set({ why: "vk" })}>Why we ask</button></div>
-      <div style={{ position: "relative", flex: 1, minHeight: 260, borderRadius: 16, overflow: "hidden", background: "#13203f" }}>
+      {/* A fixed height, so Join call and the call controls stay on screen on short laptop displays. */}
+      <div style={{ position: "relative", flex: "none", height: "clamp(180px, 34vh, 420px)", borderRadius: 16, overflow: "hidden", background: "#13203f" }}>
         {live && (
           <>
             <div style={{ position: "absolute", inset: 0, background: "repeating-linear-gradient(135deg,#1c2a4a 0 10px,#24314f 10px 20px)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--mono)", fontSize: 12, color: "#a9b3c4", textAlign: "center" }}>agent video<br />(live feed placeholder)</div>
@@ -77,12 +78,12 @@ export function VideoKycScreen() {
       </div>
       {s.vk === "ready" && (
         <>
+          {/* The call needs a working camera: KYC can't pass without seeing the applicant. */}
+          <button className={"btn-lg" + (cam ? "" : " is-off")} style={{ minHeight: 48, fontSize: 15 }} onClick={() => { if (cam) joinVk(); }} aria-disabled={!cam}>{cam ? "Join call" : "Turn on your camera to join"}</button>
           <div style={{ fontSize: 13, lineHeight: 1.5, color: "#13203f", background: "#fff", border: "1px solid #e1e7f0", borderRadius: 12, padding: "10px 12px" }}>
             · Your original {doc} in your hand<br />· Bright light on your face, quiet place<br />· Steady Wi-Fi or 4G{s.weak ? ". Your connection looks weak, so move closer to your router if you can." : ""}<br />
             <span style={{ color: "#3c4659" }}>This call is recorded and used only for KYC.</span>
           </div>
-          {/* The call needs a working camera: KYC can't pass without seeing the applicant. */}
-          <button className={"btn-lg" + (cam ? "" : " is-off")} style={{ minHeight: 48, fontSize: 15 }} onClick={() => { if (cam) joinVk(); }} aria-disabled={!cam}>{cam ? "Join call" : "Turn on your camera to join"}</button>
         </>
       )}
       {live && (
