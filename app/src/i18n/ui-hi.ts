@@ -180,6 +180,7 @@ export const HI: Record<string, string> = {
   "Read fees and terms": "शुल्क और शर्तें पढ़ें",
   "Read this before you sign. Same sheet for everyone. The assistant never quotes fees itself.": "हस्ताक्षर से पहले इसे पढ़ें। सबके लिए एक ही सूची। सहायक खुद कभी शुल्क नहीं बताता।",
   "Ready when you are": "आप तैयार हों तब",
+  "REC": "रिकॉर्ड",
   "Refresh": "रीफ़्रेश करें",
   "Reload page": "पेज रीलोड करें",
   "Resend OTP": "OTP दोबारा भेजें",

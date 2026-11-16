@@ -1,4 +1,5 @@
 import { API_BASE, post } from "./api";
+import { get } from "./store";
 
 // Opens DigiLocker in a separate window, waits until the applicant approves or
 // denies sharing, and returns the server's summary. The window posts a
@@ -42,7 +43,8 @@ export async function fetchFromDigiLocker(purpose: LockerPurpose, expectedName: 
   try {
     const r = await post<{ state: string; url: string }>("/api/digilocker/start", { purpose, expectedName });
     state = r.state;
-    win.location.href = r.url.startsWith("/") ? API_BASE + r.url : r.url;
+    // The demo DigiLocker page follows the app's language (Hindi or English).
+    win.location.href = r.url.startsWith("/") ? API_BASE + r.url + (get().lang === "hi" ? "&lang=hi" : "") : r.url;
   } catch {
     win.close();
     return { ok: false, reason: "error" };

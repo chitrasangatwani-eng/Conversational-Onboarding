@@ -390,14 +390,14 @@ const server = http.createServer((req, res) => {
   // Pages opened in the DigiLocker consent window (top-level navigations, so no CORS check).
   if (req.method === "GET" && url.pathname === "/api/digilocker/sandbox" && digilocker.providerName === "sandbox") {
     res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
-    { const st = url.searchParams.get("state") || ""; res.end(sandboxConsentPage(st, digilocker.purposeOf(st))); }
+    { const st = url.searchParams.get("state") || ""; res.end(sandboxConsentPage(st, digilocker.purposeOf(st), url.searchParams.get("lang") === "hi")); }
     return;
   }
   if (req.method === "GET" && url.pathname === "/api/digilocker/callback") {
     const state = url.searchParams.get("state") || "";
     digilocker.callback(state, url.searchParams).then((ok) => {
       res.writeHead(ok ? 200 : 410, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
-      res.end(callbackPage(ok, state));
+      res.end(callbackPage(ok, state, url.searchParams.get("lang") === "hi"));
     });
     return;
   }

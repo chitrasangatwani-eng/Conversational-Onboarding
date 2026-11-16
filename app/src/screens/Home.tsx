@@ -63,8 +63,8 @@ export function Home() {
         <div style={{ fontSize: 34, fontWeight: 600, lineHeight: 1.15, margin: "6px 0 18px" }}>{T("{done} of 5 steps done", { done })}</div>
         <div className="progress"><div style={{ width: (done / 5) * 100 + "%" }} /></div>
 
-        {s.navNote && <div className="banner ok" role="status">{s.navNote}</div>}
-        {s.dlNote && <div className="banner ok"><b>{T("From DigiLocker.")}</b> {s.dlNote}.</div>}
+        {s.navNote && <div className="banner ok" role="status">{T(s.navNote)}</div>}
+        {s.dlNote && <div className="banner ok"><b>{T("From DigiLocker.")}</b> {T(s.dlNote)}.</div>}
         {s.saved && <div className="banner ok"><b>{T("Saved.")}</b> {T("We sent a link to your mobile. Open it any time and you will continue at step {n}.", { n: Math.min(done + 1, 6) })}</div>}
         {s.weak && full && <div className="banner warn"><b>{T("Weak connection.")}</b> {T("Your progress is saved. Photos are compressed and uploads retry on their own. You can also ask for a call back.")}</div>}
         {s.data !== "fresh" && (
