@@ -370,7 +370,10 @@ type Answer = { type: "answer"; text: string; source: KbId } | { type: "action";
 async function askAI(text: string): Promise<Msg[]> {
   const q = get();
   const step = steps(q);
-  const r = await post<Answer>("/api/answer", { language: q.lang, question: text, step, progress: progressText(q) });
+  // The applicant's last question (already masked on screen), so follow-ups like "and passport?" make sense.
+  const last = [...q.msgs].reverse().find((m) => m.kind === "text" && m.mine);
+  const previous = last && last.kind === "text" ? last.text : "";
+  const r = await post<Answer>("/api/answer", { language: q.lang, question: text, step, progress: progressText(q), previous: previous.slice(0, 200) });
   if (r.type === "answer") return [...aiMsg(r.text, r.source), talkLk()];
   if (r.type === "action") {
     const m: Record<string, () => Msg[]> = {
