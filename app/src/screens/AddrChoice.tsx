@@ -1,5 +1,5 @@
 import { useAppState } from "../engine/store";
-import { DEEMED, OVDS, backHome, chooseAddrDoc, ovdName, useDigiLocker, useIdForAddress } from "../engine/flow";
+import { DEEMED, OVDS, backHome, chooseAddrDoc, ovdName, useIdForAddress } from "../engine/flow";
 
 // Address (step 4): an officially valid document with the current address, or,
 // for a limited time, a "deemed" document such as a recent utility bill.
@@ -27,9 +27,9 @@ export function AddrChoiceScreen() {
         <div className="q">Identity documents with your address</div>
         <div className="opts">
           {OVDS.filter((d) => !sameOk || d.id !== s.ovd).map((d) => (
-            <button key={d.id} className="choice" onClick={() => (d.id === "aadhaar" ? useDigiLocker() : chooseAddrDoc(d.en))}>
+            <button key={d.id} className="choice" onClick={() => chooseAddrDoc(d.en)}>
               <span className="choice-title">{d.en}</span>
-              <span className="choice-sub">{d.id === "aadhaar" ? "Fetch from DigiLocker" : "Photo of the address page"}</span>
+              <span className="choice-sub">{d.id === "aadhaar" ? "DigiLocker, or upload a masked copy" : "DigiLocker, or a photo or upload of the address page"}</span>
             </button>
           ))}
         </div>

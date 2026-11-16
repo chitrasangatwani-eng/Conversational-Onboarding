@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { set, useAppState } from "../engine/store";
-import { DIGILOCKER_DOCS, backHome, captureKind, chooseIdDoc, ovdName, submitCapture, useDigiLocker } from "../engine/flow";
+import { DIGILOCKER_DOCS, OVDS, backHome, captureKind, chooseIdDoc, ovdName, submitCapture, useDigiLocker } from "../engine/flow";
 import { useCamera } from "../engine/useCamera";
 
 // Secure capture for the PAN card and address proof. The image stays on the
@@ -26,7 +26,7 @@ export function CaptureScreen() {
   const s = useAppState();
   const kind = captureKind();
   const base = COPY[kind];
-  const copy = kind === "ovd" ? { ...base, title: ovdName(s.ovd), hint: s.ovd === "aadhaar" ? "Cover the first 8 digits of your Aadhaar number (a masked Aadhaar). The photo, name and address must be readable." : base.hint } : kind === "addr" && s.addrDoc ? { ...base, title: s.addrDoc } : base;
+  const copy = kind === "ovd" ? { ...base, title: ovdName(s.ovd), hint: s.ovd === "aadhaar" ? "Cover the first 8 digits of your Aadhaar number (a masked Aadhaar). The photo, name and address must be readable." : base.hint } : kind === "addr" && s.addrDoc ? { ...base, title: s.addrDoc, hint: s.addrDoc === "Aadhaar" ? "Cover the first 8 digits of your Aadhaar number (a masked Aadhaar). The address must be readable." : base.hint } : base;
   const back = kind === "pan" || kind === "ovd" ? chooseIdDoc : kind === "addr" ? () => set({ screen: "addrchoice" }) : backHome;
   const selfie = kind === "vk";
   const { videoRef, cam, camErr, camWhy, start, stop, snapWhenReady } = useCamera(selfie ? "user" : "environment");
@@ -95,7 +95,7 @@ export function CaptureScreen() {
         </>
       )}
       <div style={{ fontSize: 12, color: "#3c4659" }}>{s.weak && !s.mvp ? "Low-data mode: your photo is compressed before it uploads." : ""}</div>
-      {!shot && (kind === "pan" || (kind === "ovd" && s.ovd !== "" && DIGILOCKER_DOCS.includes(s.ovd)) || (kind === "addr" && s.addrDoc === "Aadhaar")) && (
+      {!shot && (kind === "pan" || (kind === "ovd" && s.ovd !== "" && DIGILOCKER_DOCS.includes(s.ovd)) || (kind === "addr" && OVDS.some((d) => d.en === s.addrDoc))) && (
         <button className="btn-digi" onClick={() => useDigiLocker()} aria-busy={s.dlBusy}>
           {s.dlBusy ? "Waiting for DigiLocker… finish in its window" : "Use DigiLocker instead (no photo)"}
         </button>
