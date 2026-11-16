@@ -84,6 +84,7 @@ export function CaptureScreen() {
       </div>
       {!shot && camErr && <div style={{ fontSize: 13, color: "#3c4659" }} role="status">{CAM_HELP[camWhy] ?? CAM_HELP.other}</div>}
       {note && <div className="err" role="alert">{note}</div>}
+      {shot && <div className="banner ok" role="status">✓ {pdf ? "Document added" : "Photo taken"}. Check that it's clear, then tap <b>{pdf ? "Submit document" : "Submit photo"}</b> below.</div>}
       <div style={{ fontSize: 12, color: "#3c4659" }}>{s.weak && !s.mvp ? "Low-data mode: your photo is compressed before it uploads." : ""}</div>
       {(kind === "pan" || (kind === "ovd" && s.ovd !== "" && DIGILOCKER_DOCS.includes(s.ovd)) || (kind === "addr" && s.addrDoc === "Aadhaar")) && (
         <button className="btn-digi" onClick={() => useDigiLocker()} aria-busy={s.dlBusy}>
