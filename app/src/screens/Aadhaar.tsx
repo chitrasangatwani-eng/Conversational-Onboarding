@@ -5,7 +5,6 @@ import { aadhaarViaDigiLocker, chooseIdDoc, sendAadhaarOtp, verifyAadhaarOtp } f
 // Secure Aadhaar OTP form. The full number goes only to the server, is never
 // shown to the assistant, and is cleared from the app once the OTP is sent.
 
-const DEMO_NUMBER = "234567890124";
 const group = (n: string) => n.replace(/(\d{4})(?=\d)/g, "$1 ");
 
 export function AadhaarScreen() {
@@ -42,7 +41,6 @@ export function AadhaarScreen() {
             <button className="link" onClick={chooseIdDoc}>Use another document</button>
           </div>
           {s.dlErr && <div className="err" role="alert">{s.dlErr}</div>}
-          <button className="demo-fill" onClick={() => set({ aadNum: DEMO_NUMBER, aadConsent: true, aadErr: "" })}>Demo: fill {group(DEMO_NUMBER)}</button>
         </>
       ) : (
         <>
@@ -59,8 +57,6 @@ export function AadhaarScreen() {
             </button>
             <button className="link" onClick={aadhaarViaDigiLocker}>Use DigiLocker instead</button>
           </div>
-          {s.aadDemo && <div style={{ fontSize: 12, color: "#5f6b80" }}>Sandbox mode: no OTP was sent. Use the demo button below.</div>}
-          {s.aadDemo && <button className="demo-fill" onClick={() => set({ aadOtp: s.aadDemo, aadErr: "" })}>Demo: fill OTP {s.aadDemo}</button>}
         </>
       )}
     </div>
