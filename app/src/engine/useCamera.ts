@@ -56,11 +56,26 @@ export function useCamera(facing: "user" | "environment", autoStart = true) {
     return c.toDataURL("image/jpeg", 0.85);
   }, [stop]);
 
+  /**
+   * Like snap, but waits up to 3 seconds for the first video frame. Some phones
+   * report the camera as started a moment before frames arrive, and a tap in
+   * that gap used to do nothing.
+   */
+  const snapWhenReady = useCallback(async (mirror: boolean): Promise<string | null> => {
+    const v = videoRef.current;
+    if (!v) return null;
+    for (let i = 0; i < 30 && !v.videoWidth; i++) {
+      if (v.paused) v.play?.().catch(() => {});
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    return snap(mirror);
+  }, [snap]);
+
   useEffect(() => {
     if (!autoStart) return;
     const t = setTimeout(start, 100);
     return () => { clearTimeout(t); stream.current?.getTracks().forEach((tr) => tr.stop()); stream.current = null; };
   }, [autoStart, start]);
 
-  return { videoRef, cam, camErr, camWhy, start, stop, snap };
+  return { videoRef, cam, camErr, camWhy, start, stop, snap, snapWhenReady };
 }
