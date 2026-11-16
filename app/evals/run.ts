@@ -142,6 +142,20 @@ console.log = quiet;
 await vite.close();
 
 // ---- Scorecard ----
+// Hindi pages: every literal T("...") string in the app has a Hindi entry with the same {placeholders}.
+{
+  const { HI } = (await load("/src/i18n/ui-hi.ts")) as { HI: Record<string, string> };
+  const files: string[] = [];
+  const walk = (d: string) => fs.readdirSync(d, { withFileTypes: true }).forEach((e) => { const f = path.join(d, e.name); if (e.isDirectory()) walk(f); else if (/\.tsx?$/.test(e.name) && !f.endsWith("ui-hi.ts")) files.push(f); });
+  walk(path.join(here, "..", "src"));
+  const keys = new Set<string>();
+  for (const f of files) for (const m of fs.readFileSync(f, "utf8").matchAll(/\bT\(\s*"((?:[^"\\]|\\.)*)"/g)) keys.add(JSON.parse('"' + m[1] + '"'));
+  const ph = (x: string) => [...x.matchAll(/\{\w+\}/g)].map((m) => m[0]).sort().join();
+  const missing = [...keys].filter((k) => !(k in HI));
+  const bad = Object.entries(HI).filter(([k, v]) => ph(k) !== ph(v)).map(([k]) => k);
+  record("hindi", "hindi-pages", [...missing.map((k) => "no Hindi for: " + k), ...bad.map((k) => "placeholders differ: " + k)], `${keys.size} page strings, ${Object.keys(HI).length} Hindi entries`);
+}
+
 const pct = (a: number, b: number) => (b ? (100 * a) / b : 100);
 const of = (area: string) => results.filter((r) => r.area === area);
 const passed = (area: string) => of(area).filter((r) => r.pass).length;
@@ -154,6 +168,7 @@ const rows: [string, string, string, boolean][] = [
   ["Sensitive-data leaks", `${leaks}`, "0", leaks === 0],
   ["Abstention precision", `${abstainRight}/${abstainOut}  ${pct(abstainRight, abstainOut).toFixed(1)}%`, "≥ 90%", pct(abstainRight, abstainOut) >= 90],
   ["Status accuracy", `${passed("status")}/${st.length}  ${pct(passed("status"), st.length).toFixed(1)}%`, "≥ 99.5%", pct(passed("status"), st.length) >= 99.5],
+  ["Hindi page text", of("hindi").every((r) => r.pass) ? "complete" : "missing strings", "complete", of("hindi").every((r) => r.pass)],
   ["Handoff completeness", `${hoPass}/${ho.length}  ${pct(hoPass, ho.length).toFixed(1)}%`, "≥ 98%", pct(hoPass, ho.length) >= 98],
 ];
 const fails = results.filter((r) => !r.pass);

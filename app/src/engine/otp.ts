@@ -1,4 +1,5 @@
 import { ApiError, backend, post, useEmailChannel, whatsappHello } from "./api";
+import { T } from "./t";
 
 // Mobile OTP for the secure form. In "server" mode the backend creates, sends
 // and checks the code (see server/otp). In "local" mode, used for the static
@@ -28,8 +29,8 @@ export async function requestOtp(mobile: string, email = ""): Promise<OtpSend> {
           // The server sends OTPs by email even if the app didn't know yet: show the email box.
           if (!email) { useEmailChannel(); return { ok: false, message: "Enter your email address below to get your OTP by email." }; }
           return { ok: false, message: "Enter a valid email address to receive your OTP." };
-        case "too_soon": return { ok: false, message: `Please wait ${wait} seconds before asking for another OTP.` };
-        case "too_many_sends": return { ok: false, message: `Too many OTP requests for this number. Try again in ${Math.ceil(wait / 60)} minutes, or talk to a person.` };
+        case "too_soon": return { ok: false, message: T("Please wait {n} seconds before asking for another OTP.", { n: wait }) };
+        case "too_many_sends": return { ok: false, message: T("Too many OTP requests for this number. Try again in {n} minutes, or talk to a person.", { n: Math.ceil(wait / 60) }) };
         case "send_failed": return { ok: false, message: sendFailedMessage(email, String(e.body.hint ?? ""), String(e.body.provider ?? "")) };
       }
       if (e.status === 429) return { ok: false, message: "Too many requests. Please wait a minute and try again." };
@@ -46,7 +47,7 @@ export async function checkOtp(requestId: string, code: string): Promise<OtpVeri
     const r = await post<{ verified: boolean; token?: string; reason?: string; attemptsLeft?: number }>("/api/otp/verify", { requestId, code });
     if (r.verified && r.token) return { ok: true, token: r.token };
     switch (r.reason) {
-      case "wrong_code": return { ok: false, message: `That OTP didn't match. ${r.attemptsLeft ?? 0} ${r.attemptsLeft === 1 ? "try" : "tries"} left.` };
+      case "wrong_code": return { ok: false, message: T(r.attemptsLeft === 1 ? "That OTP didn't match. 1 try left." : "That OTP didn't match. {n} tries left.", { n: r.attemptsLeft ?? 0 }) };
       case "too_many_attempts": return { ok: false, expired: true, message: "Too many wrong tries. Tap Resend OTP to get a new code." };
       default: return { ok: false, expired: true, message: "This OTP has expired. Tap Resend OTP to get a new code." };
     }

@@ -1,6 +1,7 @@
 import { set, useAppState, type Field, type WhyKey } from "../engine/store";
 import { backHome, saveDetails } from "../engine/flow";
 import { MicButton, VOICE_NOTE } from "./fields";
+import { T } from "../engine/t";
 
 interface Def { field: Field & WhyKey; label: string; pre?: boolean; props: React.InputHTMLAttributes<HTMLInputElement>; clean?: (v: string) => string }
 
@@ -16,23 +17,23 @@ export function DetailsScreen() {
   const full = !s.mvp;
   return (
     <div className="screen" style={{ gap: 12 }}>
-      <button className="back" onClick={backHome}>← Back</button>
-      <div className="screen-title">Your details</div>
-      <div className="screen-lede">We filled in what we already have. Check it matches your PAN card exactly, and add the rest. Secure form: the assistant can't see it.{full ? VOICE_NOTE : ""}</div>
+      <button className="back" onClick={backHome}>← {T("Back")}</button>
+      <div className="screen-title">{T("Your details")}</div>
+      <div className="screen-lede">{T("We filled in what we already have. Check it matches your PAN card exactly, and add the rest. Secure form: the assistant can't see it.")}{full ? " " + T(VOICE_NOTE) : ""}</div>
       {DEFS.map((d) => (
         <label key={d.field}>
           <div className="field-head">
-            <span>{d.label} · <button className="why" onClick={(e) => { e.preventDefault(); set({ why: d.field }); }}>Why we ask</button></span>
-            {d.pre && <span className="pre">Pre-filled</span>}
+            <span>{T(d.label)} · <button className="why" onClick={(e) => { e.preventDefault(); set({ why: d.field }); }}>{T("Why we ask")}</button></span>
+            {d.pre && <span className="pre">{T("Pre-filled")}</span>}
           </div>
           <div className="field-row">
-            <input className="input" {...d.props} value={s[d.field]} onChange={(e) => set({ [d.field]: d.clean ? d.clean(e.target.value) : e.target.value, dErr: "" })} />
+            <input className="input" {...d.props} placeholder={d.props.placeholder && T(d.props.placeholder)} value={s[d.field]} onChange={(e) => set({ [d.field]: d.clean ? d.clean(e.target.value) : e.target.value, dErr: "" })} />
             {full && <MicButton field={d.field} />}
           </div>
         </label>
       ))}
-      <div className="err" role="alert">{s.dErr}</div>
-      <button className="btn-lg" onClick={saveDetails}>Save and continue</button>
+      <div className="err" role="alert">{T(s.dErr)}</div>
+      <button className="btn-lg" onClick={saveDetails}>{T("Save and continue")}</button>
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { fetchFromDigiLocker } from "./digilocker";
 import { checkAadhaarOtp, requestAadhaarOtp } from "./aadhaar";
 import { ask, greet, intentFix, intentHandoff } from "./assistant";
 import { stopListen, stopSpeak } from "./voice";
+import { T } from "./t";
 
 // The onboarding flow is the system of record. These actions stand in for the
 // real verification backend; the "Next failure to simulate" control decides
@@ -219,7 +220,7 @@ export async function verifyAadhaarOtp() {
   if (!r.nameMatch) { set({ screen: "home", id: "rejected", reason: "name" }); return; }
   // Aadhaar comes with the address, so it can complete the address part too.
   const withAddr = !!r.pincode;
-  set({ screen: "home", id: "pending", ...(withAddr ? { addr: "pending", addrDoc: "Aadhaar (same as ID proof)" } : {}), dlNote: `Aadhaar ending ${r.last4} verified by OTP` + (r.pincode ? ` (PIN ${r.pincode}${r.state ? ", " + r.state : ""}). It covers your address too` : "") });
+  set({ screen: "home", id: "pending", ...(withAddr ? { addr: "pending", addrDoc: "Aadhaar (same as ID proof)" } : {}), dlNote: r.pincode ? T("Aadhaar ending {last4} verified by OTP (PIN {pin}). It covers your address too", { last4: r.last4, pin: r.pincode + (r.state ? ", " + r.state : "") }) : T("Aadhaar ending {last4} verified by OTP", { last4: r.last4 }) });
   later(() => set({ id: "done", ...(withAddr ? { addr: "done" } : {}) }), 1500);
 }
 
@@ -311,37 +312,38 @@ export function useDigiLocker(kind: "doc" | "aadhaar" = "doc") {
       if (!d.pincode) { set({ dlErr: "We couldn't find your e-Aadhaar in DigiLocker. Use the Aadhaar OTP or another ID proof instead." }); return; }
       if (!d.nameMatch) { set({ screen: "home", id: "rejected", reason: "name" }); return; }
       // The e-Aadhaar carries the address too, so one document completes ID and address proof.
-      set({ screen: "home", id: "pending", addr: "pending", addrDoc: "Aadhaar (same as ID proof)", dlNote: (d.aadhaarLast4 ? "Aadhaar ending " + d.aadhaarLast4 : "Aadhaar") + " fetched from DigiLocker (PIN " + d.pincode + (d.state ? ", " + d.state : "") + "). It covers your address too." });
+      set({ screen: "home", id: "pending", addr: "pending", addrDoc: "Aadhaar (same as ID proof)", dlNote: T(d.aadhaarLast4 ? "Aadhaar ending {last4} fetched from DigiLocker (PIN {pin}). It covers your address too" : "Aadhaar fetched from DigiLocker (PIN {pin}). It covers your address too", { last4: d.aadhaarLast4 ?? "", pin: d.pincode + (d.state ? ", " + d.state : "") }) });
       later(() => set({ id: "done", addr: "done" }), 1500);
       return;
     }
     if (idDoc) {
-      const doc = ovdName(idDoc);
-      const inText = idDoc === "voter" ? "Voter ID" : doc.toLowerCase();
-      if (!d.docIssued) { set({ dlErr: `We couldn't find your ${inText} in DigiLocker. Upload a photo of it instead.` }); return; }
+      const doc = ovdName(idDoc, L);
+      const inText = idDoc === "voter" ? "Voter ID" : L(ovdName(idDoc).toLowerCase(), doc);
+      if (!d.docIssued) { set({ dlErr: T("We couldn't find your {doc} in DigiLocker. Upload a photo of it instead.", { doc: inText }) }); return; }
       if (!d.nameMatch) { set({ screen: "home", id: "rejected", reason: "name" }); return; }
-      set({ screen: "home", id: "pending", dlNote: `${doc} shared from DigiLocker` });
+      set({ screen: "home", id: "pending", dlNote: T("{doc} shared from DigiLocker", { doc }) });
       later(() => set({ id: "done" }), 1500);
       return;
     }
     if (purpose === "pan") {
       if (!d.panIssued) { set({ dlErr: "No PAN card was found in your DigiLocker. Upload a photo of your PAN instead." }); return; }
       if (!d.nameMatch) { set({ screen: "home", id: "rejected", reason: "name" }); return; }
-      set({ screen: "home", id: "pending", ovd: "pan", dlNote: d.panLast4 ? "PAN ending " + d.panLast4 + " fetched from DigiLocker" : "PAN shared from DigiLocker" });
+      set({ screen: "home", id: "pending", ovd: "pan", dlNote: d.panLast4 ? T("PAN ending {last4} fetched from DigiLocker", { last4: d.panLast4 }) : T("PAN shared from DigiLocker") });
       later(() => set({ id: "done" }), 1500);
       return;
     }
     if (addrIdDoc) {
       const doc = ovdName(addrIdDoc);
-      const inText = addrIdDoc === "voter" ? "Voter ID" : doc.toLowerCase();
-      if (!d.docIssued) { set({ dlErr: `We couldn't find your ${inText} in DigiLocker. Upload a photo of its address page instead.` }); return; }
+      const docL = ovdName(addrIdDoc, L);
+      const inText = addrIdDoc === "voter" ? "Voter ID" : L(doc.toLowerCase(), docL);
+      if (!d.docIssued) { set({ dlErr: T("We couldn't find your {doc} in DigiLocker. Upload a photo of its address page instead.", { doc: inText }) }); return; }
       if (!d.nameMatch) { set({ screen: "home", id: "rejected", reason: "name" }); return; }
-      set({ screen: "home", addr: "pending", addrDoc: doc, dlNote: `${doc} shared from DigiLocker for your address` });
+      set({ screen: "home", addr: "pending", addrDoc: doc, dlNote: T("{doc} shared from DigiLocker for your address", { doc: docL }) });
       later(() => set({ addr: "done" }), 1500);
       return;
     }
     if (!d.pincode) { set({ dlErr: "Your DigiLocker has no Aadhaar address we can use. Upload an address document instead." }); return; }
-    set({ screen: "home", addr: "pending", dlNote: "Address (PIN " + d.pincode + (d.state ? ", " + d.state : "") + ") fetched from DigiLocker" });
+    set({ screen: "home", addr: "pending", dlNote: T("Address (PIN {pin}) fetched from DigiLocker", { pin: d.pincode + (d.state ? ", " + d.state : "") }) });
     later(() => set({ addr: "done" }), 1500);
   });
 }
@@ -448,13 +450,13 @@ export function openStep(n: number, look: "done" | "cur" | "bad" | "wait" | "x",
   if (look === "done") {
     if (n === 1) { set({ screen: "mobile", mobStage: "enter", otp: "", otpErr: "", mobErr: "", navNote: "Your mobile is verified. Verify again only if you want to change it." }); return; }
     if (n === 2) { set({ screen: "details", dErr: "" }); return; }
-    set({ screen: "home", navNote: `${label} is verified. Nothing to do here.` });
+    set({ screen: "home", navNote: T("{step} is verified. Nothing to do here.", { step: label }) });
     return;
   }
-  if (look === "wait") { set({ screen: "home", navNote: `${label} is being checked. We'll update this when it's done.` }); return; }
+  if (look === "wait") { set({ screen: "home", navNote: T("{step} is being checked. We'll update this when it's done.", { step: label }) }); return; }
   const prev = STEP_NAMES[n - 2] ?? KYC_STEP;
   void q;
-  set({ navNote: `${label} opens after ${prev}.` });
+  set({ navNote: T("{step} opens after {prev}.", { step: label, prev: T(prev) }) });
 }
 
 /** Demo only: mark earlier steps done and open step n, to show any screen in a presentation. */

@@ -1,4 +1,5 @@
-import { openHelp } from "./engine/flow";
+import { openHelp, setLang } from "./engine/flow";
+import { T } from "./engine/t";
 import { useAppState } from "./engine/store";
 import { DemoPanel } from "./DemoPanel";
 import { Home } from "./screens/Home";
@@ -31,13 +32,18 @@ export function App() {
         <header className="topbar">
           <img className="logo" src={BRAND + "logo.png"} alt="" />
           <div className="brand">Artha Inclusive</div>
-          <div className="topbar-title">Open an account</div>
-          <div className="topbar-user">Chitra Sangatwani · Applicant</div>
+          <div className="topbar-title">{T("Open an account")}</div>
+          {/* Page language. The assistant's own picker offers more languages. */}
+          <div className="lang-toggle" role="group" aria-label="Language / भाषा">
+            <button aria-pressed={s.lang === "en"} onClick={() => setLang("en")}>English</button>
+            <button aria-pressed={s.lang === "hi"} onClick={() => setLang("hi")} lang="hi">हिन्दी</button>
+          </div>
+          <div className="topbar-user">{T("Chitra Sangatwani · Applicant")}</div>
         </header>
         <div className="trust-strip" role="note">
-          <span>Secure session</span>
-          <span>The assistant never sees your PAN or Aadhaar number</span>
-          <span>Video KYC is recorded only for KYC</span>
+          <span>{T("Secure session")}</span>
+          <span>{T("The assistant never sees your PAN or Aadhaar number")}</span>
+          <span>{T("Video KYC is recorded only for KYC")}</span>
         </div>
         <div className="shell-body">
           <Sidebar />
@@ -56,7 +62,7 @@ export function App() {
         {s.sheet && !s.vmode && <ChatSheet />}
         {s.sheet && s.vmode && <VoiceSheet />}
         {s.why && <WhySheet />}
-        {formHelp && <button className="fab" onClick={openHelp}><span className="ai-chip">AI</span>{s.down ? "Help (offline)" : "Help with this step"}</button>}
+        {formHelp && <button className="fab" onClick={openHelp}><span className="ai-chip">AI</span>{s.down ? T("Help (offline)") : T("Help with this step")}</button>}
           </main>
         </div>
       </div>

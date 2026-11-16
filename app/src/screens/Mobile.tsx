@@ -4,6 +4,7 @@ import { backHome, changeNumber, sendOtp, validMobile, verifyOtp } from "../engi
 import { firebaseWeb, mobileVia, otpChannel, whatsappHello } from "../engine/api";
 import { ask, intentAadhaar } from "../engine/assistant";
 import { L } from "../engine/i18n";
+import { T } from "../engine/t";
 import { MicButton, VOICE_NOTE } from "./fields";
 
 export function MobileScreen() {
@@ -25,54 +26,55 @@ export function MobileScreen() {
   }, [s.resendAt]);
   const resendIn = Math.max(0, Math.ceil((s.resendAt - Date.now()) / 1000));
   const mobErr = s.mobErr || (s.mobNum.length === 10 && !validMobile(s.mobNum) ? "Indian mobile numbers start with 6, 7, 8 or 9." : "");
+  const err = T(mobErr);
   const sendsTo = byEmail && emailOk ? "email" : validMobile(s.mobNum) ? "sms" : "";
   const wa = mobileVia() === "whatsapp";
-  const mobileWord = wa ? "on WhatsApp" : "by SMS";
+  const mobileWord = T(wa ? "on WhatsApp" : "by SMS");
   return (
     <div className="screen">
-      <button className="back" onClick={backHome}>← Back</button>
-      <div className="screen-title">{byEmail ? "Verify your mobile or email" : "Verify your mobile number"}</div>
-      <div className="secure-note">Secure form. The assistant never sees your number or OTP.</div>
-      {s.navNote && s.mob === "done" && <div className="banner ok" role="status">{s.navNote}</div>}
+      <button className="back" onClick={backHome}>← {T("Back")}</button>
+      <div className="screen-title">{T(byEmail ? "Verify your mobile or email" : "Verify your mobile number")}</div>
+      <div className="secure-note">{T("Secure form. The assistant never sees your number or OTP.")}</div>
+      {s.navNote && s.mob === "done" && <div className="banner ok" role="status">{T(s.navNote)}</div>}
       {s.mobStage === "enter" ? (
         <>
-          <div className="screen-lede">{byEmail ? `Enter your mobile number or your email. Either one is enough: we'll email the 6-digit OTP if you give an email, otherwise we'll send it ${mobileWord}.` : `Use your mobile number. We'll send a 6-digit OTP ${mobileWord}.`} {full ? VOICE_NOTE : ""} <button className="why" onClick={() => set({ why: "mobNum" })}>Why we ask</button></div>
+          <div className="screen-lede">{byEmail ? T("Enter your mobile number or your email. Either one is enough: we'll email the 6-digit OTP if you give an email, otherwise we'll send it {how}.", { how: mobileWord }) : T("Use your mobile number. We'll send a 6-digit OTP {how}.", { how: mobileWord })} {full ? T(VOICE_NOTE) : ""} <button className="why" onClick={() => set({ why: "mobNum" })}>{T("Why we ask")}</button></div>
           <div className="field-row">
             <div className="input big" style={{ width: 72, flex: "none", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, letterSpacing: 0 }}>+91</div>
-            <input className="input big" value={s.mobNum} onChange={(e) => set({ mobNum: e.target.value.replace(/\D/g, "").slice(0, 10), mobErr: "" })} inputMode="numeric" maxLength={10} placeholder="10-digit number" aria-label="Mobile number" autoComplete="tel-national" />
+            <input className="input big" value={s.mobNum} onChange={(e) => set({ mobNum: e.target.value.replace(/\D/g, "").slice(0, 10), mobErr: "" })} inputMode="numeric" maxLength={10} placeholder={T("10-digit number")} aria-label="Mobile number" autoComplete="tel-national" />
             {full && <MicButton field="mobNum" />}
           </div>
           {byEmail && (
             <>
               <label>
-                <div className="or-line"><span>or</span></div>
-                <div className="field-head"><span>Email address</span></div>
+                <div className="or-line"><span>{T("or")}</span></div>
+                <div className="field-head"><span>{T("Email address")}</span></div>
                 <input className="input" type="email" value={s.otpEmail} onChange={(e) => set({ otpEmail: e.target.value, mobErr: "" })} placeholder="name@example.com" autoComplete="email" aria-label="Email for your OTP" />
               </label>
-              <div style={{ fontSize: 12, color: "#5f6b80", lineHeight: 1.4 }}>{wa ? "Both send a real 6-digit code: on WhatsApp to your mobile, or to your email." : firebaseWeb() ? "Both send a real 6-digit code: by SMS to your mobile, or to your email." : "Email sends a real code. SMS in India needs DLT business registration, so in this demo SMS codes aren't really sent."}</div>
+              <div style={{ fontSize: 12, color: "#5f6b80", lineHeight: 1.4 }}>{T(wa ? "Both send a real 6-digit code: on WhatsApp to your mobile, or to your email." : firebaseWeb() ? "Both send a real 6-digit code: by SMS to your mobile, or to your email." : "Email sends a real code. SMS in India needs DLT business registration, so in this demo SMS codes aren't really sent.")}</div>
             </>
           )}
           {wa && whatsappHello() && (
             <div className="banner ok" role="note">
-              <b>Using WhatsApp?</b> First send "hi" on WhatsApp to {whatsappHello()}. <a href={"https://wa.me/" + whatsappHello()!.replace(/\D/g, "") + "?text=hi"} target="_blank" rel="noreferrer">Open WhatsApp</a>
+              <b>{T("Using WhatsApp?")}</b> {T("First send \"hi\" on WhatsApp to {num}.", { num: whatsappHello()! })} <a href={"https://wa.me/" + whatsappHello()!.replace(/\D/g, "") + "?text=hi"} target="_blank" rel="noreferrer">{T("Open WhatsApp")}</a>
             </div>
           )}
-          <div className="err" role="alert">{mobErr}</div>
-          <button className={"btn-lg" + (ok ? "" : " is-off")} onClick={() => sendOtp()} aria-busy={s.otpBusy}>{s.otpBusy ? "Sending…" : sendsTo === "email" ? "Send OTP to email" : sendsTo === "sms" && (byEmail || wa) ? `Send OTP ${mobileWord}` : "Send OTP"}</button>
+          <div className="err" role="alert">{err}</div>
+          <button className={"btn-lg" + (ok ? "" : " is-off")} onClick={() => sendOtp()} aria-busy={s.otpBusy}>{s.otpBusy ? T("Sending…") : sendsTo === "email" ? T("Send OTP to email") : sendsTo === "sms" && (byEmail || wa) ? T("Send OTP {how}", { how: mobileWord }) : T("Send OTP")}</button>
         </>
       ) : (
         <>
-          <div className="screen-lede">{s.otpSentTo ? <>Enter the 6-digit OTP we emailed to {s.otpSentTo}. Check your spam folder if you don't see it.</> : <>Enter the 6-digit OTP sent {wa && s.otpReq !== "firebase" ? "on WhatsApp " : ""}to +91 ••••••{s.mobNum.slice(-4)}.</>} {s.otpNote}</div>
+          <div className="screen-lede">{s.otpSentTo ? T("Enter the 6-digit OTP we emailed to {to}. Check your spam folder if you don't see it.", { to: s.otpSentTo }) : T(wa && s.otpReq !== "firebase" ? "Enter the 6-digit OTP sent on WhatsApp to {to}." : "Enter the 6-digit OTP sent to {to}.", { to: "+91 ••••••" + s.mobNum.slice(-4) })} {T(s.otpNote)}</div>
           <div className="field-row">
             <input type="password" className="input big" style={{ textAlign: "center", letterSpacing: ".4em" }} value={s.otp} onChange={(e) => set({ otp: e.target.value.replace(/\D/g, "").slice(0, 6), otpErr: "" })} inputMode="numeric" maxLength={6} placeholder="••••••" aria-label="OTP" autoComplete="one-time-code" />
             {full && <MicButton field="otp" />}
           </div>
-          <div className="err" role="alert">{s.otpErr}</div>
-          <button className={"btn-lg" + (s.otp.length === 6 ? "" : " is-off")} onClick={verifyOtp} aria-busy={s.otpBusy}>{s.otpBusy ? "Checking…" : "Verify"}</button>
+          <div className="err" role="alert">{T(s.otpErr)}</div>
+          <button className={"btn-lg" + (s.otp.length === 6 ? "" : " is-off")} onClick={verifyOtp} aria-busy={s.otpBusy}>{s.otpBusy ? T("Checking…") : T("Verify")}</button>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px" }}>
-            <button className="link-strong" style={{ textDecoration: "none", ...(resendIn ? { color: "#5f6b80", cursor: "default" } : {}) }} aria-disabled={!!resendIn} onClick={() => { if (!resendIn) sendOtp(true); }}>{resendIn ? `Resend OTP in ${resendIn}s` : "Resend OTP"}</button>
-            <button className="link" onClick={changeNumber}>Change number</button>
-            <button className="link" onClick={() => { set({ sheet: true }); ask(L("I didn't get the OTP", "मुझे OTP नहीं मिला"), intentAadhaar()); }}>Didn't get the OTP?</button>
+            <button className="link-strong" style={{ textDecoration: "none", ...(resendIn ? { color: "#5f6b80", cursor: "default" } : {}) }} aria-disabled={!!resendIn} onClick={() => { if (!resendIn) sendOtp(true); }}>{resendIn ? T("Resend OTP in {n}s", { n: resendIn }) : T("Resend OTP")}</button>
+            <button className="link" onClick={changeNumber}>{T("Change number")}</button>
+            <button className="link" onClick={() => { set({ sheet: true }); ask(L("I didn't get the OTP", "मुझे OTP नहीं मिला"), intentAadhaar()); }}>{T("Didn't get the OTP?")}</button>
           </div>
         </>
       )}
