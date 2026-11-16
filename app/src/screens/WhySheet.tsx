@@ -1,4 +1,5 @@
 import { set, useStore } from "../engine/store";
+import { T } from "../engine/t";
 
 // "Why we ask" for every data request. Wording and legal basis are placeholders (Legal to confirm).
 const WHY: Record<string, [what: string, why: string, ifNot: string]> = {
@@ -15,18 +16,18 @@ const WHY: Record<string, [what: string, why: string, ifNot: string]> = {
 
 export function WhySheet() {
   const key = useStore((s) => s.why);
-  const [what, why, ifNot] = WHY[key] ?? ["", "", ""];
+  const [what, why, ifNot] = (WHY[key] ?? ["", "", ""]).map((x) => (x ? T(x) : x));
   const close = () => set({ why: "" });
   return (
     <>
       <div onClick={close} style={{ position: "absolute", inset: 0, background: "rgba(29,36,32,.45)" }} />
-      <div role="dialog" aria-modal="true" aria-label={"Why we ask: " + what} style={{ position: "absolute", left: 12, right: 12, bottom: 12, background: "#fff", borderRadius: 18, padding: 16, boxShadow: "0 -6px 24px rgba(0,0,0,.25)" }}>
-        <div style={{ fontWeight: 600, fontSize: 16 }}>Why we ask: {what}</div>
+      <div role="dialog" aria-modal="true" aria-label={T("Why we ask: {what}", { what })} style={{ position: "absolute", left: 12, right: 12, bottom: 12, background: "#fff", borderRadius: 18, padding: 16, boxShadow: "0 -6px 24px rgba(0,0,0,.25)" }}>
+        <div style={{ fontWeight: 600, fontSize: 16 }}>{T("Why we ask: {what}", { what })}</div>
         <div style={{ marginTop: 8, fontSize: 13.5, lineHeight: 1.5 }}>
-          <b>Why:</b> {why}<br /><b>Legal basis:</b> KYC rules for opening an account (placeholder, Legal to confirm).<br /><b>If you don't provide it:</b> {ifNot}
+          <b>{T("Why:")}</b> {why}<br /><b>{T("Legal basis:")}</b> {T("KYC rules for opening an account (placeholder, Legal to confirm).")}<br /><b>{T("If you don't provide it:")}</b> {ifNot}
         </div>
-        <div style={{ marginTop: 8, fontFamily: "var(--mono)", fontSize: 11, color: "#5f6b80" }}>Source: Data request explanations · v1.0 · 1 Sep 2026</div>
-        <button className="btn" style={{ marginTop: 10, width: "100%" }} onClick={close} autoFocus>Got it</button>
+        <div style={{ marginTop: 8, fontFamily: "var(--mono)", fontSize: 11, color: "#5f6b80" }}>{T("Source: Data request explanations · v1.0 · 1 Sep 2026")}</div>
+        <button className="btn" style={{ marginTop: 10, width: "100%" }} onClick={close} autoFocus>{T("Got it")}</button>
       </div>
     </>
   );

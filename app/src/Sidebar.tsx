@@ -1,6 +1,7 @@
 import { useAppState } from "./engine/store";
 import { openStep } from "./engine/flow";
 import { steps } from "./screens/Home";
+import { T } from "./engine/t";
 
 // Left-hand progress list on wide screens. Read-only: it mirrors the steps on Home.
 
@@ -12,8 +13,8 @@ export function Sidebar() {
   const onScreen = (n: number) => ({ mobile: 1, details: 2, idchoice: 3, aadhaar: 3, form60: 3, addrchoice: 3, vkyc: 4, review: 5 } as Record<string, number>)[s.screen] === n
     || (s.screen === "secure" && n === (s.addr === "done" ? 4 : 3));
   return (
-    <nav className="sidebar" aria-label="Your progress">
-      <div className="sidebar-eyebrow">YOUR PROGRESS · {done} OF 5</div>
+    <nav className="sidebar" aria-label={T("Your progress")}>
+      <div className="sidebar-eyebrow">{T("YOUR PROGRESS · {done} OF 5", { done })}</div>
       <ol className="side-steps">
         {list.map((st) => (
           <li key={st.n}>

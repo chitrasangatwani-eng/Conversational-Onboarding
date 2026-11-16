@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { set, useAppState } from "../engine/store";
 import { aadhaarViaDigiLocker, chooseIdDoc, sendAadhaarOtp, verifyAadhaarOtp } from "../engine/flow";
+import { T } from "../engine/t";
 
 // Secure Aadhaar OTP form. The full number goes only to the server, is never
 // shown to the assistant, and is cleared from the app once the OTP is sent.
@@ -20,42 +21,42 @@ export function AadhaarScreen() {
 
   return (
     <div className="screen">
-      <button className="back" onClick={chooseIdDoc}>← Back</button>
-      <div className="screen-title">Verify Aadhaar</div>
-      <div className="secure-note"><span style={{ fontFamily: "var(--mono)" }}>🔒</span>Secure form. The assistant never sees your Aadhaar number or OTP.</div>
+      <button className="back" onClick={chooseIdDoc}>← {T("Back")}</button>
+      <div className="screen-title">{T("Verify Aadhaar")}</div>
+      <div className="secure-note"><span style={{ fontFamily: "var(--mono)" }}>🔒</span>{T("Secure form. The assistant never sees your Aadhaar number or OTP.")}</div>
       {s.aadStage === "enter" ? (
         <>
-          <div className="screen-lede">We'll send an OTP to the mobile linked to your Aadhaar. Aadhaar is optional: you can use another identity document instead. <button className="why" onClick={() => set({ why: "aadhaar" })}>Why we ask</button></div>
+          <div className="screen-lede">{T("We'll send an OTP to the mobile linked to your Aadhaar. Aadhaar is optional: you can use another identity document instead.")} <button className="why" onClick={() => set({ why: "aadhaar" })}>{T("Why we ask")}</button></div>
           <input className="input big" value={group(s.aadNum)} onChange={(e) => set({ aadNum: e.target.value.replace(/\D/g, "").slice(0, 12), aadErr: "" })}
             inputMode="numeric" placeholder="1234 5678 9012" aria-label="Aadhaar number" autoComplete="off" style={{ letterSpacing: ".08em" }} />
           <button role="checkbox" aria-checked={s.aadConsent} onClick={() => set({ aadConsent: !s.aadConsent, aadErr: "" })}
             style={{ display: "flex", gap: 10, alignItems: "flex-start", textAlign: "left", border: 0, background: "none", font: "inherit", fontSize: 13.5, lineHeight: 1.45, padding: 0, cursor: "pointer", color: "#13203f" }}>
             <span className={"box" + (s.aadConsent ? " on" : "")}>{s.aadConsent ? "✓" : ""}</span>
-            I consent to my Aadhaar number being used to verify my identity with UIDAI for opening this account (KYC). (Placeholder wording, Legal to approve.)
+            {T("I consent to my Aadhaar number being used to verify my identity with UIDAI for opening this account (KYC). (Placeholder wording, Legal to approve.)")}
           </button>
-          <div className="err" role="alert">{s.aadErr}</div>
-          <button className={"btn-lg" + (ready ? "" : " is-off")} onClick={sendAadhaarOtp} aria-busy={s.aadBusy}>{s.aadBusy ? "Sending…" : "Send OTP"}</button>
+          <div className="err" role="alert">{T(s.aadErr)}</div>
+          <button className={"btn-lg" + (ready ? "" : " is-off")} onClick={sendAadhaarOtp} aria-busy={s.aadBusy}>{T(s.aadBusy ? "Sending…" : "Send OTP")}</button>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 18px" }}>
-            <button className="link" onClick={aadhaarViaDigiLocker} aria-busy={s.dlBusy}>{s.dlBusy ? "Waiting for DigiLocker…" : "Use DigiLocker instead"}</button>
-            <button className="link" onClick={() => set({ screen: "secure", dlErr: "", aadErr: "" })}>Upload a photo instead</button>
-            <button className="link" onClick={chooseIdDoc}>Use another document</button>
+            <button className="link" onClick={aadhaarViaDigiLocker} aria-busy={s.dlBusy}>{T(s.dlBusy ? "Waiting for DigiLocker…" : "Use DigiLocker instead")}</button>
+            <button className="link" onClick={() => set({ screen: "secure", dlErr: "", aadErr: "" })}>{T("Upload a photo instead")}</button>
+            <button className="link" onClick={chooseIdDoc}>{T("Use another document")}</button>
           </div>
-          {s.dlErr && <div className="err" role="alert">{s.dlErr}</div>}
+          {s.dlErr && <div className="err" role="alert">{T(s.dlErr)}</div>}
         </>
       ) : (
         <>
-          <div className="screen-lede">Enter the 6-digit OTP sent to the mobile linked to Aadhaar ending {s.aadLast4}.</div>
+          <div className="screen-lede">{T("Enter the 6-digit OTP sent to the mobile linked to Aadhaar ending {last4}.", { last4: s.aadLast4 })}</div>
           <input type="password" className="input big" style={{ textAlign: "center", letterSpacing: ".4em" }} value={s.aadOtp}
             onChange={(e) => set({ aadOtp: e.target.value.replace(/\D/g, "").slice(0, 6), aadErr: "" })}
             inputMode="numeric" maxLength={6} placeholder="••••••" aria-label="Aadhaar OTP" autoComplete="one-time-code" />
-          <div className="err" role="alert">{s.aadErr}</div>
-          <button className={"btn-lg" + (s.aadOtp.length === 6 ? "" : " is-off")} onClick={verifyAadhaarOtp} aria-busy={s.aadBusy}>{s.aadBusy ? "Checking…" : "Verify"}</button>
+          <div className="err" role="alert">{T(s.aadErr)}</div>
+          <button className={"btn-lg" + (s.aadOtp.length === 6 ? "" : " is-off")} onClick={verifyAadhaarOtp} aria-busy={s.aadBusy}>{T(s.aadBusy ? "Checking…" : "Verify")}</button>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px" }}>
             <button className="link-strong" style={{ textDecoration: "none", ...(resendIn ? { color: "#5f6b80", cursor: "default" } : {}) }} aria-disabled={!!resendIn}
               onClick={() => { if (!resendIn) set({ aadStage: "enter", aadOtp: "", aadErr: "Enter your Aadhaar number again to get a new OTP." }); }}>
-              {resendIn ? `New OTP in ${resendIn}s` : "Get a new OTP"}
+              {resendIn ? T("New OTP in {n}s", { n: resendIn }) : T("Get a new OTP")}
             </button>
-            <button className="link" onClick={aadhaarViaDigiLocker}>Use DigiLocker instead</button>
+            <button className="link" onClick={aadhaarViaDigiLocker}>{T("Use DigiLocker instead")}</button>
           </div>
         </>
       )}

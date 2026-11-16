@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { set, useAppState } from "../engine/store";
 import { DIGILOCKER_DOCS, OVDS, backHome, captureKind, chooseIdDoc, ovdName, submitCapture, useDigiLocker } from "../engine/flow";
 import { useCamera } from "../engine/useCamera";
+import { T } from "../engine/t";
 
 // Secure capture for the PAN card and address proof. The image stays on the
 // device in this prototype; the assistant never sees this screen.
@@ -68,10 +69,10 @@ export function CaptureScreen() {
 
   return (
     <div className="screen">
-      <button className="back" onClick={close(back)}>← Back</button>
-      <div style={{ fontSize: 24, fontWeight: 600 }}>{copy.title}</div>
-      <div style={{ fontSize: 13, color: "#3c4659", marginTop: -8 }}>{copy.hint} <button className="why" onClick={() => set({ why: kind === "ovd" ? "pan" : kind })}>Why we ask</button></div>
-      <div className="secure-note"><span style={{ fontFamily: "var(--mono)" }}>🔒</span>Secure upload. The assistant never sees this image, your PAN or your Aadhaar number.</div>
+      <button className="back" onClick={close(back)}>← {T("Back")}</button>
+      <div style={{ fontSize: 24, fontWeight: 600 }}>{T(copy.title)}</div>
+      <div style={{ fontSize: 13, color: "#3c4659", marginTop: -8 }}>{copy.hint && T(copy.hint)} <button className="why" onClick={() => set({ why: kind === "ovd" ? "pan" : kind })}>{T("Why we ask")}</button></div>
+      <div className="secure-note"><span style={{ fontFamily: "var(--mono)" }}>🔒</span>{T("Secure upload. The assistant never sees this image, your PAN or your Aadhaar number.")}</div>
       <input ref={fileRef} type="file" accept="image/*" capture={selfie ? "user" : "environment"} style={{ display: "none" }}
         onChange={(e) => onFile(e.target.files?.[0])} />
       <input ref={uploadRef} type="file" accept={selfie ? "image/*" : "image/*,application/pdf"} style={{ display: "none" }} aria-label="Upload a photo or PDF"
@@ -80,28 +81,28 @@ export function CaptureScreen() {
       <div className={"frame" + (shot ? " shot" : "")} style={{ flex: "none", height: "clamp(150px, 34vh, 340px)", ...(url ? { backgroundImage: `url(${url})` } : {}) }} onClick={capture} role="button" aria-label="Camera frame">
         {/* Kept in the page (only made invisible) so phones keep decoding frames before it's shown. */}
         <video ref={videoRef} autoPlay playsInline muted style={{ opacity: cam && !shot ? 1 : 0, pointerEvents: "none", transform: selfie ? "scaleX(-1)" : "none" }} />
-        {pdf ? `📄 ${pdf}` : shot || cam ? "" : camErr ? "Camera unavailable. Tap to choose a photo" : "Starting camera…"}
+        {pdf ? `📄 ${pdf}` : shot || cam ? "" : camErr ? T("Camera unavailable. Tap to choose a photo") : T("Starting camera…")}
       </div>
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-        <button className="btn-outline-lg" style={{ flex: "1 1 180px" }} onClick={capture}>{busy ? "Capturing…" : shot ? "Retake with camera" : cam ? "Capture photo" : camErr ? "Choose a photo" : "Capture photo"}</button>
-        {!selfie && <button className="btn-outline-lg" style={{ flex: "1 1 180px" }} onClick={upload}>{shot ? "Upload a different file" : "Upload photo or PDF"}</button>}
+        <button className="btn-outline-lg" style={{ flex: "1 1 180px" }} onClick={capture}>{T(busy ? "Capturing…" : shot ? "Retake with camera" : cam ? "Capture photo" : camErr ? "Choose a photo" : "Capture photo")}</button>
+        {!selfie && <button className="btn-outline-lg" style={{ flex: "1 1 180px" }} onClick={upload}>{T(shot ? "Upload a different file" : "Upload photo or PDF")}</button>}
       </div>
-      {!shot && camErr && <div style={{ fontSize: 13, color: "#3c4659" }} role="status">{CAM_HELP[camWhy] ?? CAM_HELP.other}</div>}
-      {note && <div className="err" role="alert">{note}</div>}
+      {!shot && camErr && <div style={{ fontSize: 13, color: "#3c4659" }} role="status">{T(CAM_HELP[camWhy] ?? CAM_HELP.other)}</div>}
+      {note && <div className="err" role="alert">{T(note)}</div>}
       {shot && (
         <>
-          <div className="banner ok" role="status">✓ {pdf ? "Document added" : "Photo taken"}. Check that it's clear, then submit it.</div>
-          <button ref={submitRef} className="btn-block" onClick={close(submitCapture)}>{pdf ? "Submit document" : "Submit photo"}</button>
+          <div className="banner ok" role="status">✓ {T(pdf ? "Document added. Check that it's clear, then submit it." : "Photo taken. Check that it's clear, then submit it.")}</div>
+          <button ref={submitRef} className="btn-block" onClick={close(submitCapture)}>{T(pdf ? "Submit document" : "Submit photo")}</button>
         </>
       )}
-      <div style={{ fontSize: 12, color: "#3c4659" }}>{s.weak && !s.mvp ? "Low-data mode: your photo is compressed before it uploads." : ""}</div>
+      <div style={{ fontSize: 12, color: "#3c4659" }}>{s.weak && !s.mvp ? T("Low-data mode: your photo is compressed before it uploads.") : ""}</div>
       {!shot && (kind === "pan" || (kind === "ovd" && s.ovd !== "" && DIGILOCKER_DOCS.includes(s.ovd)) || (kind === "addr" && OVDS.some((d) => d.en === s.addrDoc))) && (
         <button className="btn-digi" onClick={() => useDigiLocker()} aria-busy={s.dlBusy}>
-          {s.dlBusy ? "Waiting for DigiLocker… finish in its window" : "Use DigiLocker instead (no photo)"}
+          {T(s.dlBusy ? "Waiting for DigiLocker… finish in its window" : "Use DigiLocker instead (no photo)")}
         </button>
       )}
-      {s.dlErr && <div className="err" role="alert">{s.dlErr}</div>}
-      {(kind === "pan" || kind === "ovd") && <button className="link" style={{ alignSelf: "flex-start" }} onClick={close(chooseIdDoc)}>Choose a different identity document</button>}
+      {s.dlErr && <div className="err" role="alert">{T(s.dlErr)}</div>}
+      {(kind === "pan" || kind === "ovd") && <button className="link" style={{ alignSelf: "flex-start" }} onClick={close(chooseIdDoc)}>{T("Choose a different identity document")}</button>}
     </div>
   );
 }

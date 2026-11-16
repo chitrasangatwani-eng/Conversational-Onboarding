@@ -154,7 +154,7 @@ function initialScope(): boolean {
 // so "Reload page" or a refresh doesn't send the applicant back to step 1.
 // Only step statuses and document names are kept: no personal details, codes or tokens.
 const SAVE_KEY = "artha-progress";
-const SAVED_KEYS = ["mob", "det", "id", "addr", "selfie", "ovd", "addrDoc", "f60"] as const;
+const SAVED_KEYS = ["mob", "det", "id", "addr", "selfie", "ovd", "addrDoc", "f60", "lang"] as const;
 function restore(s: State): State {
   try {
     const raw = sessionStorage.getItem(SAVE_KEY);
