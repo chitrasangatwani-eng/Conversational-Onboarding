@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { set, useAppState } from "../engine/store";
 import { DIGILOCKER_DOCS, backHome, captureKind, chooseIdDoc, ovdName, submitCapture, useDigiLocker } from "../engine/flow";
 import { useCamera } from "../engine/useCamera";
@@ -36,8 +36,11 @@ export function CaptureScreen() {
   /** A PDF upload can't be previewed as an image, so its name is shown instead. */
   const [pdf, setPdf] = useState("");
   const [busy, setBusy] = useState(false);
+  const submitRef = useRef<HTMLButtonElement>(null);
   const [note, setNote] = useState("");
   const shot = !!url || !!pdf;
+  // Once there's a photo, bring the Submit button into view.
+  useEffect(() => { if (shot) submitRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" }); }, [shot]);
 
   const pick = () => { const i = fileRef.current; if (i) { i.value = ""; i.click(); } };
   /** Upload from the gallery or files: offered for every document, camera or not. */
@@ -64,7 +67,7 @@ export function CaptureScreen() {
   const close = (fn: () => void) => () => { stop(); fn(); };
 
   return (
-    <div className="screen" style={{ overflow: "hidden" }}>
+    <div className="screen">
       <button className="back" onClick={close(back)}>← Back</button>
       <div style={{ fontSize: 24, fontWeight: 600 }}>{copy.title}</div>
       <div style={{ fontSize: 13, color: "#3c4659", marginTop: -8 }}>{copy.hint} <button className="why" onClick={() => set({ why: kind === "ovd" ? "pan" : kind })}>Why we ask</button></div>
@@ -73,7 +76,8 @@ export function CaptureScreen() {
         onChange={(e) => onFile(e.target.files?.[0])} />
       <input ref={uploadRef} type="file" accept={selfie ? "image/*" : "image/*,application/pdf"} style={{ display: "none" }} aria-label="Upload a photo or PDF"
         onChange={(e) => onFile(e.target.files?.[0])} />
-      <div className={"frame" + (shot ? " shot" : "")} style={url ? { backgroundImage: `url(${url})` } : undefined} onClick={capture} role="button" aria-label="Camera frame">
+      {/* A fixed height, so the buttons below stay on screen on short laptop displays. */}
+      <div className={"frame" + (shot ? " shot" : "")} style={{ flex: "none", height: "clamp(150px, 34vh, 340px)", ...(url ? { backgroundImage: `url(${url})` } : {}) }} onClick={capture} role="button" aria-label="Camera frame">
         {/* Kept in the page (only made invisible) so phones keep decoding frames before it's shown. */}
         <video ref={videoRef} autoPlay playsInline muted style={{ opacity: cam && !shot ? 1 : 0, pointerEvents: "none", transform: selfie ? "scaleX(-1)" : "none" }} />
         {pdf ? `📄 ${pdf}` : shot || cam ? "" : camErr ? "Camera unavailable. Tap to choose a photo" : "Starting camera…"}
@@ -84,16 +88,20 @@ export function CaptureScreen() {
       </div>
       {!shot && camErr && <div style={{ fontSize: 13, color: "#3c4659" }} role="status">{CAM_HELP[camWhy] ?? CAM_HELP.other}</div>}
       {note && <div className="err" role="alert">{note}</div>}
-      {shot && <div className="banner ok" role="status">✓ {pdf ? "Document added" : "Photo taken"}. Check that it's clear, then tap <b>{pdf ? "Submit document" : "Submit photo"}</b> below.</div>}
+      {shot && (
+        <>
+          <div className="banner ok" role="status">✓ {pdf ? "Document added" : "Photo taken"}. Check that it's clear, then submit it.</div>
+          <button ref={submitRef} className="btn-block" onClick={close(submitCapture)}>{pdf ? "Submit document" : "Submit photo"}</button>
+        </>
+      )}
       <div style={{ fontSize: 12, color: "#3c4659" }}>{s.weak && !s.mvp ? "Low-data mode: your photo is compressed before it uploads." : ""}</div>
-      {(kind === "pan" || (kind === "ovd" && s.ovd !== "" && DIGILOCKER_DOCS.includes(s.ovd)) || (kind === "addr" && s.addrDoc === "Aadhaar")) && (
+      {!shot && (kind === "pan" || (kind === "ovd" && s.ovd !== "" && DIGILOCKER_DOCS.includes(s.ovd)) || (kind === "addr" && s.addrDoc === "Aadhaar")) && (
         <button className="btn-digi" onClick={() => useDigiLocker()} aria-busy={s.dlBusy}>
           {s.dlBusy ? "Waiting for DigiLocker… finish in its window" : "Use DigiLocker instead (no photo)"}
         </button>
       )}
       {s.dlErr && <div className="err" role="alert">{s.dlErr}</div>}
       {(kind === "pan" || kind === "ovd") && <button className="link" style={{ alignSelf: "flex-start" }} onClick={close(chooseIdDoc)}>Choose a different identity document</button>}
-      <button className="btn-block" onClick={close(submitCapture)}>{pdf ? "Submit document" : "Submit photo"}</button>
     </div>
   );
 }
