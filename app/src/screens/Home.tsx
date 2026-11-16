@@ -74,7 +74,7 @@ export function Home() {
           <div className="intro-card" style={{ marginTop: 18 }}>
             <b style={{ fontSize: 15 }}>Before you start</b>
             <div style={{ marginTop: 8 }}>· 100% online. No branch visit needed.</div>
-            <div>· Keep ready: one identity proof (PAN, Aadhaar, passport, voter ID, driving licence, NREGA job card or NPR letter) and a document with your current address. A recent utility bill works for address too.</div>
+            <div>· Keep ready: one identity proof (PAN, Aadhaar, passport, voter ID or driving licence) and a document with your current address. A recent utility bill works for address too.</div>
             <div>· Your name, mobile and date of birth are already filled in. You won't type them again.</div>
             {full && <button className="link-strong" style={{ marginTop: 6 }} onClick={openFees}>See fees and terms first</button>}
           </div>

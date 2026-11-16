@@ -35,7 +35,7 @@ export const CASES: Case[] = [
   ok("docs-3", "Can I use Aadhaar instead of PAN?", "docs", { mustSay: ["any one"] }),
   ok("docs-6", "Is Aadhaar compulsory?", "docs", { mustSay: ["optional"] }),
   ok("docs-7", "Can I use my voter ID?", "docs"),
-  ok("docs-8", "Can I use my NREGA job card?", "docs", { mustSay: ["NREGA"] }),
+  ok("docs-8", "Can I use my driving licence?", "docs", { mustSay: ["driving licence"] }),
   ok("docs-4", "I don't have a PAN card", "docs", { mustSay: ["passport"] }),
   ok("docs-5", "Can I use my driving licence for identity?", "docs"),
   ok("addr-1", "Which address proof is accepted?", "addr"),
