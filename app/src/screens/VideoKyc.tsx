@@ -49,7 +49,7 @@ export function VideoKycScreen() {
             <div style={{ position: "absolute", inset: 0, background: "repeating-linear-gradient(135deg,#1c2a4a 0 10px,#24314f 10px 20px)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--mono)", fontSize: 12, color: "#a9b3c4", textAlign: "center" }}>{T("agent video")}<br />{T("(live feed placeholder)")}</div>
             <div style={{ position: "absolute", top: 12, left: 12, display: "flex", gap: 8, alignItems: "center" }}>
               <span style={{ background: "#fff", color: "#13203f", borderRadius: 8, padding: "4px 8px", fontSize: 12, fontWeight: 600 }}>{T("Priya · Verification agent")}</span>
-              <span style={{ background: "oklch(0.5 0.09 25)", color: "#fff", borderRadius: 8, padding: "4px 8px", fontFamily: "var(--mono)", fontSize: 11 }}>REC 00:{String(s.vkT).padStart(2, "0")}</span>
+              <span style={{ background: "oklch(0.5 0.09 25)", color: "#fff", borderRadius: 8, padding: "4px 8px", fontFamily: "var(--mono)", fontSize: 11 }}>{T("REC")} 00:{String(s.vkT).padStart(2, "0")}</span>
             </div>
             <div style={{ position: "absolute", left: 12, right: 12, bottom: 12, background: "rgba(255,255,255,.95)", borderRadius: 12, padding: "10px 12px", fontSize: 14, lineHeight: 1.4 }} aria-live="polite">
               <span style={{ fontFamily: "var(--mono)", fontSize: 11, color: "#5f6b80", display: "block" }}>{T("AGENT ASKS")}</span>

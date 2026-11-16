@@ -26,7 +26,7 @@ export function Sidebar() {
           </li>
         ))}
       </ol>
-      <div className="side-note" role="status">{s.navNote}</div>
+      <div className="side-note" role="status">{s.navNote && T(s.navNote)}</div>
       <img className="side-art" src={import.meta.env.BASE_URL + "brand/illustration.jpg"} alt="" />
     </nav>
   );

@@ -346,26 +346,32 @@ const page = (title: string, body: string) => `<!doctype html><html lang="en"><h
 .card{background:#fff;border:1px solid #d9deea;border-radius:14px;padding:16px;margin:16px 0}button,a.btn{display:block;width:100%;box-sizing:border-box;border:0;border-radius:12px;padding:14px;font:600 16px system-ui;margin-top:10px;cursor:pointer;text-align:center;text-decoration:none}
 .go{background:#2b3a8c;color:#fff}.alt{background:#fff;color:#2b3a8c;border:1px solid #2b3a8c}.no{background:none;color:#5b6170;text-decoration:underline}small{color:#5b6170}</style></head><body>${body}</body></html>`;
 
-export function sandboxConsentPage(state: string, purpose: Purpose | null = null): string {
-  const doc = purpose && purpose !== "address" ? DOC_NAME[purpose] : "";
+const DOC_NAME_HI: Record<string, string> = { "PAN card": "PAN कार्ड", "Driving licence": "ड्राइविंग लाइसेंस", "Voter ID": "वोटर ID", Passport: "पासपोर्ट" };
+
+/** The demo DigiLocker consent page, in English or Hindi to match the app. */
+export function sandboxConsentPage(state: string, purpose: Purpose | null = null, hi = false): string {
+  const t = (en: string, h: string) => (hi ? h : en);
+  const docEn = purpose && purpose !== "address" ? DOC_NAME[purpose] : "";
+  const doc = hi ? DOC_NAME_HI[docEn] ?? docEn : docEn;
   const s = encodeURIComponent(state);
-  const go = (code: string) => `/api/digilocker/callback?state=${s}&code=sandbox-${code}`;
-  return page("DigiLocker (sandbox)", `<div class="bar">DigiLocker<span class="tag">SANDBOX</span></div><main>
-<h2 style="margin:8px 0 4px">Share documents?</h2>
-<p><b>Artha Inclusive</b> is asking to read from your DigiLocker:</p>
-<div class="card">${doc ? `• ${doc}<br>` : ""}• Aadhaar: name and address (e-Aadhaar)<br><small>Used only for KYC. You can revoke access in DigiLocker at any time.</small></div>
-<p><small>This is a test page with sample data. The real DigiLocker asks you to sign in with your Aadhaar or mobile number and an OTP.</small></p>
-<a class="btn go" href="${go("allow")}">Allow</a>
-<a class="btn no" href="/api/digilocker/callback?state=${s}&error=access_denied">Deny</a>
-<details style="margin-top:20px"><summary><small>Demo: try a problem case</small></summary>
-<a class="btn alt" href="${go("name-differs")}">Name doesn't match</a>
-<a class="btn alt" href="${go("no-pan")}">${doc || "Document"} not in DigiLocker</a></details></main>`);
+  const lq = hi ? "&lang=hi" : "";
+  const go = (code: string) => `/api/digilocker/callback?state=${s}&code=sandbox-${code}${lq}`;
+  return page(t("DigiLocker (sandbox)", "DigiLocker (सैंडबॉक्स)"), `<div class="bar">DigiLocker<span class="tag">${t("SANDBOX", "सैंडबॉक्स")}</span></div><main${hi ? ' lang="hi"' : ""}>
+<h2 style="margin:8px 0 4px">${t("Share documents?", "दस्तावेज़ साझा करें?")}</h2>
+<p>${t("<b>Artha Inclusive</b> is asking to read from your DigiLocker:", "<b>Artha Inclusive</b> आपके DigiLocker से ये पढ़ना चाहता है:")}</p>
+<div class="card">${doc ? `• ${doc}<br>` : ""}• ${t("Aadhaar: name and address (e-Aadhaar)", "आधार: नाम और पता (ई-आधार)")}<br><small>${t("Used only for KYC. You can revoke access in DigiLocker at any time.", "सिर्फ़ KYC के लिए इस्तेमाल होगा। आप DigiLocker में कभी भी अनुमति वापस ले सकते हैं।")}</small></div>
+<p><small>${t("This is a test page with sample data. The real DigiLocker asks you to sign in with your Aadhaar or mobile number and an OTP.", "यह नमूना डेटा वाला टेस्ट पेज है। असली DigiLocker आपसे आधार या मोबाइल नंबर और OTP से साइन इन करने को कहता है।")}</small></p>
+<a class="btn go" href="${go("allow")}">${t("Allow", "अनुमति दें")}</a>
+<a class="btn no" href="/api/digilocker/callback?state=${s}&error=access_denied${lq}">${t("Deny", "मना करें")}</a>
+<details style="margin-top:20px"><summary><small>${t("Demo: try a problem case", "डेमो: कोई समस्या वाला मामला आज़माएँ")}</small></summary>
+<a class="btn alt" href="${go("name-differs")}">${t("Name doesn't match", "नाम मेल नहीं खाता")}</a>
+<a class="btn alt" href="${go("no-pan")}">${hi ? `${doc || "दस्तावेज़"} DigiLocker में नहीं है` : `${doc || "Document"} not in DigiLocker`}</a></details></main>`);
 }
 
-export function callbackPage(ok: boolean, rawState: string): string {
+export function callbackPage(ok: boolean, rawState: string, hi = false): string {
   const state = rawState.replace(/[^A-Za-z0-9_-]/g, ""); // state is base64url; drop anything else before it goes into the script
-  const msg = ok ? "Done. You can go back to the app." : "This DigiLocker link has expired. Go back to the app and try again.";
+  const msg = ok ? (hi ? "हो गया। आप ऐप पर वापस जा सकते हैं।" : "Done. You can go back to the app.") : (hi ? "यह DigiLocker लिंक समाप्त हो गया है। ऐप पर वापस जाकर फिर कोशिश करें।" : "This DigiLocker link has expired. Go back to the app and try again.");
   return page("DigiLocker", `<div class="bar">DigiLocker</div><main><div class="card">${msg}</div>
-<button class="go" onclick="window.close()">Close this window</button></main>
+<button class="go" onclick="window.close()">${hi ? "यह विंडो बंद करें" : "Close this window"}</button></main>
 <script>try{if(window.opener)window.opener.postMessage({type:"digilocker",state:${JSON.stringify(state)}},location.origin);}catch(e){}setTimeout(function(){window.close()},800);</script>`);
 }
