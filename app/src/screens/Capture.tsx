@@ -6,6 +6,15 @@ import { useCamera } from "../engine/useCamera";
 // Secure capture for the PAN card and address proof. The image stays on the
 // device in this prototype; the assistant never sees this screen.
 
+/** Why the camera isn't available, in plain words, with the upload alternative. */
+const CAM_HELP: Record<string, string> = {
+  blocked: "Camera access is blocked for this site. Allow the camera in your browser's site settings (the icon left of the web address), then reload, or upload a photo instead.",
+  none: "We can't find a camera on this device. Upload a photo or PDF instead.",
+  busy: "Another app is using your camera. Close it and tap Capture photo again, or upload a photo instead.",
+  unsupported: "This browser can't use the camera. Open the page in Chrome or Safari, or upload a photo instead.",
+  other: "We couldn't start your camera. Tap Capture photo to try again, or upload a photo instead.",
+};
+
 const COPY = {
   pan: { title: "PAN card", hint: "" },
   ovd: { title: "Identity document", hint: "All four corners and your name, photo and date of birth readable." },
@@ -20,12 +29,14 @@ export function CaptureScreen() {
   const copy = kind === "ovd" ? { ...base, title: ovdName(s.ovd), hint: s.ovd === "aadhaar" ? "Cover the first 8 digits of your Aadhaar number (a masked Aadhaar). The photo, name and address must be readable." : base.hint } : kind === "addr" && s.addrDoc ? { ...base, title: s.addrDoc } : base;
   const back = kind === "pan" || kind === "ovd" ? chooseIdDoc : kind === "addr" ? () => set({ screen: "addrchoice" }) : backHome;
   const selfie = kind === "vk";
-  const { videoRef, cam, camErr, start, stop, snap } = useCamera(selfie ? "user" : "environment");
+  const { videoRef, cam, camErr, camWhy, start, stop, snapWhenReady } = useCamera(selfie ? "user" : "environment");
   const fileRef = useRef<HTMLInputElement>(null);
   const uploadRef = useRef<HTMLInputElement>(null);
   const [url, setUrl] = useState("");
   /** A PDF upload can't be previewed as an image, so its name is shown instead. */
   const [pdf, setPdf] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState("");
   const shot = !!url || !!pdf;
 
   const pick = () => { const i = fileRef.current; if (i) { i.value = ""; i.click(); } };
@@ -37,7 +48,16 @@ export function CaptureScreen() {
     if (f.type === "application/pdf") { setUrl(""); setPdf(f.name); } else { setPdf(""); setUrl(URL.createObjectURL(f)); }
   };
   const capture = () => {
-    if (cam && !shot) { const u = snap(selfie); if (u) setUrl(u); return; }
+    setNote("");
+    if (cam && !shot) {
+      if (busy) return;
+      setBusy(true);
+      void snapWhenReady(selfie).then((u) => {
+        setBusy(false);
+        if (u) setUrl(u); else setNote("The camera isn't showing a picture yet. Wait a second and tap Capture photo again, or upload a photo instead.");
+      });
+      return;
+    }
     if (shot) { setUrl(""); setPdf(""); setTimeout(start, 50); return; }
     if (camErr) pick(); else start();
   };
@@ -54,13 +74,16 @@ export function CaptureScreen() {
       <input ref={uploadRef} type="file" accept={selfie ? "image/*" : "image/*,application/pdf"} style={{ display: "none" }} aria-label="Upload a photo or PDF"
         onChange={(e) => onFile(e.target.files?.[0])} />
       <div className={"frame" + (shot ? " shot" : "")} style={url ? { backgroundImage: `url(${url})` } : undefined} onClick={capture} role="button" aria-label="Camera frame">
-        <video ref={videoRef} autoPlay playsInline muted style={{ display: cam && !shot ? "block" : "none", transform: selfie ? "scaleX(-1)" : "none" }} />
+        {/* Kept in the page (only made invisible) so phones keep decoding frames before it's shown. */}
+        <video ref={videoRef} autoPlay playsInline muted style={{ opacity: cam && !shot ? 1 : 0, pointerEvents: "none", transform: selfie ? "scaleX(-1)" : "none" }} />
         {pdf ? `📄 ${pdf}` : shot || cam ? "" : camErr ? "Camera unavailable. Tap to choose a photo" : "Starting camera…"}
       </div>
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-        <button className="btn-outline-lg" style={{ flex: "1 1 180px" }} onClick={capture}>{shot ? "Retake with camera" : cam ? "Capture photo" : camErr ? "Choose a photo" : "Capture photo"}</button>
+        <button className="btn-outline-lg" style={{ flex: "1 1 180px" }} onClick={capture}>{busy ? "Capturing…" : shot ? "Retake with camera" : cam ? "Capture photo" : camErr ? "Choose a photo" : "Capture photo"}</button>
         {!selfie && <button className="btn-outline-lg" style={{ flex: "1 1 180px" }} onClick={upload}>{shot ? "Upload a different file" : "Upload photo or PDF"}</button>}
       </div>
+      {!shot && camErr && <div style={{ fontSize: 13, color: "#3c4659" }} role="status">{CAM_HELP[camWhy] ?? CAM_HELP.other}</div>}
+      {note && <div className="err" role="alert">{note}</div>}
       <div style={{ fontSize: 12, color: "#3c4659" }}>{s.weak && !s.mvp ? "Low-data mode: your photo is compressed before it uploads." : ""}</div>
       {(kind === "pan" || (kind === "ovd" && s.ovd !== "" && DIGILOCKER_DOCS.includes(s.ovd)) || (kind === "addr" && s.addrDoc === "Aadhaar")) && (
         <button className="btn-digi" onClick={() => useDigiLocker()} aria-busy={s.dlBusy}>
