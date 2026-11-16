@@ -64,7 +64,7 @@ export function MobileScreen() {
         <>
           <div className="screen-lede">{s.otpSentTo ? <>Enter the 6-digit OTP we emailed to {s.otpSentTo}. Check your spam folder if you don't see it.</> : <>Enter the 6-digit OTP sent {wa && s.otpReq !== "firebase" ? "on WhatsApp " : ""}to +91 ••••••{s.mobNum.slice(-4)}.</>} {s.otpNote}</div>
           <div className="field-row">
-            <input className="input big" style={{ textAlign: "center", letterSpacing: ".4em" }} value={s.otp} onChange={(e) => set({ otp: e.target.value.replace(/\D/g, "").slice(0, 6), otpErr: "" })} inputMode="numeric" maxLength={6} placeholder="••••••" aria-label="OTP" autoComplete="one-time-code" />
+            <input type="password" className="input big" style={{ textAlign: "center", letterSpacing: ".4em" }} value={s.otp} onChange={(e) => set({ otp: e.target.value.replace(/\D/g, "").slice(0, 6), otpErr: "" })} inputMode="numeric" maxLength={6} placeholder="••••••" aria-label="OTP" autoComplete="one-time-code" />
             {full && <MicButton field="otp" />}
           </div>
           <div className="err" role="alert">{s.otpErr}</div>

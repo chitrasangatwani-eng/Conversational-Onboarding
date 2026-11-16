@@ -45,7 +45,7 @@ export function AadhaarScreen() {
       ) : (
         <>
           <div className="screen-lede">Enter the 6-digit OTP sent to the mobile linked to Aadhaar ending {s.aadLast4}.</div>
-          <input className="input big" style={{ textAlign: "center", letterSpacing: ".4em" }} value={s.aadOtp}
+          <input type="password" className="input big" style={{ textAlign: "center", letterSpacing: ".4em" }} value={s.aadOtp}
             onChange={(e) => set({ aadOtp: e.target.value.replace(/\D/g, "").slice(0, 6), aadErr: "" })}
             inputMode="numeric" maxLength={6} placeholder="••••••" aria-label="Aadhaar OTP" autoComplete="one-time-code" />
           <div className="err" role="alert">{s.aadErr}</div>
